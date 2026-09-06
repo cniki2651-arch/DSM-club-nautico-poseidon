@@ -12,7 +12,7 @@
     <!-- Encabezado / Marca -->
     <string name="login_logo_descripcion">Club Náutico Poseidón</string>
     <string name="login_titulo">Club Náutico Poseidón</string>
-
+    <string name="marca_subtitulo">MARINA PRIVADA</string>
     <!-- Bienvenida -->
     <string name="login_bienvenida">¡Bienvenido a bordo!</string>
     <string name="login_instruccion">Ingresa tus credenciales de socio para acceder a tu marina.</string>
