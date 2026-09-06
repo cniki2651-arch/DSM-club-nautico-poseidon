@@ -1,7 +1,5 @@
 package com.dsm.clubnauticoposeidon.ui.screens.login
 
-
-
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -11,9 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -44,6 +44,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dsm.clubnauticoposeidon.R
+import com.dsm.clubnauticoposeidon.ui.components.AuthHeader
 import com.dsm.clubnauticoposeidon.ui.theme.Gold400
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Ink
@@ -61,25 +62,19 @@ fun LoginScreen(auth: FirebaseAuth, onSignUp: () -> Unit = {}) {
         modifier = Modifier
             .fillMaxSize()
             .background(Navy900)
-            .padding(horizontal = 32.dp, vertical = 48.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Título centrado arriba
-        Text(
-            text = stringResource(R.string.login_titulo),
-            color = Ink,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.ExtraBold,
-            modifier = Modifier.padding(top = 32.dp)
-        )
+        AuthHeader()
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // Campos de entrada
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
         ) {
             TextField(
                 value = email,
@@ -130,57 +125,55 @@ fun LoginScreen(auth: FirebaseAuth, onSignUp: () -> Unit = {}) {
                     }
                 }
             )
-        }
 
-        Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-        // Botón dorado
-        Button(
-            onClick = {
-                if (email.isBlank() || password.isBlank()) {
-                    Log.e("AUTH", "Correo o contraseña vacíos")
-                    // Acá podrías mostrar un mensaje al usuario, por ejemplo con un Toast o un Snackbar
-                } else {
-                    auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            val user = task.result?.user
-                            Log.d("AUTH", "Login correcto: ${user?.email}")
-                        } else {
-                            Log.e("AUTH", "Error: ${task.exception?.message}")
+            Button(
+                onClick = {
+                    if (email.isBlank() || password.isBlank()) {
+                        Log.e("AUTH", "Correo o contraseña vacíos")
+                    } else {
+                        auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                val user = task.result?.user
+                                Log.d("AUTH", "Login correcto: ${user?.email}")
+                            } else {
+                                Log.e("AUTH", "Error: ${task.exception?.message}")
+                            }
                         }
                     }
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Gold500),
-            shape = RoundedCornerShape(50)
-        ) {
-            Text(text = stringResource(R.string.login_inicio), color = Navy900, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        val annotatedText = buildAnnotatedString {
-            append(stringResource(R.string.login_registro_pregunta))
-            pushStringAnnotation(tag = "signup", annotation = "signup")
-            withStyle(style = SpanStyle(color = Gold400, fontWeight = FontWeight.Bold)) {
-                append(stringResource(R.string.login_registro_accion))
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Gold500),
+                shape = RoundedCornerShape(50)
+            ) {
+                Text(text = stringResource(R.string.login_inicio), color = Navy900, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
-            pop()
-        }
 
-        ClickableText(
-            text = annotatedText,
-            onClick = { offset ->
-                annotatedText.getStringAnnotations(tag = "signup", start = offset, end = offset)
-                    .firstOrNull()?.let {
-                        onSignUp()
-                    }
-            },
-            modifier = Modifier.padding(bottom = 32.dp),
-            style = TextStyle(color = Ink, fontSize = 14.sp)
-        )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            val annotatedText = buildAnnotatedString {
+                append(stringResource(R.string.login_registro_pregunta))
+                pushStringAnnotation(tag = "signup", annotation = "signup")
+                withStyle(style = SpanStyle(color = Gold400, fontWeight = FontWeight.Bold)) {
+                    append(stringResource(R.string.login_registro_accion))
+                }
+                pop()
+            }
+
+            ClickableText(
+                text = annotatedText,
+                onClick = { offset ->
+                    annotatedText.getStringAnnotations(tag = "signup", start = offset, end = offset)
+                        .firstOrNull()?.let {
+                            onSignUp()
+                        }
+                },
+                modifier = Modifier.padding(bottom = 32.dp),
+                style = TextStyle(color = Ink, fontSize = 14.sp)
+            )
+        }
     }
 }
