@@ -50,6 +50,7 @@ import com.dsm.clubnauticoposeidon.ui.theme.Muted
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import com.dsm.clubnauticoposeidon.ui.theme.TituloNautico
 import com.google.firebase.auth.FirebaseAuth
+import com.dsm.clubnauticoposeidon.ui.components.AuthHeader
 
 @Composable
 fun SignUpScreen(auth: FirebaseAuth, onLogin: () -> Unit = {}) {
