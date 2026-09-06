@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.dsm.clubnauticoposeidon.ui.screens.initial.InitialScreen
 import com.dsm.clubnauticoposeidon.ui.screens.login.LoginScreen
+import com.dsm.clubnauticoposeidon.ui.screens.signup.SignUpScreen
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -29,7 +30,10 @@ fun NavigationWrapper(
         }
 
         composable("signUp") {
-            // SignUpScreen(auth, onLogin = { navHostController.navigate("logIn") })
+            SignUpScreen(
+                auth = auth,
+                onLogin = { navHostController.navigate("logIn") }
+            )
         }
 
         composable("home") {
