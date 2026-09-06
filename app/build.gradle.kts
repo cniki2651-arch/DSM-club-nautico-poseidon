@@ -57,7 +57,7 @@ dependencies {
     // Firebase (BOM controla versiones)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
-
+    implementation(libs.firebase.firestore)
     implementation("androidx.compose.material:material-icons-extended:1.7.5")
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
