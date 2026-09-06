@@ -1,6 +1,7 @@
 package com.dsm.clubnauticoposeidon.ui.screens.login
 
 import android.util.Log
+import android.util.Patterns
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -132,6 +133,8 @@ fun LoginScreen(auth: FirebaseAuth, onSignUp: () -> Unit = {}) {
                 onClick = {
                     if (email.isBlank() || password.isBlank()) {
                         Log.e("AUTH", "Correo o contraseña vacíos")
+                    } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                        Log.e("AUTH", "Formato de correo inválido")
                     } else {
                         auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
                             if (task.isSuccessful) {
