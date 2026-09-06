@@ -40,6 +40,7 @@
         <string name="login_huella_descripcion">Iniciar sesión con huella dactilar</string>
 
         <!-- Registro / Footer -->
-        <string name="login_registro">¿Aún no eres socio? Solicita tu membresía</string>
+        <string name="login_registro_pregunta">¿Aún no eres socio? </string>
+        <string name="login_registro_accion">Solicita tu membresía</string>
         <string name="login_copyright">© 2026 CLUB NÁUTICO POSEIDÓN</string>
     </resources>

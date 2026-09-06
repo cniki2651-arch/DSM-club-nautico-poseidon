@@ -1,6 +1,5 @@
 package com.dsm.clubnauticoposeidon.ui.screens.initial
 
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,7 +30,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.dsm.clubnauticoposeidon.R
 import com.dsm.clubnauticoposeidon.ui.theme.Gold400
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
@@ -40,6 +38,7 @@ import com.dsm.clubnauticoposeidon.ui.theme.Navy600
 import com.dsm.clubnauticoposeidon.ui.theme.Navy700
 import com.dsm.clubnauticoposeidon.ui.theme.Navy800
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
+import com.dsm.clubnauticoposeidon.ui.theme.TituloNautico
 
 @Composable
 fun InitialScreen(
@@ -57,15 +56,14 @@ fun InitialScreen(
             painter = painterResource(id = R.drawable.logo),
             contentDescription = stringResource(R.string.login_logo_descripcion),
             modifier = Modifier
-                .size(90.dp)
+                .size(200.dp)
                 .clip(CircleShape)
         )
         Spacer(modifier = Modifier.weight(1f))
         Text(
             text = stringResource(R.string.welcome_titulo),
+            style = TituloNautico,
             color = Ink,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
 
