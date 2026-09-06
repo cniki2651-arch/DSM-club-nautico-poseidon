@@ -66,12 +66,10 @@ fun SignUpScreen(auth: FirebaseAuth, onLogin: () -> Unit = {}) {
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         // Título centrado arriba
-        Text(
-            text = stringResource(R.string.signup_titulo),
-            style = TituloNautico,
-            color = Ink,
-            modifier = Modifier.padding(top = 32.dp)
-        )
+
+        AuthHeader()
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         Spacer(modifier = Modifier.height(48.dp))
 
