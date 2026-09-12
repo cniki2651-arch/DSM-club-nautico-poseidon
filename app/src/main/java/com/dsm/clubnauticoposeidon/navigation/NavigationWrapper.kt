@@ -46,10 +46,10 @@ fun NavigationWrapper(
         composable("home") {
             HomeScreen(
                 auth = auth,
-                onLogout = { 
+                onLogout = {
                     navHostController.navigate("logIn") {
                         popUpTo(0) // Limpiar la pila de navegación al salir
-                    } 
+                    }
                 }
             )
         }
