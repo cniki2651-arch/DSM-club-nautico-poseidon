@@ -175,6 +175,7 @@ fun SignUpScreen(
 
             val annotatedText = buildAnnotatedString {
                 append(stringResource(R.string.signup_login_pregunta))
+                append(" ") // Agrega un espacio entre la pregunta y la acción
                 pushStringAnnotation(tag = "login", annotation = "login")
                 withStyle(style = SpanStyle(color = Gold400, fontWeight = FontWeight.Bold)) {
                     append(stringResource(R.string.signup_login_accion))

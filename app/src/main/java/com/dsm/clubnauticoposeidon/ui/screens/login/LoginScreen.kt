@@ -233,10 +233,11 @@ fun LoginScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             val annotatedText = buildAnnotatedString {
                 append(stringResource(R.string.login_registro_pregunta))
+                append(" ") // Agrega un espacio entre la pregunta y la acción
                 pushStringAnnotation(tag = "signup", annotation = "signup")
                 withStyle(style = SpanStyle(color = Gold400, fontWeight = FontWeight.Bold)) {
                     append(stringResource(R.string.login_registro_accion))
@@ -252,7 +253,7 @@ fun LoginScreen(
                             onSignUp()
                         }
                 },
-                modifier = Modifier.padding(bottom = 32.dp),
+                modifier = Modifier.padding(bottom = 16.dp),
                 style = TextStyle(color = Ink, fontSize = 14.sp)
             )
         }
