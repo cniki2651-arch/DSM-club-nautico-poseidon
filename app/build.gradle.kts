@@ -50,6 +50,10 @@ dependencies {
     //componente de navegacion de rutas
     implementation(libs.androidx.navigation.compose)
 
+    // API Biométrica de Android (HU01)
+    implementation("androidx.biometric:biometric:1.1.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+
     //iconos extendidos de material3
     implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.compose.material:material-icons-extended")
