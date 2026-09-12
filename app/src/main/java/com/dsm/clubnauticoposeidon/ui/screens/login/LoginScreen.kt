@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -65,6 +66,7 @@ fun LoginScreen(
     auth: FirebaseAuth,
     onSignUp: () -> Unit = {},
     onLoginSuccess: () -> Unit = {},
+    onBackClick: () -> Unit = {},
     viewModel: LoginViewModel = viewModel()
 ) {
     var email by remember { mutableStateOf("") }
@@ -81,6 +83,20 @@ fun LoginScreen(
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Botón de Retroceso en la esquina superior izquierda
+        IconButton(
+            onClick = onBackClick,
+            modifier = Modifier
+                .align(Alignment.Start)
+                .padding(top = 32.dp, start = 16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Volver atrás",
+                tint = Color.White
+            )
+        }
+
         AuthHeader()
 
         Spacer(modifier = Modifier.height(24.dp))
