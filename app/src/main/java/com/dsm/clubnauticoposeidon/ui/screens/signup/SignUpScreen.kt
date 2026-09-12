@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -53,7 +54,11 @@ import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun SignUpScreen(auth: FirebaseAuth, onLogin: () -> Unit = {}) {
+fun SignUpScreen(
+    auth: FirebaseAuth,
+    onLogin: () -> Unit = {},
+    onBackClick: () -> Unit = {}
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -65,6 +70,20 @@ fun SignUpScreen(auth: FirebaseAuth, onLogin: () -> Unit = {}) {
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Botón de Retroceso en la esquina superior izquierda
+        IconButton(
+            onClick = onBackClick,
+            modifier = Modifier
+                .align(Alignment.Start)
+                .padding(top = 32.dp, start = 16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Volver atrás",
+                tint = Color.White
+            )
+        }
+
         AuthHeader()
 
         Spacer(modifier = Modifier.height(24.dp))
