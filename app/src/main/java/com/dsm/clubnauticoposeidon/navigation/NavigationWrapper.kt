@@ -30,14 +30,16 @@ fun NavigationWrapper(
             LoginScreen(
                 auth = auth,
                 onSignUp = { navHostController.navigate("signUp") },
-                onLoginSuccess = { navHostController.navigate("home") }
+                onLoginSuccess = { navHostController.navigate("home") },
+                onBackClick = { navHostController.popBackStack() }
             )
         }
 
         composable("signUp") {
             SignUpScreen(
                 auth = auth,
-                onLogin = { navHostController.navigate("logIn") }
+                onLogin = { navHostController.navigate("logIn") },
+                onBackClick = { navHostController.popBackStack() }
             )
         }
 
