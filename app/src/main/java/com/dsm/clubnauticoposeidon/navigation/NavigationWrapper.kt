@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import com.dsm.clubnauticoposeidon.ui.screens.initial.InitialScreen
 import com.dsm.clubnauticoposeidon.ui.screens.login.LoginScreen
 import com.dsm.clubnauticoposeidon.ui.screens.signup.SignUpScreen
+import com.dsm.clubnauticoposeidon.ui.screens.home.HomeScreen
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -14,7 +15,10 @@ fun NavigationWrapper(
     navHostController: NavHostController,
     auth: FirebaseAuth
 ) {
-    NavHost(navController = navHostController, startDestination = "initial") {
+    // Evalúa si existe una sesión activa
+    val startDest = if (auth.currentUser != null) "home" else "initial"
+
+    NavHost(navController = navHostController, startDestination = startDest) {
         composable("initial") {
             InitialScreen(
                 onLogin = { navHostController.navigate("logIn") },
@@ -25,7 +29,8 @@ fun NavigationWrapper(
         composable("logIn") {
             LoginScreen(
                 auth = auth,
-                onSignUp = { navHostController.navigate("signUp") }
+                onSignUp = { navHostController.navigate("signUp") },
+                onLoginSuccess = { navHostController.navigate("home") }
             )
         }
 
@@ -37,7 +42,14 @@ fun NavigationWrapper(
         }
 
         composable("home") {
-            // HomeScreen()
+            HomeScreen(
+                auth = auth,
+                onLogout = { 
+                    navHostController.navigate("logIn") {
+                        popUpTo(0) // Limpiar la pila de navegación al salir
+                    } 
+                }
+            )
         }
     }
 }
