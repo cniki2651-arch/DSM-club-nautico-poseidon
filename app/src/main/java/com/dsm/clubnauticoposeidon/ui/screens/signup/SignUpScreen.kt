@@ -18,6 +18,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -53,15 +57,30 @@ import com.dsm.clubnauticoposeidon.ui.theme.Muted
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import com.google.firebase.auth.FirebaseAuth
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
     auth: FirebaseAuth,
     onLogin: () -> Unit = {},
     onBackClick: () -> Unit = {}
 ) {
+    var nombres by remember { mutableStateOf("") }
+    var apellidos by remember { mutableStateOf("") }
+    
+    val documentTypes = listOf("DNI", "Pasaporte", "CE")
+    var expanded by remember { mutableStateOf(false) }
+    var tipoDocumento by remember { mutableStateOf(documentTypes[0]) }
+    
+    var numDocumento by remember { mutableStateOf("") }
+    var fechaNacimiento by remember { mutableStateOf("") }
+    var telefono by remember { mutableStateOf("") }
+    
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    
+    var confirmPassword by remember { mutableStateOf("") }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -95,40 +114,125 @@ fun SignUpScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
+            val textFieldColors = TextFieldDefaults.colors(
+                focusedTextColor = Ink,
+                unfocusedTextColor = Ink,
+                cursorColor = Ink,
+                unfocusedContainerColor = Color.Transparent,
+                focusedContainerColor = Color.Transparent,
+                focusedIndicatorColor = Gold500,
+                unfocusedIndicatorColor = Muted
+            )
+
+            // Nombres
+            TextField(
+                value = nombres,
+                onValueChange = { nombres = it },
+                placeholder = { Text("Nombres", color = Muted) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = textFieldColors
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Apellidos
+            TextField(
+                value = apellidos,
+                onValueChange = { apellidos = it },
+                placeholder = { Text("Apellidos", color = Muted) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = textFieldColors
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Tipo de Documento
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
+                TextField(
+                    value = tipoDocumento,
+                    onValueChange = {},
+                    readOnly = true,
+                    placeholder = { Text("Tipo de Documento", color = Muted) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    colors = textFieldColors
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier.background(Color.White)
+                ) {
+                    documentTypes.forEach { selectionOption ->
+                        DropdownMenuItem(
+                            text = { Text(selectionOption, color = Navy900, fontWeight = FontWeight.Medium) },
+                            onClick = {
+                                tipoDocumento = selectionOption
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Número de Documento
+            TextField(
+                value = numDocumento,
+                onValueChange = { numDocumento = it },
+                placeholder = { Text("Número de Documento", color = Muted) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                colors = textFieldColors
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Fecha de Nacimiento
+            TextField(
+                value = fechaNacimiento,
+                onValueChange = { fechaNacimiento = it },
+                placeholder = { Text("Fecha de Nacimiento (DD/MM/AAAA)", color = Muted) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = textFieldColors
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Número Telefónico
+            TextField(
+                value = telefono,
+                onValueChange = { telefono = it },
+                placeholder = { Text("Número telefónico", color = Muted) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                colors = textFieldColors
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Correo electrónico
             TextField(
                 value = email,
                 onValueChange = { email = it },
                 placeholder = { Text(stringResource(R.string.login_email), color = Muted) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedTextColor = Ink,
-                    unfocusedTextColor = Ink,
-                    cursorColor = Ink,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Gold500,
-                    unfocusedIndicatorColor = Muted
-                )
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                colors = textFieldColors
             )
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
-
+            // Contraseña
             TextField(
                 value = password,
                 onValueChange = { password = it },
                 placeholder = { Text(stringResource(R.string.login_password), color = Muted) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedTextColor = Ink,
-                    unfocusedTextColor = Ink,
-                    cursorColor = Ink,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Gold500,
-                    unfocusedIndicatorColor = Muted
-                ),
+                colors = textFieldColors,
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 trailingIcon = {
@@ -144,13 +248,40 @@ fun SignUpScreen(
                     }
                 }
             )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Confirmar Contraseña
+            TextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                placeholder = { Text("Confirmar contraseña", color = Muted) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = textFieldColors,
+                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                trailingIcon = {
+                    val image = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                    val description = if (confirmPasswordVisible) stringResource(R.string.login_password_ocultar) else stringResource(R.string.login_password_mostrar)
+
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        Icon(
+                            imageVector = image,
+                            contentDescription = description,
+                            tint = Ink
+                        )
+                    }
+                }
+            )
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = {
-                    if (email.isBlank() || password.isBlank()) {
-                        Log.e("AUTH", "Correo o contraseña vacíos")
+                    if (email.isBlank() || password.isBlank() || confirmPassword.isBlank() || nombres.isBlank() || apellidos.isBlank() || numDocumento.isBlank() || fechaNacimiento.isBlank() || telefono.isBlank()) {
+                        Log.e("AUTH", "Faltan campos por llenar")
+                    } else if (password != confirmPassword) {
+                        Log.e("AUTH", "Las contraseñas no coinciden")
                     } else {
                         auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
                             if (task.isSuccessful) {
@@ -168,7 +299,7 @@ fun SignUpScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Gold500),
                 shape = RoundedCornerShape(50)
             ) {
-                Text(text = stringResource(R.string.signup_boton), color = Navy900, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Enviar Solicitud", color = Navy900, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
