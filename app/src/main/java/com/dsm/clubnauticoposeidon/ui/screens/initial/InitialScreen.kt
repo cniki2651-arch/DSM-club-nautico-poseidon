@@ -94,11 +94,7 @@ fun InitialScreen(
             painter = painterResource(id = R.drawable.facebook),
             title = stringResource(R.string.welcome_facebook)
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        CustomIconButton(
-            modifier = Modifier.clickable { },
-            title = stringResource(R.string.welcome_huella)
-        )
+
         Text(
             text = stringResource(R.string.welcome_iniciar_sesion),
             color = Gold400,

@@ -6,7 +6,6 @@
     <string name="welcome_crear_cuenta">Crear cuenta</string>
     <string name="welcome_google">Continuar con Google</string>
     <string name="welcome_facebook">Continuar con Facebook</string>
-    <string name="welcome_huella">Continuar con huella</string>
     <string name="welcome_iniciar_sesion">Iniciar sesión</string>
 
     <!-- Encabezado / Marca -->
@@ -35,7 +34,6 @@
     <string name="login_continuar_con">O continúa con</string>
     <string name="login_facebook_descripcion">Iniciar sesión con Facebook</string>
     <string name="login_google_descripcion">Iniciar sesión con Google</string>
-    <string name="login_huella_descripcion">Iniciar sesión con huella dactilar</string>
 
     <!-- Registro / Footer -->
     <string name="login_registro_pregunta">¿Aún no eres socio? </string>
