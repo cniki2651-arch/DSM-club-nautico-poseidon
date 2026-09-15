@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ClubNauticoPoseidon</string>
+    <string name="app_name">Poseidon</string>
 
     <!-- Pantalla de bienvenida (inicial) -->
     <string name="welcome_titulo">Club Náutico Poseidón</string>
