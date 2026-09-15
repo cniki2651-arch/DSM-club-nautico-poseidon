@@ -26,13 +26,16 @@ fun NavigationWrapper(
             )
         }
 
-        composable("logIn") {
-            LoginScreen(
-                auth = auth,
-                onSignUp = { navHostController.navigate("signUp") },
-                onLoginSuccess = { navHostController.navigate("home") },
-                onBackClick = { navHostController.popBackStack() }
-            )
+         composable("login") {
+                    LoginScreen(
+                        auth = auth,
+                        onSignUp = { navController.navigate("signup") },
+                        onLoginSuccess = { navController.navigate("home") },
+                        onBackClick = { navController.popBackStack() },
+                        onForgotPassword = { navController.navigate("recuperar_password") }
+                    )
+                }
+
         }
 
         composable("signUp") {
