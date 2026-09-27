@@ -35,8 +35,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.MultiFormatWriter
 
 @Composable
 fun ProfileScreen(
@@ -132,12 +140,10 @@ fun ProfileScreen(
                     
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Ícono gigante del QR simulado
-                    Icon(
-                        imageVector = Icons.Default.QrCode2,
-                        contentDescription = "Código QR Credencial",
-                        modifier = Modifier.size(250.dp),
-                        tint = Color.Black
+                    // Ícono gigante del QR generado dinámicamente con ZXing
+                    QrCodeImage(
+                        content = "POS-2026-001",
+                        size = 250.dp
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
@@ -198,5 +204,51 @@ fun ProfileDataCard(
                 fontWeight = FontWeight.SemiBold
             )
         }
+    }
+}
+
+@Composable
+fun QrCodeImage(content: String, size: Dp, modifier: Modifier = Modifier) {
+    val density = LocalDensity.current
+    val sizePx = remember(size, density) {
+        with(density) { size.roundToPx() }
+    }
+
+    val bitmap = remember(content, sizePx) {
+        try {
+            val bitMatrix = MultiFormatWriter().encode(
+                content,
+                BarcodeFormat.QR_CODE,
+                sizePx,
+                sizePx
+            )
+            val width = bitMatrix.width
+            val height = bitMatrix.height
+            val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+            for (x in 0 until width) {
+                for (y in 0 until height) {
+                    bmp.setPixel(x, y, if (bitMatrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+                }
+            }
+            bmp
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    if (bitmap != null) {
+        Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = "Código QR generado dinámicamente",
+            modifier = modifier.size(size),
+            contentScale = ContentScale.Fit
+        )
+    } else {
+        // Fallback visual en caso de que ocurra algún error
+        androidx.compose.foundation.layout.Box(
+            modifier = modifier
+                .size(size)
+                .background(Color.LightGray)
+        )
     }
 }
