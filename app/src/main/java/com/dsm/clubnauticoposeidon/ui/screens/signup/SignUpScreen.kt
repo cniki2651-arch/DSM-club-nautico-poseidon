@@ -58,6 +58,7 @@ import com.dsm.clubnauticoposeidon.ui.theme.Ink
 import com.dsm.clubnauticoposeidon.ui.theme.Muted
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.AnnotatedString
@@ -388,10 +389,29 @@ fun SignUpScreen(
                         if (task.isSuccessful) {
                             val user = task.result?.user
                             Log.d("AUTH", "Usuario creado: ${user?.email}")
-                            // Mensaje de éxito al usuario
-                            Toast.makeText(context, "Solicitud enviada exitosamente. Te contactaremos pronto.", Toast.LENGTH_LONG).show()
-                            // Regresa a la pantalla anterior
-                            onBackClick()
+                            
+                            user?.uid?.let { uid ->
+                                val db = FirebaseFirestore.getInstance()
+                                val userData = hashMapOf(
+                                    "nombre" to nombres,
+                                    "apellidos" to apellidos,
+                                    "dni" to numDocumento,
+                                    "correo" to email,
+                                    "rol" to "socio"
+                                )
+                                
+                                db.collection("usuarios").document(uid)
+                                    .set(userData)
+                                    .addOnSuccessListener {
+                                        Log.d("FIRESTORE", "Usuario guardado exitosamente en BD")
+                                        Toast.makeText(context, "Solicitud enviada exitosamente. Te contactaremos pronto.", Toast.LENGTH_LONG).show()
+                                        onBackClick()
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Log.e("FIRESTORE", "Error al guardar el usuario", e)
+                                        Toast.makeText(context, "Error al guardar los datos.", Toast.LENGTH_SHORT).show()
+                                    }
+                            }
                         } else {
                             Log.e("AUTH", "Error: ${task.exception?.message}")
                             Toast.makeText(context, "Error: ${task.exception?.message}", Toast.LENGTH_SHORT).show()

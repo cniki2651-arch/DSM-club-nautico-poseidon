@@ -66,11 +66,11 @@ import com.google.firebase.auth.FirebaseAuth
 fun LoginScreen(
     auth: FirebaseAuth,
     onSignUp: () -> Unit = {},
-    onLoginSuccess: () -> Unit = {},
+    onNavigateToSocio: () -> Unit = {},
+    onNavigateToAdmin: () -> Unit = {},
     onBackClick: () -> Unit = {},
     onForgotPassword: () -> Unit = {},
     viewModel: LoginViewModel = viewModel()
-
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -189,8 +189,30 @@ fun LoginScreen(
                         auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
                             if (task.isSuccessful) {
                                 val user = task.result?.user
-                                Toast.makeText(context, "Login correcto: ${user?.email}", Toast.LENGTH_SHORT).show()
-                                onLoginSuccess()
+                                user?.uid?.let { uid ->
+                                    val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                    db.collection("usuarios").document(uid).get()
+                                        .addOnSuccessListener { document ->
+                                            if (document.exists()) {
+                                                val rol = document.getString("rol")
+                                                Toast.makeText(context, "Login correcto", Toast.LENGTH_SHORT).show()
+                                                
+                                                if (rol == "admin") {
+                                                    onNavigateToAdmin()
+                                                } else {
+                                                    onNavigateToSocio()
+                                                }
+                                            } else {
+                                                // Si por algún motivo no existe el documento, asumimos que es socio
+                                                Toast.makeText(context, "Login correcto (Sin rol definido)", Toast.LENGTH_SHORT).show()
+                                                onNavigateToSocio()
+                                            }
+                                        }
+                                        .addOnFailureListener {
+                                            Toast.makeText(context, "Error al obtener rol", Toast.LENGTH_SHORT).show()
+                                            onNavigateToSocio() // Fallback a socio en caso de error
+                                        }
+                                }
                             } else {
                                 Toast.makeText(context, "Error: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                             }
@@ -222,7 +244,9 @@ fun LoginScreen(
                                     auth = auth,
                                     onNavigateHome = {
                                         Toast.makeText(context, "Autenticación biométrica exitosa", Toast.LENGTH_SHORT).show()
-                                        onLoginSuccess()
+                                        // Aquí también evaluaremos el rol o lo mandaremos a socio por defecto,
+                                        // lo ideal sería reutilizar la lógica de consulta o por ahora mandarlo a socio:
+                                        onNavigateToSocio()
                                     },
                                     onNoSession = {
                                         Toast.makeText(context, "Inicie sesión con correo y contraseña por primera vez", Toast.LENGTH_LONG).show()

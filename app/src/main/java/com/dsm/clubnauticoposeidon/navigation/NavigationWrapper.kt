@@ -34,7 +34,8 @@ fun NavigationWrapper(
             LoginScreen(
                 auth = auth,
                 onSignUp = { navHostController.navigate("signup") },
-                onLoginSuccess = { navHostController.navigate("home") },
+                onNavigateToSocio = { navHostController.navigate("home") },
+                onNavigateToAdmin = { navHostController.navigate("home_admin") }, // Ruta a implementar a futuro
                 onBackClick = { navHostController.popBackStack() },
                 onForgotPassword = { navHostController.navigate("recuperar_password") }
             )
