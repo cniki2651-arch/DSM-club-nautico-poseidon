@@ -10,6 +10,7 @@ import com.dsm.clubnauticoposeidon.ui.screens.login.LoginScreen
 import com.dsm.clubnauticoposeidon.ui.screens.recovery.RecuperarPasswordScreen
 import com.dsm.clubnauticoposeidon.ui.screens.signup.SignUpScreen
 import com.dsm.clubnauticoposeidon.ui.screens.home.HomeScreen
+import com.dsm.clubnauticoposeidon.ui.screens.home.HomeSocioScreen
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -54,11 +55,16 @@ fun NavigationWrapper(
         }
 
         composable("home") {
-            HomeScreen(
-                auth = auth,
+            HomeSocioScreen(
+                onNavigateToProfile = {
+                    // Navega a la pantalla del código QR
+                    navHostController.navigate("profile")
+                },
                 onLogout = {
-                    navHostController.navigate("login") {
-                        popUpTo(0) // Limpiar la pila de navegación al salir
+                    // Cierra sesión en Firebase y regresa al inicio
+                    auth.signOut()
+                    navHostController.navigate("initial") {
+                        popUpTo(0) // Borra el historial para que no pueda volver con la flecha
                     }
                 }
             )
