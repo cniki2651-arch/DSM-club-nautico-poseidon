@@ -82,6 +82,19 @@ fun SignUpScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
+    // Validaciones reactivas de contraseña
+    val passwordsMatch = password == confirmPassword
+    
+    // Validación general del formulario para habilitar/deshabilitar el botón
+    val isFormValid = nombres.isNotBlank() &&
+            apellidos.isNotBlank() &&
+            (if (tipoDocumento == "DNI") numDocumento.length == 8 else numDocumento.isNotBlank()) &&
+            fechaNacimiento.isNotBlank() &&
+            telefono.length == 9 &&
+            email.contains("@") && email.contains(".") &&
+            password.isNotBlank() &&
+            passwordsMatch
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -124,10 +137,17 @@ fun SignUpScreen(
                 unfocusedIndicatorColor = Muted
             )
 
+            // Helper para validar nombres y apellidos (solo letras/espacios, sin espacios iniciales, sin doble espacio)
+            fun formatName(input: String): String {
+                val filtered = input.filter { it.isLetter() || it.isWhitespace() }
+                val noLeadingSpace = if (filtered.startsWith(" ")) filtered.trimStart() else filtered
+                return noLeadingSpace.replace(Regex("\\s+"), " ")
+            }
+
             // Nombres
             TextField(
                 value = nombres,
-                onValueChange = { nombres = it },
+                onValueChange = { nombres = formatName(it) },
                 placeholder = { Text("Nombres", color = Muted) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -138,7 +158,7 @@ fun SignUpScreen(
             // Apellidos
             TextField(
                 value = apellidos,
-                onValueChange = { apellidos = it },
+                onValueChange = { apellidos = formatName(it) },
                 placeholder = { Text("Apellidos", color = Muted) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -170,6 +190,7 @@ fun SignUpScreen(
                             text = { Text(selectionOption, color = Navy900, fontWeight = FontWeight.Medium) },
                             onClick = {
                                 tipoDocumento = selectionOption
+                                numDocumento = "" // Limpia el documento al cambiar el tipo
                                 expanded = false
                             }
                         )
@@ -181,11 +202,18 @@ fun SignUpScreen(
             // Número de Documento
             TextField(
                 value = numDocumento,
-                onValueChange = { numDocumento = it },
+                onValueChange = { 
+                    val noSpaces = it.filter { char -> !char.isWhitespace() }
+                    numDocumento = if (tipoDocumento == "DNI") {
+                        noSpaces.filter { char -> char.isDigit() }.take(8)
+                    } else {
+                        noSpaces.filter { char -> char.isLetterOrDigit() }.take(12)
+                    }
+                },
                 placeholder = { Text("Número de Documento", color = Muted) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(keyboardType = if (tipoDocumento == "DNI") KeyboardType.Number else KeyboardType.Text),
                 colors = textFieldColors
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -193,7 +221,7 @@ fun SignUpScreen(
             // Fecha de Nacimiento
             TextField(
                 value = fechaNacimiento,
-                onValueChange = { fechaNacimiento = it },
+                onValueChange = { fechaNacimiento = it.filter { char -> !char.isWhitespace() } },
                 placeholder = { Text("Fecha de Nacimiento (DD/MM/AAAA)", color = Muted) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -204,7 +232,7 @@ fun SignUpScreen(
             // Número Telefónico
             TextField(
                 value = telefono,
-                onValueChange = { telefono = it },
+                onValueChange = { telefono = it.filter { char -> char.isDigit() }.take(9) },
                 placeholder = { Text("Número telefónico", color = Muted) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -216,7 +244,7 @@ fun SignUpScreen(
             // Correo electrónico
             TextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = { email = it.filter { char -> !char.isWhitespace() } },
                 placeholder = { Text(stringResource(R.string.login_email), color = Muted) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -228,7 +256,7 @@ fun SignUpScreen(
             // Contraseña
             TextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = { password = it.filter { char -> !char.isWhitespace() } },
                 placeholder = { Text(stringResource(R.string.login_password), color = Muted) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -253,7 +281,7 @@ fun SignUpScreen(
             // Confirmar Contraseña
             TextField(
                 value = confirmPassword,
-                onValueChange = { confirmPassword = it },
+                onValueChange = { confirmPassword = it.filter { char -> !char.isWhitespace() } },
                 placeholder = { Text("Confirmar contraseña", color = Muted) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -273,33 +301,44 @@ fun SignUpScreen(
                     }
                 }
             )
+            
+            // Mensaje de error de contraseñas no coincidentes
+            if (confirmPassword.isNotEmpty() && !passwordsMatch) {
+                Text(
+                    text = "Las contraseñas no coinciden",
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .padding(start = 16.dp, top = 4.dp)
+                )
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = {
-                    if (email.isBlank() || password.isBlank() || confirmPassword.isBlank() || nombres.isBlank() || apellidos.isBlank() || numDocumento.isBlank() || fechaNacimiento.isBlank() || telefono.isBlank()) {
-                        Log.e("AUTH", "Faltan campos por llenar")
-                    } else if (password != confirmPassword) {
-                        Log.e("AUTH", "Las contraseñas no coinciden")
-                    } else {
-                        auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                val user = task.result?.user
-                                Log.d("AUTH", "Usuario creado: ${user?.email}")
-                            } else {
-                                Log.e("AUTH", "Error: ${task.exception?.message}")
-                            }
+                    auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            val user = task.result?.user
+                            Log.d("AUTH", "Usuario creado: ${user?.email}")
+                        } else {
+                            Log.e("AUTH", "Error: ${task.exception?.message}")
                         }
                     }
                 },
+                enabled = isFormValid, // Habilita el botón solo si el formulario es completamente válido
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Gold500),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Gold500,
+                    disabledContainerColor = Color.Gray.copy(alpha = 0.5f), // Color grisáceo/oscuro cuando está desactivado
+                    disabledContentColor = Color.LightGray
+                ),
                 shape = RoundedCornerShape(50)
             ) {
-                Text(text = "Enviar Solicitud", color = Navy900, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Enviar Solicitud", color = if (isFormValid) Navy900 else Color.LightGray, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
