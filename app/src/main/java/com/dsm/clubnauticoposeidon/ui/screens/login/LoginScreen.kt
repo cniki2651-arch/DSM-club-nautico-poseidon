@@ -5,6 +5,7 @@ import android.content.ContextWrapper
 import android.widget.Toast
 import android.util.Patterns
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -67,7 +68,9 @@ fun LoginScreen(
     onSignUp: () -> Unit = {},
     onLoginSuccess: () -> Unit = {},
     onBackClick: () -> Unit = {},
+    onForgotPassword: () -> Unit = {},
     viewModel: LoginViewModel = viewModel()
+
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -158,7 +161,22 @@ fun LoginScreen(
                 }
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Enlace "¿Olvidaste tu contraseña?" alineado a la derecha
+            Text(
+                text = stringResource(R.string.login_olvidaste_clave),
+                color = Gold400,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp)
+                    .clickable { onForgotPassword() }
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Botón principal de Iniciar Sesión
             Button(
@@ -189,6 +207,7 @@ fun LoginScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+
 
             // Botón de huella digital grande y destacado (HU01 - Login Biométrico)
             IconButton(
