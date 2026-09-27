@@ -56,6 +56,50 @@ import com.dsm.clubnauticoposeidon.ui.theme.Ink
 import com.dsm.clubnauticoposeidon.ui.theme.Muted
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import com.google.firebase.auth.FirebaseAuth
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.AnnotatedString
+
+class DateVisualTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val trimmed = if (text.text.length >= 8) text.text.substring(0..7) else text.text
+        var out = ""
+        for (i in trimmed.indices) {
+            out += trimmed[i]
+            if (i == 1 || i == 3) out += "/"
+        }
+
+        val offsetMapping = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                if (offset <= 1) return offset
+                if (offset <= 3) return offset + 1
+                if (offset <= 8) return offset + 2
+                return 10
+            }
+
+            override fun transformedToOriginal(offset: Int): Int {
+                if (offset <= 2) return offset
+                if (offset <= 5) return offset - 1
+                if (offset <= 10) return offset - 2
+                return 8
+            }
+        }
+        return TransformedText(AnnotatedString(out), offsetMapping)
+    }
+}
+
+fun isValidDate(date: String): Boolean {
+    if (date.length != 8) return false
+    val day = date.substring(0, 2).toIntOrNull() ?: return false
+    val month = date.substring(2, 4).toIntOrNull() ?: return false
+    val year = date.substring(4, 8).toIntOrNull() ?: return false
+
+    if (day !in 1..31) return false
+    if (month !in 1..12) return false
+    if (year !in 1920..2008) return false
+
+    return true
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,14 +126,15 @@ fun SignUpScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
-    // Validaciones reactivas de contraseña
+    // Validaciones reactivas de contraseña y fecha
     val passwordsMatch = password == confirmPassword
+    val isDateValid = fechaNacimiento.length == 8 && isValidDate(fechaNacimiento)
     
     // Validación general del formulario para habilitar/deshabilitar el botón
     val isFormValid = nombres.isNotBlank() &&
             apellidos.isNotBlank() &&
             (if (tipoDocumento == "DNI") numDocumento.length == 8 else numDocumento.isNotBlank()) &&
-            fechaNacimiento.isNotBlank() &&
+            isDateValid &&
             telefono.length == 9 &&
             email.contains("@") && email.contains(".") &&
             password.isNotBlank() &&
@@ -221,12 +266,29 @@ fun SignUpScreen(
             // Fecha de Nacimiento
             TextField(
                 value = fechaNacimiento,
-                onValueChange = { fechaNacimiento = it.filter { char -> !char.isWhitespace() } },
+                onValueChange = { 
+                    val digitsOnly = it.filter { char -> char.isDigit() }
+                    fechaNacimiento = digitsOnly.take(8)
+                },
                 placeholder = { Text("Fecha de Nacimiento (DD/MM/AAAA)", color = Muted) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                visualTransformation = DateVisualTransformation(),
                 colors = textFieldColors
             )
+            
+            // Error si la fecha no es válida después de escribir los 8 dígitos
+            if (fechaNacimiento.length == 8 && !isValidDate(fechaNacimiento)) {
+                Text(
+                    text = "Fecha inválida o debes ser mayor de 18 años",
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .padding(start = 16.dp, top = 4.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
             // Número Telefónico
