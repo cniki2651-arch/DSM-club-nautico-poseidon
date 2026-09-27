@@ -1,6 +1,7 @@
 package com.dsm.clubnauticoposeidon.ui.screens.signup
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -37,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -108,6 +110,8 @@ fun SignUpScreen(
     onLogin: () -> Unit = {},
     onBackClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    
     var nombres by remember { mutableStateOf("") }
     var apellidos by remember { mutableStateOf("") }
     
@@ -384,8 +388,13 @@ fun SignUpScreen(
                         if (task.isSuccessful) {
                             val user = task.result?.user
                             Log.d("AUTH", "Usuario creado: ${user?.email}")
+                            // Mensaje de éxito al usuario
+                            Toast.makeText(context, "Solicitud enviada exitosamente. Te contactaremos pronto.", Toast.LENGTH_LONG).show()
+                            // Regresa a la pantalla anterior
+                            onBackClick()
                         } else {
                             Log.e("AUTH", "Error: ${task.exception?.message}")
+                            Toast.makeText(context, "Error: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                         }
                     }
                 },
