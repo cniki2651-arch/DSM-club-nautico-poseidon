@@ -11,6 +11,7 @@ import com.dsm.clubnauticoposeidon.ui.screens.recovery.RecuperarPasswordScreen
 import com.dsm.clubnauticoposeidon.ui.screens.signup.SignUpScreen
 import com.dsm.clubnauticoposeidon.ui.screens.home.HomeScreen
 import com.dsm.clubnauticoposeidon.ui.screens.home.HomeSocioScreen
+import com.dsm.clubnauticoposeidon.ui.screens.profile.ProfileScreen
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -66,6 +67,13 @@ fun NavigationWrapper(
                     navHostController.navigate("initial") {
                         popUpTo(0) // Borra el historial para que no pueda volver con la flecha
                     }
+                }
+            )
+        }
+        composable(route = "profile") {
+            ProfileScreen(
+                onBackClick = {
+                    navHostController.popBackStack()
                 }
             )
         }
