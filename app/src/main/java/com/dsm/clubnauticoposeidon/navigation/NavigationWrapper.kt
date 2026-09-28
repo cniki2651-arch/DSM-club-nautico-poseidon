@@ -87,14 +87,21 @@ fun NavigationWrapper(
                         popUpTo(0)
                     }
                 },
-                onNavigateToAsignarRada = { navHostController.navigate("asignar_rada") }
+                onNavigateToAsignarRada = { navHostController.navigate("asignar_rada") },
+                onNavigateToMapa = { navHostController.navigate("mapa_muelles") }
             )
         }
 
         composable("asignar_rada") {
             com.dsm.clubnauticoposeidon.ui.screens.radas.AsignarRadaScreen(
                 onBackClick = { navHostController.popBackStack() },
-                onAbrirMapaClick = { /* Lógica futura del mapa */ }
+                onAbrirMapaClick = { navHostController.navigate("mapa_muelles") }
+            )
+        }
+        
+        composable("mapa_muelles") {
+            com.dsm.clubnauticoposeidon.ui.screens.home.MapaMuellesScreen(
+                onBackClick = { navHostController.popBackStack() }
             )
         }
     }

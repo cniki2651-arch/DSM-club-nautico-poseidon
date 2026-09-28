@@ -59,7 +59,8 @@ import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 @Composable
 fun HomeOperacionesScreen(
     onLogout: () -> Unit,
-    onNavigateToAsignarRada: () -> Unit = {}
+    onNavigateToAsignarRada: () -> Unit = {},
+    onNavigateToMapa: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var menuExpanded by remember { mutableStateOf(false) }
@@ -201,7 +202,7 @@ fun HomeOperacionesScreen(
                 NavieroGridItem(
                     title = "Mapa de Muelles",
                     icon = Icons.Default.Map,
-                    onClick = showToast,
+                    onClick = onNavigateToMapa,
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
