@@ -45,4 +45,6 @@
     <string name="signup_boton">Registrarme</string>
     <string name="signup_login_pregunta">¿Ya eres socio? </string>
     <string name="signup_login_accion">Inicia sesión</string>
+
+    <string name="google_web_client_id">276810070049-fht9sagka87o1af36ubt463rags7pqdt.apps.googleusercontent.com</string>
 </resources>

@@ -48,14 +48,14 @@ dependencies {
     implementation("com.google.zxing:core:3.5.4")
     testImplementation(libs.junit)
 
-    //componente de navegacion de rutas
+    // componente de navegacion de rutas
     implementation(libs.androidx.navigation.compose)
 
     // API Biométrica de Android (HU01)
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
 
-    //iconos extendidos de material3
+    // iconos extendidos de material3
     implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.compose.material:material-icons-extended")
 
@@ -64,6 +64,11 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation("androidx.compose.material:material-icons-extended:1.7.5")
+
+    // Google Sign-In (Credential Manager)
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
