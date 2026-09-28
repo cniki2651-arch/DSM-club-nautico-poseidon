@@ -58,7 +58,7 @@ data class SolicitudPassword(
     val correo: String = "",
     val mensaje: String = "",
     val fecha: Long = System.currentTimeMillis(),
-    val estado: String = "pendiente" // pendiente / atendido
+    val estado: String = "pendiente"
 )
 
 

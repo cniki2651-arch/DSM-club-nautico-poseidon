@@ -81,22 +81,22 @@ fun ProfileScreen(
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
-        // Tarjetas de datos estáticos del socio
+
         ProfileDataCard(label = "Nombres y Apellidos", value = "Khalep Velarde")
         ProfileDataCard(label = "DNI", value = "72459812")
         ProfileDataCard(label = "Correo Electrónico", value = "khalep@poseidon.com")
         ProfileDataCard(label = "Teléfono", value = "987654321")
         
-        // Tarjeta de estado con color diferente
+
         ProfileDataCard(
             label = "Estado",
             value = "SOCIO ACTIVO",
-            valueColor = Color(0xFF4CAF50) // Verde para indicar activo
+            valueColor = Color(0xFF4CAF50)
         )
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        // Botón grande y dorado para mostrar credencial
+
         Button(
             onClick = { showQR = true },
             modifier = Modifier

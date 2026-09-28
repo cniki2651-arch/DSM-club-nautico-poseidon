@@ -1,6 +1,7 @@
 package com.dsm.clubnauticoposeidon.ui.screens.signup
 
 import android.util.Log
+import android.util.Patterns
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -10,21 +11,23 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -40,12 +43,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -59,9 +65,8 @@ import com.dsm.clubnauticoposeidon.ui.theme.Muted
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import androidx.compose.ui.text.input.OffsetMapping
-import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.AnnotatedString
+import java.time.LocalDate
+import java.time.Period
 
 class DateVisualTransformation : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {
@@ -91,17 +96,23 @@ class DateVisualTransformation : VisualTransformation {
     }
 }
 
+/**
+ * Valida formato DDMMAAAA, que la fecha exista (no 31/02)
+ * y que la persona tenga al menos 18 años a día de hoy.
+ */
 fun isValidDate(date: String): Boolean {
     if (date.length != 8) return false
     val day = date.substring(0, 2).toIntOrNull() ?: return false
     val month = date.substring(2, 4).toIntOrNull() ?: return false
     val year = date.substring(4, 8).toIntOrNull() ?: return false
 
-    if (day !in 1..31) return false
-    if (month !in 1..12) return false
-    if (year !in 1920..2008) return false
-
-    return true
+    return try {
+        val nacimiento = LocalDate.of(year, month, day) // lanza excepción si no existe
+        val edad = Period.between(nacimiento, LocalDate.now()).years
+        year >= 1920 && edad >= 18
+    } catch (e: Exception) {
+        false
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -112,37 +123,41 @@ fun SignUpScreen(
     onBackClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    
+
     var nombres by remember { mutableStateOf("") }
     var apellidos by remember { mutableStateOf("") }
-    
+
     val documentTypes = listOf("DNI", "Pasaporte", "CE")
     var expanded by remember { mutableStateOf(false) }
     var tipoDocumento by remember { mutableStateOf(documentTypes[0]) }
-    
+
     var numDocumento by remember { mutableStateOf("") }
     var fechaNacimiento by remember { mutableStateOf("") }
     var telefono by remember { mutableStateOf("") }
-    
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    
+
     var confirmPassword by remember { mutableStateOf("") }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
-    // Validaciones reactivas de contraseña y fecha
+    // Evita clics repetidos mientras Firebase responde
+    var enviando by remember { mutableStateOf(false) }
+
+    // Validaciones reactivas
     val passwordsMatch = password == confirmPassword
     val isDateValid = fechaNacimiento.length == 8 && isValidDate(fechaNacimiento)
-    
-    // Validación general del formulario para habilitar/deshabilitar el botón
+    val isEmailValid = Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    val isPasswordValid = password.length >= 8
+
     val isFormValid = nombres.isNotBlank() &&
             apellidos.isNotBlank() &&
             (if (tipoDocumento == "DNI") numDocumento.length == 8 else numDocumento.isNotBlank()) &&
             isDateValid &&
             telefono.length == 9 &&
-            email.contains("@") && email.contains(".") &&
-            password.isNotBlank() &&
+            isEmailValid &&
+            isPasswordValid &&
             passwordsMatch
 
     Column(
@@ -187,7 +202,7 @@ fun SignUpScreen(
                 unfocusedIndicatorColor = Muted
             )
 
-            // Helper para validar nombres y apellidos (solo letras/espacios, sin espacios iniciales, sin doble espacio)
+            // Solo letras/espacios, sin espacio inicial, sin doble espacio
             fun formatName(input: String): String {
                 val filtered = input.filter { it.isLetter() || it.isWhitespace() }
                 val noLeadingSpace = if (filtered.startsWith(" ")) filtered.trimStart() else filtered
@@ -252,7 +267,7 @@ fun SignUpScreen(
             // Número de Documento
             TextField(
                 value = numDocumento,
-                onValueChange = { 
+                onValueChange = {
                     val noSpaces = it.filter { char -> !char.isWhitespace() }
                     numDocumento = if (tipoDocumento == "DNI") {
                         noSpaces.filter { char -> char.isDigit() }.take(8)
@@ -263,7 +278,9 @@ fun SignUpScreen(
                 placeholder = { Text("Número de Documento", color = Muted) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = if (tipoDocumento == "DNI") KeyboardType.Number else KeyboardType.Text),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = if (tipoDocumento == "DNI") KeyboardType.Number else KeyboardType.Text
+                ),
                 colors = textFieldColors
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -271,7 +288,7 @@ fun SignUpScreen(
             // Fecha de Nacimiento
             TextField(
                 value = fechaNacimiento,
-                onValueChange = { 
+                onValueChange = {
                     val digitsOnly = it.filter { char -> char.isDigit() }
                     fechaNacimiento = digitsOnly.take(8)
                 },
@@ -282,9 +299,8 @@ fun SignUpScreen(
                 visualTransformation = DateVisualTransformation(),
                 colors = textFieldColors
             )
-            
-            // Error si la fecha no es válida después de escribir los 8 dígitos
-            if (fechaNacimiento.length == 8 && !isValidDate(fechaNacimiento)) {
+
+            if (fechaNacimiento.length == 8 && !isDateValid) {
                 Text(
                     text = "Fecha inválida o debes ser mayor de 18 años",
                     color = Color.Red,
@@ -318,6 +334,17 @@ fun SignUpScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 colors = textFieldColors
             )
+
+            if (email.isNotEmpty() && !isEmailValid) {
+                Text(
+                    text = "Formato de correo inválido",
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .padding(start = 16.dp, top = 4.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
             // Contraseña
@@ -343,6 +370,17 @@ fun SignUpScreen(
                     }
                 }
             )
+
+            if (password.isNotEmpty() && !isPasswordValid) {
+                Text(
+                    text = "La contraseña debe tener al menos 8 caracteres",
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .padding(start = 16.dp, top = 4.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
             // Confirmar Contraseña
@@ -368,8 +406,7 @@ fun SignUpScreen(
                     }
                 }
             )
-            
-            // Mensaje de error de contraseñas no coincidentes
+
             if (confirmPassword.isNotEmpty() && !passwordsMatch) {
                 Text(
                     text = "Las contraseñas no coinciden",
@@ -385,58 +422,99 @@ fun SignUpScreen(
 
             Button(
                 onClick = {
-                    auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+                    enviando = true
+                    val correo = email.trim().lowercase()
+
+                    auth.createUserWithEmailAndPassword(correo, password).addOnCompleteListener { task ->
                         if (task.isSuccessful) {
                             val user = task.result?.user
                             Log.d("AUTH", "Usuario creado: ${user?.email}")
-                            
-                            user?.uid?.let { uid ->
-                                val db = FirebaseFirestore.getInstance()
-                                val userData = hashMapOf(
-                                    "nombre" to nombres,
-                                    "apellidos" to apellidos,
-                                    "dni" to numDocumento,
-                                    "correo" to email,
-                                    "rol" to "socio"
-                                )
-                                
-                                db.collection("usuarios").document(uid)
-                                    .set(userData)
-                                    .addOnSuccessListener {
-                                        Log.d("FIRESTORE", "Usuario guardado exitosamente en BD")
-                                        Toast.makeText(context, "Solicitud enviada exitosamente. Te contactaremos pronto.", Toast.LENGTH_LONG).show()
-                                        onBackClick()
-                                    }
-                                    .addOnFailureListener { e ->
-                                        Log.e("FIRESTORE", "Error al guardar el usuario", e)
-                                        Toast.makeText(context, "Error al guardar los datos.", Toast.LENGTH_SHORT).show()
-                                    }
+
+                            if (user == null) {
+                                enviando = false
+                                Toast.makeText(context, "Error al crear el usuario.", Toast.LENGTH_SHORT).show()
+                                return@addOnCompleteListener
                             }
+
+                            val db = FirebaseFirestore.getInstance()
+                            val userData = hashMapOf(
+                                "nombre" to nombres,
+                                "apellidos" to apellidos,
+                                "tipoDocumento" to tipoDocumento,
+                                "dni" to numDocumento,
+                                "fechaNacimiento" to fechaNacimiento,
+                                "telefono" to telefono,
+                                "correo" to correo,
+                                "rol" to "socio",
+                                "estado" to "pendiente",
+                                "proveedor" to "password",
+                                "fechaRegistro" to System.currentTimeMillis()
+                            )
+
+                            db.collection("usuarios").document(user.uid)
+                                .set(userData)
+                                .addOnSuccessListener {
+                                    Log.d("FIRESTORE", "Usuario guardado exitosamente en BD")
+                                    // El socio debe esperar aprobación: cerramos la sesión
+                                    auth.signOut()
+                                    enviando = false
+                                    Toast.makeText(
+                                        context,
+                                        "Registro enviado. Cuando el club lo apruebe, podrás ingresar con este correo o con tu cuenta de Google o Facebook.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                    onBackClick()
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e("FIRESTORE", "Error al guardar el usuario", e)
+                                    // Deshacer: borrar el usuario creado en Authentication
+                                    user.delete()
+                                    enviando = false
+                                    Toast.makeText(
+                                        context,
+                                        "Error al guardar los datos. Intenta nuevamente.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                         } else {
+                            enviando = false
                             Log.e("AUTH", "Error: ${task.exception?.message}")
                             Toast.makeText(context, "Error: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                         }
                     }
                 },
-                enabled = isFormValid, // Habilita el botón solo si el formulario es completamente válido
+                enabled = isFormValid && !enviando,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Gold500,
-                    disabledContainerColor = Color.Gray.copy(alpha = 0.5f), // Color grisáceo/oscuro cuando está desactivado
+                    disabledContainerColor = Color.Gray.copy(alpha = 0.5f),
                     disabledContentColor = Color.LightGray
                 ),
                 shape = RoundedCornerShape(50)
             ) {
-                Text(text = "Enviar Solicitud", color = if (isFormValid) Navy900 else Color.LightGray, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                if (enviando) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        color = Navy900,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text = "Enviar Solicitud",
+                        color = if (isFormValid) Navy900 else Color.LightGray,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             val annotatedText = buildAnnotatedString {
                 append(stringResource(R.string.signup_login_pregunta))
-                append(" ") // Agrega un espacio entre la pregunta y la acción
+                append(" ")
                 pushStringAnnotation(tag = "login", annotation = "login")
                 withStyle(style = SpanStyle(color = Gold400, fontWeight = FontWeight.Bold)) {
                     append(stringResource(R.string.signup_login_accion))
