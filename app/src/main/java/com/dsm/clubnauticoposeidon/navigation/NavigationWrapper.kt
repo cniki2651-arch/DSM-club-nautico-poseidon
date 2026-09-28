@@ -88,7 +88,9 @@ fun NavigationWrapper(
             com.dsm.clubnauticoposeidon.ui.screens.Socios.ServiciosScreen(
                 onBackClick = { navHostController.popBackStack() },
                 onNavigateToCatering = { navHostController.navigate("catering") },
-                onNavigateToLimpieza = { navHostController.navigate("limpieza") }
+                onNavigateToLimpieza = { navHostController.navigate("limpieza") },
+                onNavigateToSuministros = { navHostController.navigate("suministros") },
+                onNavigateToAsistencia = { navHostController.navigate("asistencia") }
             )
         }
         composable("catering") {
@@ -98,6 +100,16 @@ fun NavigationWrapper(
         }
         composable("limpieza") {
             com.dsm.clubnauticoposeidon.ui.screens.Socios.LimpiezaScreen(
+                onBackClick = { navHostController.popBackStack() }
+            )
+        }
+        composable("suministros") {
+            com.dsm.clubnauticoposeidon.ui.screens.Socios.SuministrosScreen(
+                onBackClick = { navHostController.popBackStack() }
+            )
+        }
+        composable("asistencia") {
+            com.dsm.clubnauticoposeidon.ui.screens.Socios.AsistenciaScreen(
                 onBackClick = { navHostController.popBackStack() }
             )
         }

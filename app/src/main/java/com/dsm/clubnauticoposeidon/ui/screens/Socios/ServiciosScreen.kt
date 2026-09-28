@@ -46,7 +46,9 @@ import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 fun ServiciosScreen(
     onBackClick: () -> Unit,
     onNavigateToCatering: () -> Unit = {},
-    onNavigateToLimpieza: () -> Unit = {}
+    onNavigateToLimpieza: () -> Unit = {},
+    onNavigateToSuministros: () -> Unit = {},
+    onNavigateToAsistencia: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -110,9 +112,7 @@ fun ServiciosScreen(
                     titulo = "Suministros Básicos",
                     descripcion = "Solicitud de agua potable, hielo y recarga de baterías.",
                     icono = Icons.Default.WaterDrop,
-                    onClick = {
-                        Toast.makeText(context, "Solicitando: Suministros Básicos - Sprint 2", Toast.LENGTH_SHORT).show()
-                    }
+                    onClick = onNavigateToSuministros
                 )
             }
 
@@ -121,9 +121,7 @@ fun ServiciosScreen(
                     titulo = "Asistencia en Muelle",
                     descripcion = "Solicitar un marinero de guardia para apoyo en maniobras.",
                     icono = Icons.Default.SupportAgent,
-                    onClick = {
-                        Toast.makeText(context, "Solicitando: Asistencia en Muelle - Sprint 2", Toast.LENGTH_SHORT).show()
-                    }
+                    onClick = onNavigateToAsistencia
                 )
             }
 
