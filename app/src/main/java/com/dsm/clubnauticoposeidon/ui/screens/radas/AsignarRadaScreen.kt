@@ -39,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,13 +62,13 @@ fun AsignarRadaScreen(
 ) {
     val context = LocalContext.current
 
-    // Variables de estado del formulario
-    var dniSocio by remember { mutableStateOf("") }
-    var matricula by remember { mutableStateOf("") }
+    // Variables de estado del formulario (Preservan estado al navegar)
+    var dniSocio by rememberSaveable { mutableStateOf("") }
+    var matricula by rememberSaveable { mutableStateOf("") }
     
     // Variables para fechas (simuladas para poder habilitar el botón)
-    var fechaIngreso by remember { mutableStateOf("") }
-    var fechaSalida by remember { mutableStateOf("") }
+    var fechaIngreso by rememberSaveable { mutableStateOf("") }
+    var fechaSalida by rememberSaveable { mutableStateOf("") }
 
     // Validación del formulario
     val isFormValid = dniSocio.isNotBlank() && 
