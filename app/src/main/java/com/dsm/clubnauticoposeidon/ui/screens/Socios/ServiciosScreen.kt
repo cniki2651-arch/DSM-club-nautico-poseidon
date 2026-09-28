@@ -44,7 +44,9 @@ import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ServiciosScreen(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onNavigateToCatering: () -> Unit = {},
+    onNavigateToLimpieza: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -90,9 +92,7 @@ fun ServiciosScreen(
                     titulo = "Catering y Restaurante",
                     descripcion = "Envío de alimentos, bebidas y snacks directo a su embarcación o rada.",
                     icono = Icons.Default.Restaurant,
-                    onClick = {
-                        Toast.makeText(context, "Solicitando: Catering y Restaurante - Sprint 2", Toast.LENGTH_SHORT).show()
-                    }
+                    onClick = onNavigateToCatering
                 )
             }
 
@@ -101,9 +101,7 @@ fun ServiciosScreen(
                     titulo = "Limpieza y Aseo",
                     descripcion = "Servicio de limpieza profunda interior y exterior de yates.",
                     icono = Icons.Default.CleaningServices,
-                    onClick = {
-                        Toast.makeText(context, "Solicitando: Limpieza y Aseo - Sprint 2", Toast.LENGTH_SHORT).show()
-                    }
+                    onClick = onNavigateToLimpieza
                 )
             }
 
