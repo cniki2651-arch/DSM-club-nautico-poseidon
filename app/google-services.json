@@ -12,7 +12,20 @@
           "package_name": "com.dsm.clubnauticoposeidon"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "276810070049-rav0bc9ctmcpfgfhtlvmc1ehna3msppd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dsm.clubnauticoposeidon",
+            "certificate_hash": "fe6cff49da2d78acd8f6a583741e4822664fe48b"
+          }
+        },
+        {
+          "client_id": "276810070049-fht9sagka87o1af36ubt463rags7pqdt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDYFChu5mqx7aNghBdu3BfQcO3VzhhXbB4"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "276810070049-fht9sagka87o1af36ubt463rags7pqdt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
