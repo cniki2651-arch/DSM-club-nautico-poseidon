@@ -5,6 +5,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.dsm.clubnauticoposeidon.ui.screens.home.HomeOperacionesScreen
 import com.dsm.clubnauticoposeidon.ui.screens.initial.InitialScreen
 import com.dsm.clubnauticoposeidon.ui.screens.login.LoginScreen
 import com.dsm.clubnauticoposeidon.ui.screens.recovery.RecuperarPasswordScreen
@@ -35,7 +36,7 @@ fun NavigationWrapper(
                 auth = auth,
                 onSignUp = { navHostController.navigate("signup") },
                 onNavigateToSocio = { navHostController.navigate("home") },
-                onNavigateToAdmin = { navHostController.navigate("home_admin") }, // Ruta a implementar a futuro
+                onNavigateToAdmin = { navHostController.navigate("home_operaciones") },
                 onBackClick = { navHostController.popBackStack() },
                 onForgotPassword = { navHostController.navigate("recuperar_password") }
             )
@@ -76,6 +77,24 @@ fun NavigationWrapper(
                 onBackClick = {
                     navHostController.popBackStack()
                 }
+            )
+        }
+        composable("home_operaciones") {
+            HomeOperacionesScreen(
+                onLogout = {
+                    auth.signOut()
+                    navHostController.navigate("initial") {
+                        popUpTo(0)
+                    }
+                },
+                onNavigateToAsignarRada = { navHostController.navigate("asignar_rada") }
+            )
+        }
+
+        composable("asignar_rada") {
+            com.dsm.clubnauticoposeidon.ui.screens.radas.AsignarRadaScreen(
+                onBackClick = { navHostController.popBackStack() },
+                onAbrirMapaClick = { /* Lógica futura del mapa */ }
             )
         }
     }

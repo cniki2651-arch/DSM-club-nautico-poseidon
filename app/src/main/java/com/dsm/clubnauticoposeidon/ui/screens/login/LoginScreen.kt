@@ -197,7 +197,7 @@ fun LoginScreen(
                                                 val rol = document.getString("rol")
                                                 Toast.makeText(context, "Login correcto", Toast.LENGTH_SHORT).show()
                                                 
-                                                if (rol == "admin") {
+                                                if (rol == "naviero") {
                                                     onNavigateToAdmin()
                                                 } else {
                                                     onNavigateToSocio()
