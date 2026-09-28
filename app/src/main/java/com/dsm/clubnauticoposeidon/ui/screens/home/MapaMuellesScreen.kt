@@ -46,7 +46,8 @@ import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapaMuellesScreen(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onRadaSelected: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     
@@ -104,7 +105,9 @@ fun MapaMuellesScreen(
                             if (isOcupada) {
                                 Toast.makeText(context, "Rada no disponible", Toast.LENGTH_SHORT).show()
                             } else {
-                                Toast.makeText(context, "Rada R-$formattedNumber seleccionada", Toast.LENGTH_SHORT).show()
+                                val radaName = "R-$formattedNumber"
+                                Toast.makeText(context, "Rada $radaName seleccionada", Toast.LENGTH_SHORT).show()
+                                onRadaSelected(radaName) // <-- Llamada para enviar el dato de regreso
                             }
                         }
                     )

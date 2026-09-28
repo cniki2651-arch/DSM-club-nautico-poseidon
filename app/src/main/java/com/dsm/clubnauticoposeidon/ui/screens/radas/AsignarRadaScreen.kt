@@ -56,7 +56,8 @@ import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 @Composable
 fun AsignarRadaScreen(
     onBackClick: () -> Unit,
-    onAbrirMapaClick: () -> Unit
+    onAbrirMapaClick: () -> Unit,
+    radaSeleccionada: String = ""
 ) {
     val context = LocalContext.current
 
@@ -64,10 +65,9 @@ fun AsignarRadaScreen(
     var dniSocio by remember { mutableStateOf("") }
     var matricula by remember { mutableStateOf("") }
     
-    // Variables para fechas y rada (simuladas para poder habilitar el botón)
+    // Variables para fechas (simuladas para poder habilitar el botón)
     var fechaIngreso by remember { mutableStateOf("") }
     var fechaSalida by remember { mutableStateOf("") }
-    var radaSeleccionada by remember { mutableStateOf("") }
 
     // Validación del formulario
     val isFormValid = dniSocio.isNotBlank() && 
@@ -212,11 +212,7 @@ fun AsignarRadaScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(
-                onClick = { 
-                    // Simulamos que al abrir el mapa selecciona una rada
-                    radaSeleccionada = "Muelle B - Rada 14"
-                    onAbrirMapaClick() 
-                },
+                onClick = onAbrirMapaClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp),
@@ -234,12 +230,21 @@ fun AsignarRadaScreen(
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(horizontalAlignment = Alignment.Start) {
-                    Text(
-                        text = if (radaSeleccionada.isEmpty()) "Seleccionar Rada en el Mapa" else radaSeleccionada,
-                        color = if (radaSeleccionada.isEmpty()) Color.White else Gold500,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (radaSeleccionada.isEmpty()) {
+                        Text(
+                            text = "Seleccionar Rada en el Mapa",
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    } else {
+                        Text(
+                            text = "Muelle Seleccionado: $radaSeleccionada",
+                            color = Gold500,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 

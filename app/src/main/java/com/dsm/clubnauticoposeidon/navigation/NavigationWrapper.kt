@@ -12,7 +12,9 @@ import com.dsm.clubnauticoposeidon.ui.screens.recovery.RecuperarPasswordScreen
 import com.dsm.clubnauticoposeidon.ui.screens.signup.SignUpScreen
 import com.dsm.clubnauticoposeidon.ui.screens.home.HomeScreen
 import com.dsm.clubnauticoposeidon.ui.screens.home.HomeSocioScreen
+import com.dsm.clubnauticoposeidon.ui.screens.home.MapaMuellesScreen
 import com.dsm.clubnauticoposeidon.ui.screens.profile.ProfileScreen
+import com.dsm.clubnauticoposeidon.ui.screens.radas.AsignarRadaScreen
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -92,15 +94,26 @@ fun NavigationWrapper(
             )
         }
 
-        composable("asignar_rada") {
-            com.dsm.clubnauticoposeidon.ui.screens.radas.AsignarRadaScreen(
-                onBackClick = { navHostController.popBackStack() },
-                onAbrirMapaClick = { navHostController.navigate("mapa_muelles") }
+        composable("asignar_rada") { backStackEntry ->
+            // 1. Leemos el "buzón" para ver si el mapa nos dejó alguna rada seleccionada
+            val radaDelMapa = backStackEntry.savedStateHandle.get("rada_seleccionada") ?: ""
+
+            AsignarRadaScreen(
+                radaSeleccionada = radaDelMapa, // 2. Le pasamos el dato a la pantalla
+                onAbrirMapaClick = { navHostController.navigate("mapa_muelles") },
+                onBackClick = { navHostController.popBackStack() }
             )
         }
-        
+
+        // Ruta del Mapa interactivo
         composable("mapa_muelles") {
-            com.dsm.clubnauticoposeidon.ui.screens.home.MapaMuellesScreen(
+            MapaMuellesScreen(
+                onRadaSelected = { nombreRada ->
+                    // 3. Cuando el usuario toca una rada verde, guardamos el nombre en el "buzón" de la pantalla anterior
+                    navHostController.previousBackStackEntry?.savedStateHandle?.set("rada_seleccionada", nombreRada)
+                    // 4. Regresamos al formulario automáticamente
+                    navHostController.popBackStack()
+                },
                 onBackClick = { navHostController.popBackStack() }
             )
         }
