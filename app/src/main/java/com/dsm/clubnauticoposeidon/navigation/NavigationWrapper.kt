@@ -65,6 +65,9 @@ fun NavigationWrapper(
                     // Navega a la pantalla del código QR
                     navHostController.navigate("profile")
                 },
+                onNavigateToServicios = {
+                    navHostController.navigate("servicios")
+                },
                 onLogout = {
                     // Cierra sesión en Firebase y regresa al inicio
                     auth.signOut()
@@ -79,6 +82,11 @@ fun NavigationWrapper(
                 onBackClick = {
                     navHostController.popBackStack()
                 }
+            )
+        }
+        composable("servicios") {
+            com.dsm.clubnauticoposeidon.ui.screens.Socios.ServiciosScreen(
+                onBackClick = { navHostController.popBackStack() }
             )
         }
         composable("home_operaciones") {

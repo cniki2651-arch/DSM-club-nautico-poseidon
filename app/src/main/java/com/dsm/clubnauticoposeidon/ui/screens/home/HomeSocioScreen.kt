@@ -65,7 +65,8 @@ import java.util.Locale
 @Composable
 fun HomeSocioScreen(
     onLogout: () -> Unit,
-    onNavigateToProfile: () -> Unit
+    onNavigateToProfile: () -> Unit,
+    onNavigateToServicios: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var menuExpanded by remember { mutableStateOf(false) }
@@ -219,7 +220,7 @@ fun HomeSocioScreen(
                 DashboardGridItem(
                     title = "Servicios",
                     icon = Icons.Default.RoomService,
-                    onClick = showToast,
+                    onClick = onNavigateToServicios,
                     modifier = Modifier.weight(1f)
                 )
             }
