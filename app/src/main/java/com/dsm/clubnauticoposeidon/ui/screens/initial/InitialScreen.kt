@@ -139,12 +139,6 @@ fun InitialScreen(
             title = stringResource(R.string.welcome_facebook)
         )
 
-        Text(
-            text = "¿Aún no eres socio? Primero crea tu cuenta",
-            color = Ink,
-            modifier = Modifier.padding(top = 12.dp),
-            textAlign = TextAlign.Center
-        )
 
         Text(
             text = stringResource(R.string.welcome_iniciar_sesion),
