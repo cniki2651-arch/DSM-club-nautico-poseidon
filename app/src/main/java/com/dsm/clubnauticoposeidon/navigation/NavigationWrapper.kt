@@ -29,7 +29,17 @@ fun NavigationWrapper(
         composable("initial") {
             InitialScreen(
                 onLogin = { navHostController.navigate("login") },
-                onSignUp = { navHostController.navigate("signup") }
+                onSignUp = { navHostController.navigate("signup") },
+                onNavigateToSocio = {
+                    navHostController.navigate("home") {
+                        popUpTo("initial") { inclusive = true }
+                    }
+                },
+                onNavigateToAdmin = {
+                    navHostController.navigate("home_operaciones") {
+                        popUpTo("initial") { inclusive = true }
+                    }
+                }
             )
         }
 
