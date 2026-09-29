@@ -2,8 +2,8 @@ package com.dsm.clubnauticoposeidon.ui.screens.login
 
 import android.content.Context
 import android.content.ContextWrapper
-import android.widget.Toast
 import android.util.Patterns
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,12 +20,13 @@ import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,9 +77,31 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var cargando by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val activity = context.findActivity()
+
+    // Lógica única de acceso: revisa registro, estado y rol en Firestore
+    fun verificarAcceso() {
+        validarAcceso(
+            auth = auth,
+            onSocio = {
+                cargando = false
+                Toast.makeText(context, "Login correcto", Toast.LENGTH_SHORT).show()
+                onNavigateToSocio()
+            },
+            onAdmin = {
+                cargando = false
+                Toast.makeText(context, "Login correcto", Toast.LENGTH_SHORT).show()
+                onNavigateToAdmin()
+            },
+            onError = { msg ->
+                cargando = false
+                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -113,10 +137,11 @@ fun LoginScreen(
         ) {
             TextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = { email = it.filter { c -> !c.isWhitespace() } },
                 placeholder = { Text(stringResource(R.string.login_email), color = Muted) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 colors = TextFieldDefaults.colors(
                     focusedTextColor = Ink,
                     unfocusedTextColor = Ink,
@@ -169,7 +194,7 @@ fun LoginScreen(
                 color = Gold400,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
-                textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                textAlign = TextAlign.End,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 4.dp)
@@ -181,57 +206,49 @@ fun LoginScreen(
             // Botón principal de Iniciar Sesión
             Button(
                 onClick = {
-                    if (email.isBlank() || password.isBlank()) {
+                    val correo = email.trim().lowercase()
+                    if (correo.isBlank() || password.isBlank()) {
                         Toast.makeText(context, "Correo o contraseña vacíos", Toast.LENGTH_SHORT).show()
-                    } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                    } else if (!Patterns.EMAIL_ADDRESS.matcher(correo).matches()) {
                         Toast.makeText(context, "Formato de correo inválido", Toast.LENGTH_SHORT).show()
                     } else {
-                        auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+                        cargando = true
+                        auth.signInWithEmailAndPassword(correo, password).addOnCompleteListener { task ->
                             if (task.isSuccessful) {
-                                val user = task.result?.user
-                                user?.uid?.let { uid ->
-                                    val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
-                                    db.collection("usuarios").document(uid).get()
-                                        .addOnSuccessListener { document ->
-                                            if (document.exists()) {
-                                                val rol = document.getString("rol")
-                                                Toast.makeText(context, "Login correcto", Toast.LENGTH_SHORT).show()
-                                                
-                                                if (rol == "naviero") {
-                                                    onNavigateToAdmin()
-                                                } else {
-                                                    onNavigateToSocio()
-                                                }
-                                            } else {
-                                                // Si por algún motivo no existe el documento, asumimos que es socio
-                                                Toast.makeText(context, "Login correcto (Sin rol definido)", Toast.LENGTH_SHORT).show()
-                                                onNavigateToSocio()
-                                            }
-                                        }
-                                        .addOnFailureListener {
-                                            Toast.makeText(context, "Error al obtener rol", Toast.LENGTH_SHORT).show()
-                                            onNavigateToSocio() // Fallback a socio en caso de error
-                                        }
-                                }
+                                verificarAcceso()
                             } else {
+                                cargando = false
                                 Toast.makeText(context, "Error: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }
                 },
+                enabled = !cargando,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Gold500),
                 shape = RoundedCornerShape(50)
             ) {
-                Text(text = stringResource(R.string.login_inicio), color = Navy900, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                if (cargando) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        color = Navy900,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text = stringResource(R.string.login_inicio),
+                        color = Navy900,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-
-            // Botón de huella digital grande y destacado (HU01 - Login Biométrico)
+            // Botón de huella digital (HU01 - Login Biométrico)
             IconButton(
                 onClick = {
                     if (activity != null) {
@@ -243,10 +260,9 @@ fun LoginScreen(
                                 viewModel.handleBiometricSuccess(
                                     auth = auth,
                                     onNavigateHome = {
-                                        Toast.makeText(context, "Autenticación biométrica exitosa", Toast.LENGTH_SHORT).show()
-                                        // Aquí también evaluaremos el rol o lo mandaremos a socio por defecto,
-                                        // lo ideal sería reutilizar la lógica de consulta o por ahora mandarlo a socio:
-                                        onNavigateToSocio()
+                                        // Ahora también revisa estado y rol (naviero → Admin)
+                                        cargando = true
+                                        verificarAcceso()
                                     },
                                     onNoSession = {
                                         Toast.makeText(context, "Inicie sesión con correo y contraseña por primera vez", Toast.LENGTH_LONG).show()
@@ -280,7 +296,7 @@ fun LoginScreen(
 
             val annotatedText = buildAnnotatedString {
                 append(stringResource(R.string.login_registro_pregunta))
-                append(" ") // Agrega un espacio entre la pregunta y la acción
+                append(" ")
                 pushStringAnnotation(tag = "signup", annotation = "signup")
                 withStyle(style = SpanStyle(color = Gold400, fontWeight = FontWeight.Bold)) {
                     append(stringResource(R.string.login_registro_accion))
