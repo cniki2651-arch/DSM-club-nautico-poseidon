@@ -1,5 +1,6 @@
 package com.dsm.clubnauticoposeidon.ui.screens.initial
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,17 +21,24 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.dsm.clubnauticoposeidon.R
+import com.dsm.clubnauticoposeidon.ui.screens.login.signInWithGoogle
 import com.dsm.clubnauticoposeidon.ui.theme.Gold400
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Ink
@@ -39,12 +47,21 @@ import com.dsm.clubnauticoposeidon.ui.theme.Navy700
 import com.dsm.clubnauticoposeidon.ui.theme.Navy800
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import com.dsm.clubnauticoposeidon.ui.theme.TituloNautico
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 
 @Composable
 fun InitialScreen(
     onLogin: () -> Unit = {},
-    onSignUp: () -> Unit = {}
+    onSignUp: () -> Unit = {},
+    onNavigateToSocio: () -> Unit = {},
+    onNavigateToAdmin: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val webClientId = stringResource(R.string.google_web_client_id)
+    var cargando by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -83,16 +100,50 @@ fun InitialScreen(
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
+
+        // Botón Google
         CustomButton(
-            modifier = Modifier.clickable { },
+            modifier = Modifier.clickable(enabled = !cargando) {
+                cargando = true
+                scope.launch {
+                    signInWithGoogle(
+                        context = context,
+                        auth = FirebaseAuth.getInstance(),
+                        webClientId = webClientId,
+                        onSocio = {
+                            cargando = false
+                            onNavigateToSocio()
+                        },
+                        onAdmin = {
+                            cargando = false
+                            onNavigateToAdmin()
+                        },
+                        onError = { msg ->
+                            cargando = false
+                            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                        }
+                    )
+                }
+            },
             painter = painterResource(id = R.drawable.google),
             title = stringResource(R.string.welcome_google)
         )
         Spacer(modifier = Modifier.height(8.dp))
+
+        // Botón Facebook (pendiente de configurar en Meta)
         CustomButton(
-            modifier = Modifier.clickable { },
+            modifier = Modifier.clickable {
+                Toast.makeText(context, "Facebook estará disponible próximamente", Toast.LENGTH_SHORT).show()
+            },
             painter = painterResource(id = R.drawable.facebook),
             title = stringResource(R.string.welcome_facebook)
+        )
+
+        Text(
+            text = "¿Aún no eres socio? Primero crea tu cuenta",
+            color = Ink,
+            modifier = Modifier.padding(top = 12.dp),
+            textAlign = TextAlign.Center
         )
 
         Text(
