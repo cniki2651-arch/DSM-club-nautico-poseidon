@@ -1,7 +1,10 @@
 package com.dsm.clubnauticoposeidon.ui.screens.profile
 
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,15 +17,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,27 +34,79 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import android.graphics.Bitmap
-import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
+
+// Datos del socio leídos desde Firestore
+data class PerfilSocio(
+    val nombreCompleto: String = "",
+    val dni: String = "",
+    val tipoDocumento: String = "",
+    val correo: String = "",
+    val telefono: String = "",
+    val estado: String = ""
+)
 
 @Composable
 fun ProfileScreen(
     onBackClick: () -> Unit
 ) {
     var showQR by remember { mutableStateOf(false) }
+    var perfil by remember { mutableStateOf<PerfilSocio?>(null) }
+    var cargando by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    // Carga el perfil del usuario que inició sesión (búsqueda por correo, igual que validarAcceso)
+    LaunchedEffect(Unit) {
+        val user = FirebaseAuth.getInstance().currentUser
+        val correo = user?.email?.trim()?.lowercase()
+        if (correo == null) {
+            error = "No hay una sesión activa"
+            cargando = false
+            return@LaunchedEffect
+        }
+
+        FirebaseFirestore.getInstance()
+            .collection("usuarios")
+            .whereEqualTo("correo", correo)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { result ->
+                val doc = result.documents.firstOrNull()
+                if (doc == null) {
+                    error = "No se encontró tu registro de socio"
+                } else {
+                    val nombre = doc.getString("nombre") ?: ""
+                    val apellidos = doc.getString("apellidos") ?: ""
+                    perfil = PerfilSocio(
+                        nombreCompleto = "$nombre $apellidos".trim(),
+                        dni = doc.getString("dni") ?: "",
+                        tipoDocumento = doc.getString("tipoDocumento") ?: "DNI",
+                        correo = doc.getString("correo") ?: correo,
+                        telefono = doc.getString("telefono") ?: "",
+                        estado = doc.getString("estado") ?: ""
+                    )
+                }
+                cargando = false
+            }
+            .addOnFailureListener {
+                error = "No se pudieron cargar tus datos"
+                cargando = false
+            }
+    }
 
     Column(
         modifier = Modifier
@@ -81,44 +137,88 @@ fun ProfileScreen(
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
+        when {
+            cargando -> {
+                Spacer(modifier = Modifier.height(48.dp))
+                CircularProgressIndicator(color = Gold500)
+            }
 
-        ProfileDataCard(label = "Nombres y Apellidos", value = "Khalep Velarde")
-        ProfileDataCard(label = "DNI", value = "72459812")
-        ProfileDataCard(label = "Correo Electrónico", value = "khalep@poseidon.com")
-        ProfileDataCard(label = "Teléfono", value = "987654321")
-        
+            error != null -> {
+                Text(
+                    text = error ?: "",
+                    color = Color(0xFFE57373),
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 32.dp, vertical = 24.dp)
+                )
+            }
 
-        ProfileDataCard(
-            label = "Estado",
-            value = "SOCIO ACTIVO",
-            valueColor = Color(0xFF4CAF50)
-        )
+            perfil != null -> {
+                val p = perfil!!
 
-        Spacer(modifier = Modifier.height(48.dp))
+                ProfileDataCard(
+                    label = "Nombres y Apellidos",
+                    value = p.nombreCompleto.ifBlank { "No registrado" }
+                )
+                ProfileDataCard(
+                    label = p.tipoDocumento.ifBlank { "DNI" },
+                    value = p.dni.ifBlank { "No registrado" }
+                )
+                ProfileDataCard(
+                    label = "Correo Electrónico",
+                    value = p.correo.ifBlank { "No registrado" }
+                )
+                ProfileDataCard(
+                    label = "Teléfono",
+                    value = p.telefono.ifBlank { "No registrado" }
+                )
 
+                val (textoEstado, colorEstado) = when (p.estado) {
+                    "activo" -> "SOCIO ACTIVO" to Color(0xFF4CAF50)
+                    "pendiente" -> "PENDIENTE DE APROBACIÓN" to Color(0xFFFFB74D)
+                    "" -> "SIN ESTADO" to Color.LightGray
+                    else -> p.estado.uppercase() to Color.LightGray
+                }
+                ProfileDataCard(
+                    label = "Estado",
+                    value = textoEstado,
+                    valueColor = colorEstado
+                )
 
-        Button(
-            onClick = { showQR = true },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Gold500),
-            shape = RoundedCornerShape(50)
-        ) {
-            Text(
-                text = "Mostrar Credencial QR",
-                color = Navy900,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
+                Spacer(modifier = Modifier.height(48.dp))
+
+                // El QR solo se habilita para socios activos
+                Button(
+                    onClick = { showQR = true },
+                    enabled = p.estado == "activo" && p.dni.isNotBlank(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Gold500,
+                        disabledContainerColor = Color.Gray.copy(alpha = 0.5f)
+                    ),
+                    shape = RoundedCornerShape(50)
+                ) {
+                    Text(
+                        text = "Mostrar Credencial QR",
+                        color = Navy900,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
-        
+
         Spacer(modifier = Modifier.height(32.dp))
     }
 
     // Cuadro de Diálogo para el código QR
-    if (showQR) {
+    val p = perfil
+    if (showQR && p != null) {
+        val idSocio = "POS-${p.dni}"
+
         Dialog(onDismissRequest = { showQR = false }) {
             Card(
                 shape = RoundedCornerShape(16.dp),
@@ -137,24 +237,33 @@ fun ProfileScreen(
                         color = Navy900,
                         textAlign = TextAlign.Center
                     )
-                    
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = p.nombreCompleto,
+                        fontSize = 16.sp,
+                        color = Color.DarkGray,
+                        textAlign = TextAlign.Center
+                    )
+
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Ícono gigante del QR generado dinámicamente con ZXing
+                    // QR generado dinámicamente con ZXing usando el ID real del socio
                     QrCodeImage(
-                        content = "POS-2026-001",
+                        content = idSocio,
                         size = 250.dp
                     )
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = "ID: POS-2026-001",
+                        text = "ID: $idSocio",
                         fontSize = 18.sp,
                         color = Color.DarkGray,
                         fontWeight = FontWeight.SemiBold
                     )
-                    
+
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Button(
@@ -245,7 +354,7 @@ fun QrCodeImage(content: String, size: Dp, modifier: Modifier = Modifier) {
         )
     } else {
         // Fallback visual en caso de que ocurra algún error
-        androidx.compose.foundation.layout.Box(
+        Box(
             modifier = modifier
                 .size(size)
                 .background(Color.LightGray)
