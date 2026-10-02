@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,30 +44,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
+import com.google.firebase.firestore.FirebaseFirestore
 
-// 1. Modelo de Datos
-data class MenuItem(
-    val nombre: String,
-    val precio: String,
-    val descripcion: String,
-    val categoria: String
-)
-
-// 2. Mock Data
-val menuItems = listOf(
-    MenuItem("Desayuno Náutico", "S/ 35.00", "Huevos revueltos, tocino, pan artesanal y jugo natural.", "Desayunos"),
-    MenuItem("Panqueques del Capitán", "S/ 28.00", "Panqueques con miel de maple y frutos rojos.", "Desayunos"),
-    
-    MenuItem("Ceviche Clásico", "S/ 45.00", "Pesca del día con limón sutil y ají limo.", "Piqueos"),
-    MenuItem("Tabla de Piqueos Náuticos", "S/ 60.00", "Selección de mariscos y quesos para compartir.", "Piqueos"),
-    MenuItem("Tequeños de Cangrejo", "S/ 30.00", "Masa crujiente rellena de pulpa de cangrejo con salsa golf.", "Piqueos"),
-    
-    MenuItem("Lomo Saltado Poseidón", "S/ 55.00", "Fino lomo de res flambeado con pisco, cebolla y tomate.", "Platos Fuertes"),
-    MenuItem("Arroz con Mariscos", "S/ 50.00", "Arroz meloso con mix de mariscos y un toque de ají panca.", "Platos Fuertes"),
-    
-    MenuItem("Chilcano con Pisco Queirolo", "S/ 25.00", "Pisco Queirolo, Ginger Ale, amargo de Angostura y limón.", "Bebidas"),
-    MenuItem("Limonada Frozen", "S/ 15.00", "Refrescante limonada con hielo frozen y un toque de menta.", "Bebidas"),
-    MenuItem("Cerveza Artesanal", "S/ 20.00", "Cerveza rubia artesanal, muy fría.", "Bebidas")
+// 1. Modelo de Datos adaptado para Firestore
+data class PlatoItem(
+    val nombre: String = "",
+    val precio: Double = 0.0,
+    val descripcion: String = "",
+    val categoria: String = "",
+    val modulo: String = ""
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,26 +62,46 @@ fun CateringScreen(
 ) {
     val context = LocalContext.current
 
-    // Obtener las categorías únicas de la lista
-    val categorias = remember { menuItems.map { it.categoria }.distinct() }
-    
-    // 3. Gestión de Estado
-    var categoriaSeleccionada by remember { mutableStateOf("Piqueos") }
-    
-    // 4. Lógica de Filtrado
-    val itemsFiltrados = remember(categoriaSeleccionada) {
-        menuItems.filter { it.categoria == categoriaSeleccionada }
+    // Estados para los datos de la nube
+    var listaPlatos by remember { mutableStateOf<List<PlatoItem>>(emptyList()) }
+    var categoriaSeleccionada by remember { mutableStateOf("Desayunos") }
+
+    // 2. Descarga dinámica desde Firebase al abrir la pantalla
+    LaunchedEffect(Unit) {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("catalogo_servicios")
+            .whereEqualTo("modulo", "catering")
+            .get()
+            .addOnSuccessListener { result ->
+                val platosNuevos = result.toObjects(PlatoItem::class.java)
+                listaPlatos = platosNuevos
+                // Si la categoría seleccionada por defecto no existe en la BD, asignamos la primera disponible
+                if (platosNuevos.isNotEmpty() && !platosNuevos.any { it.categoria == categoriaSeleccionada }) {
+                    categoriaSeleccionada = platosNuevos.first().categoria
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(context, "Error al cargar el menú de la nube", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    // Obtener las categorías únicas directamente de los datos descargados
+    val categorias = remember(listaPlatos) { listaPlatos.map { it.categoria }.distinct() }
+
+    // 3. Lógica de Filtrado reactiva
+    val itemsFiltrados = remember(listaPlatos, categoriaSeleccionada) {
+        listaPlatos.filter { it.categoria == categoriaSeleccionada }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
-                        text = "Menú del Restaurante", 
-                        color = Gold500, 
+                        text = "Menú del Restaurante",
+                        color = Gold500,
                         fontWeight = FontWeight.Bold
-                    ) 
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -116,7 +122,7 @@ fun CateringScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Filtros de Categorías (LazyRow)
+            // Filtros de Categorías Dinámicos (LazyRow)
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -143,7 +149,7 @@ fun CateringScreen(
                 }
             }
 
-            // Lista de Platos Filtrados
+            // Lista de Platos Filtrados desde la Base de Datos
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -152,18 +158,16 @@ fun CateringScreen(
             ) {
                 item { Spacer(modifier = Modifier.height(4.dp)) }
 
-                // Iteramos exclusivamente sobre itemsFiltrados
                 items(itemsFiltrados) { item ->
                     MenuItemCard(
                         nombre = item.nombre,
-                        precio = item.precio,
+                        precio = "S/ ${String.format("%.2f", item.precio)}",
                         descripcion = item.descripcion
                     )
                 }
 
                 item { Spacer(modifier = Modifier.height(24.dp)) }
 
-                // Botón de confirmar pedido intacto
                 item {
                     Button(
                         onClick = {
@@ -177,9 +181,9 @@ fun CateringScreen(
                         shape = RoundedCornerShape(50)
                     ) {
                         Text(
-                            text = "Confirmar Pedido", 
-                            color = Navy900, 
-                            fontSize = 18.sp, 
+                            text = "Confirmar Pedido",
+                            color = Navy900,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -193,8 +197,8 @@ fun CateringScreen(
 
 @Composable
 fun MenuItemCard(
-    nombre: String, 
-    precio: String, 
+    nombre: String,
+    precio: String,
     descripcion: String
 ) {
     val context = LocalContext.current
@@ -203,7 +207,7 @@ fun MenuItemCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.08f) // Fondo oscuro translúcido
+            containerColor = Color.White.copy(alpha = 0.08f)
         )
     ) {
         Column(
@@ -230,20 +234,20 @@ fun MenuItemCard(
                     fontWeight = FontWeight.Bold
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
                 text = descripcion,
                 color = Color.LightGray,
                 fontSize = 14.sp
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Button(
-                onClick = { 
-                    Toast.makeText(context, "$nombre agregado", Toast.LENGTH_SHORT).show() 
+                onClick = {
+                    Toast.makeText(context, "$nombre agregado", Toast.LENGTH_SHORT).show()
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Gold500),
                 modifier = Modifier.align(Alignment.End),
@@ -251,9 +255,9 @@ fun MenuItemCard(
                 shape = RoundedCornerShape(50)
             ) {
                 Text(
-                    text = "Agregar", 
-                    color = Navy900, 
-                    fontWeight = FontWeight.Bold, 
+                    text = "Agregar",
+                    color = Navy900,
+                    fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
             }

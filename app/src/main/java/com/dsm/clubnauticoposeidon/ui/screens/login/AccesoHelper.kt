@@ -74,7 +74,7 @@ fun validarAcceso(
             val doc = result.documents[0]
             when {
                 doc.getString("rol") == "naviero" -> onAdmin()
-                doc.getString("estado") == "activo" -> onSocio()
+                doc.getString("rol") == "socio" -> onSocio()
                 else -> {
                     auth.signOut()
                     onError("Tu solicitud aún está en revisión. Te avisaremos cuando esté activa.")
