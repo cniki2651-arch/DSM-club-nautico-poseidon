@@ -19,6 +19,8 @@ suspend fun signInWithGoogle(
     webClientId: String,
     onSocio: () -> Unit,
     onAdmin: () -> Unit,
+    onSecretaria: () -> Unit,
+    onSeguimiento: () -> Unit,
     onError: (String) -> Unit
 ) {
     try {
@@ -33,7 +35,8 @@ suspend fun signInWithGoogle(
 
         auth.signInWithCredential(firebaseCred).addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                validarAcceso(auth, onSocio, onAdmin, onError)
+                // <--- 2. Pasamos los 4 parámetros correctos a validarAcceso
+                validarAcceso(auth, onSocio, onAdmin, onSeguimiento,onSecretaria, onError)
             } else {
                 onError(task.exception?.message ?: "Error al iniciar sesión con Google")
             }
@@ -44,13 +47,14 @@ suspend fun signInWithGoogle(
 }
 
 /**
- * Revisa en Firestore que el usuario tenga registro y esté aprobado.
- * Busca por correo (el que llenó en el formulario de registro).
+ * Revisa en Firestore que el usuario tenga registro y envía a la pantalla correspondiente.
  */
 fun validarAcceso(
     auth: FirebaseAuth,
     onSocio: () -> Unit,
     onAdmin: () -> Unit,
+    onSecretaria: () -> Unit,
+    onSeguimiento: () -> Unit,
     onError: (String) -> Unit
 ) {
     val user = auth.currentUser
@@ -72,9 +76,15 @@ fun validarAcceso(
                 return@addOnSuccessListener
             }
             val doc = result.documents[0]
+            val estado = doc.getString("estado")
+            val rol = doc.getString("rol")
+
+            // 4. Lógica de ruteo de la HU02
             when {
-                doc.getString("rol") == "naviero" -> onAdmin()
-                doc.getString("rol") == "socio" -> onSocio()
+                rol == "naviero" -> onAdmin()
+                estado == "aprobado" || rol == "socio" -> onSocio()
+                rol == "secretaria" -> onSecretaria()
+                estado == "pendiente" || estado == "revisado_secretaria" || estado == "rechazado" -> onSeguimiento()
                 else -> {
                     auth.signOut()
                     onError("Tu solicitud aún está en revisión. Te avisaremos cuando esté activa.")

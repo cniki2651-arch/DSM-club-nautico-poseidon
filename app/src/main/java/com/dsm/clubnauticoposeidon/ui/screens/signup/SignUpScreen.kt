@@ -30,6 +30,8 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -56,6 +58,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.Row
 import com.dsm.clubnauticoposeidon.R
 import com.dsm.clubnauticoposeidon.ui.components.AuthHeader
 import com.dsm.clubnauticoposeidon.ui.theme.Gold400
@@ -142,6 +145,11 @@ fun SignUpScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
+    // Switch para embarcación opcional
+    var tieneEmbarcacion by remember { mutableStateOf(false) }
+    var matricula by remember { mutableStateOf("") }
+    var nombreEmbarcacion by remember { mutableStateOf("") }
+
     // Evita clics repetidos mientras Firebase responde
     var enviando by remember { mutableStateOf(false) }
 
@@ -150,6 +158,8 @@ fun SignUpScreen(
     val isDateValid = fechaNacimiento.length == 8 && isValidDate(fechaNacimiento)
     val isEmailValid = Patterns.EMAIL_ADDRESS.matcher(email).matches()
     val isPasswordValid = password.length >= 8
+    
+    val isEmbarcacionValid = if (tieneEmbarcacion) matricula.isNotBlank() && nombreEmbarcacion.isNotBlank() else true
 
     val isFormValid = nombres.isNotBlank() &&
             apellidos.isNotBlank() &&
@@ -158,7 +168,8 @@ fun SignUpScreen(
             telefono.length == 9 &&
             isEmailValid &&
             isPasswordValid &&
-            passwordsMatch
+            passwordsMatch &&
+            isEmbarcacionValid
 
     Column(
         modifier = Modifier
@@ -418,70 +429,146 @@ fun SignUpScreen(
                 )
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Switch de Embarcación Opcional
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "¿Posee embarcación propia?",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Switch(
+                    checked = tieneEmbarcacion,
+                    onCheckedChange = { tieneEmbarcacion = it },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Navy900,
+                        checkedTrackColor = Gold500,
+                        uncheckedThumbColor = Color.LightGray,
+                        uncheckedTrackColor = Color.DarkGray
+                    )
+                )
+            }
+            
+            if (tieneEmbarcacion) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                TextField(
+                    value = matricula,
+                    onValueChange = { matricula = it },
+                    placeholder = { Text("Matrícula", color = Muted) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = textFieldColors
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                TextField(
+                    value = nombreEmbarcacion,
+                    onValueChange = { nombreEmbarcacion = it },
+                    placeholder = { Text("Nombre de la embarcación", color = Muted) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = textFieldColors
+                )
+            }
+
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = {
                     enviando = true
                     val correo = email.trim().lowercase()
+                    val db = FirebaseFirestore.getInstance()
 
-                    auth.createUserWithEmailAndPassword(correo, password).addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            val user = task.result?.user
-                            Log.d("AUTH", "Usuario creado: ${user?.email}")
-
-                            if (user == null) {
+                    // Validación para evitar doble registro por DNI
+                    db.collection("usuarios").whereEqualTo("dni", numDocumento).get()
+                        .addOnSuccessListener { querySnapshot ->
+                            if (!querySnapshot.isEmpty) {
+                                // El DNI ya se encuentra registrado
                                 enviando = false
-                                Toast.makeText(context, "Error al crear el usuario.", Toast.LENGTH_SHORT).show()
-                                return@addOnCompleteListener
+                                Toast.makeText(context, "El DNI ya se encuentra registrado.", Toast.LENGTH_LONG).show()
+                            } else {
+                                // Procede con la creación del usuario en Authentication
+                                auth.createUserWithEmailAndPassword(correo, password).addOnCompleteListener { task ->
+                                    if (task.isSuccessful) {
+                                        val user = task.result?.user
+                                        Log.d("AUTH", "Usuario creado: ${user?.email}")
+
+                                        if (user == null) {
+                                            enviando = false
+                                            Toast.makeText(context, "Error al crear el usuario.", Toast.LENGTH_SHORT).show()
+                                            return@addOnCompleteListener
+                                        }
+
+                                        // Transacción Batch en Firestore que asigna el rol 'postulante' y el estado 'pendiente'
+                                        val batch = db.batch()
+                                        val userRef = db.collection("usuarios").document(user.uid)
+                                        
+                                        val userData = hashMapOf<String, Any>(
+                                            "nombre" to nombres,
+                                            "apellidos" to apellidos,
+                                            "tipoDocumento" to tipoDocumento,
+                                            "dni" to numDocumento,
+                                            "fechaNacimiento" to fechaNacimiento,
+                                            "telefono" to telefono,
+                                            "correo" to correo,
+                                            "rol" to "postulante",
+                                            "estado" to "pendiente",
+                                            "proveedor" to "password",
+                                            "fechaRegistro" to System.currentTimeMillis()
+                                        )
+
+                                        if (tieneEmbarcacion) {
+                                            userData["tieneEmbarcacion"] = true
+                                            userData["matricula"] = matricula
+                                            userData["nombreEmbarcacion"] = nombreEmbarcacion
+                                        } else {
+                                            userData["tieneEmbarcacion"] = false
+                                        }
+
+                                        batch.set(userRef, userData)
+                                        batch.commit()
+                                            .addOnSuccessListener {
+                                                Log.d("FIRESTORE", "Postulante guardado exitosamente en BD")
+                                                // El socio debe esperar aprobación: cerramos la sesión
+                                                auth.signOut()
+                                                enviando = false
+                                                Toast.makeText(
+                                                    context,
+                                                    "Registro enviado. Cuando el club lo apruebe, podrás ingresar.",
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+                                                onBackClick()
+                                            }
+                                            .addOnFailureListener { e ->
+                                                Log.e("FIRESTORE", "Error al guardar el usuario", e)
+                                                // Deshacer: borrar el usuario creado en Authentication
+                                                user.delete()
+                                                enviando = false
+                                                Toast.makeText(
+                                                    context,
+                                                    "Error al guardar los datos. Intenta nuevamente.",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                    } else {
+                                        enviando = false
+                                        Log.e("AUTH", "Error: ${task.exception?.message}")
+                                        Toast.makeText(context, "Error: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
                             }
-
-                            val db = FirebaseFirestore.getInstance()
-                            val userData = hashMapOf(
-                                "nombre" to nombres,
-                                "apellidos" to apellidos,
-                                "tipoDocumento" to tipoDocumento,
-                                "dni" to numDocumento,
-                                "fechaNacimiento" to fechaNacimiento,
-                                "telefono" to telefono,
-                                "correo" to correo,
-                                "rol" to "socio",
-                                "estado" to "pendiente",
-                                "proveedor" to "password",
-                                "fechaRegistro" to System.currentTimeMillis()
-                            )
-
-                            db.collection("usuarios").document(user.uid)
-                                .set(userData)
-                                .addOnSuccessListener {
-                                    Log.d("FIRESTORE", "Usuario guardado exitosamente en BD")
-                                    // El socio debe esperar aprobación: cerramos la sesión
-                                    auth.signOut()
-                                    enviando = false
-                                    Toast.makeText(
-                                        context,
-                                        "Registro enviado. Cuando el club lo apruebe, podrás ingresar con este correo o con tu cuenta de Google o Facebook.",
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                    onBackClick()
-                                }
-                                .addOnFailureListener { e ->
-                                    Log.e("FIRESTORE", "Error al guardar el usuario", e)
-                                    // Deshacer: borrar el usuario creado en Authentication
-                                    user.delete()
-                                    enviando = false
-                                    Toast.makeText(
-                                        context,
-                                        "Error al guardar los datos. Intenta nuevamente.",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                        } else {
-                            enviando = false
-                            Log.e("AUTH", "Error: ${task.exception?.message}")
-                            Toast.makeText(context, "Error: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                         }
-                    }
+                        .addOnFailureListener {
+                            enviando = false
+                            Toast.makeText(context, "Error al validar la información.", Toast.LENGTH_SHORT).show()
+                        }
                 },
                 enabled = isFormValid && !enviando,
                 modifier = Modifier

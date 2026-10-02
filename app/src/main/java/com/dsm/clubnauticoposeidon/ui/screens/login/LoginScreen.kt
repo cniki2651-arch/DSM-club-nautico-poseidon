@@ -73,6 +73,8 @@ fun LoginScreen(
     onSignUp: () -> Unit = {},
     onNavigateToSocio: () -> Unit = {},
     onNavigateToAdmin: () -> Unit = {},
+    onNavigateToSecretaria: () -> Unit = {},
+    onNavigateToSeguimiento: () -> Unit = {},
     onBackClick: () -> Unit = {},
     onForgotPassword: () -> Unit = {},
     viewModel: LoginViewModel = viewModel()
@@ -98,6 +100,14 @@ fun LoginScreen(
                 cargando = false
                 Toast.makeText(context, "Login correcto", Toast.LENGTH_SHORT).show()
                 onNavigateToAdmin()
+            },
+            onSeguimiento = {
+                cargando = false
+                onNavigateToSeguimiento()
+            },
+            onSecretaria = {
+                cargando = false
+                onNavigateToSecretaria()
             },
             onError = { msg ->
                 cargando = false

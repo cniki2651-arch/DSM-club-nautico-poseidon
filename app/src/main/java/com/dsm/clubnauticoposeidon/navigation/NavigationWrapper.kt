@@ -15,6 +15,7 @@ import com.dsm.clubnauticoposeidon.ui.screens.home.HomeSocioScreen
 import com.dsm.clubnauticoposeidon.ui.screens.home.MapaMuellesScreen
 import com.dsm.clubnauticoposeidon.ui.screens.profile.ProfileScreen
 import com.dsm.clubnauticoposeidon.ui.screens.radas.AsignarRadaScreen
+import com.dsm.clubnauticoposeidon.ui.screens.postulante.SeguimientoScreen // IMPORT AGREGADO AQUÍ
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -39,6 +40,16 @@ fun NavigationWrapper(
                     navHostController.navigate("home_operaciones") {
                         popUpTo("initial") { inclusive = true }
                     }
+                },
+                onNavigateToSecretaria = {
+                    navHostController.navigate("secretaria") {
+                        popUpTo("initial") { inclusive = true }
+                    }
+                },
+                onNavigateToSeguimiento = {
+                    navHostController.navigate("seguimiento") {
+                        popUpTo("initial") { inclusive = true }
+                    }
                 }
             )
         }
@@ -49,7 +60,9 @@ fun NavigationWrapper(
                 onSignUp = { navHostController.navigate("signup") },
                 onNavigateToSocio = { navHostController.navigate("home") },
                 onNavigateToAdmin = { navHostController.navigate("home_operaciones") },
+                onNavigateToSecretaria = { navHostController.navigate("secretaria") },
                 onBackClick = { navHostController.popBackStack() },
+                onNavigateToSeguimiento = { navHostController.navigate("seguimiento") }, // CORREGIDO AQUÍ
                 onForgotPassword = { navHostController.navigate("recuperar_password") }
             )
         }
@@ -137,26 +150,44 @@ fun NavigationWrapper(
         }
 
         composable("asignar_rada") { backStackEntry ->
-            // 1. Leemos el "buzón" para ver si el mapa nos dejó alguna rada seleccionada
             val radaDelMapa = backStackEntry.savedStateHandle.get("rada_seleccionada") ?: ""
 
             AsignarRadaScreen(
-                radaSeleccionada = radaDelMapa, // 2. Le pasamos el dato a la pantalla
+                radaSeleccionada = radaDelMapa,
                 onAbrirMapaClick = { navHostController.navigate("mapa_muelles") },
                 onBackClick = { navHostController.popBackStack() }
             )
         }
 
-        // Ruta del Mapa interactivo
         composable("mapa_muelles") {
             MapaMuellesScreen(
                 onRadaSelected = { nombreRada ->
-                    // 3. Cuando el usuario toca una rada verde, guardamos el nombre en el "buzón" de la pantalla anterior
-                    navHostController.previousBackStackEntry?.savedStateHandle?.set("rada_seleccionada", nombreRada)
-                    // 4. Regresamos al formulario automáticamente
+                    navHostController.previousBackStackEntry?.savedStateHandle?.set(
+                        "rada_seleccionada",
+                        nombreRada
+                    )
                     navHostController.popBackStack()
                 },
                 onBackClick = { navHostController.popBackStack() }
+            )
+        }
+
+        composable("seguimiento") {
+            SeguimientoScreen(
+                auth = auth,
+                onSignOut = {
+                    navHostController.navigate("login") { // CORREGIDO AQUÍ
+                        popUpTo(0)
+                    }
+                }
+            )
+        }
+        composable("secretaria") {
+            com.dsm.clubnauticoposeidon.ui.screens.admin.SecretariaScreen(
+                onBackClick = {
+                    auth.signOut()
+                    navHostController.navigate("login") { popUpTo(0) }
+                }
             )
         }
     }
