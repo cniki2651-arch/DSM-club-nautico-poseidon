@@ -17,6 +17,19 @@ import com.dsm.clubnauticoposeidon.ui.screens.profile.ProfileScreen
 import com.dsm.clubnauticoposeidon.ui.screens.radas.AsignarRadaScreen
 import com.dsm.clubnauticoposeidon.ui.screens.postulante.SeguimientoScreen // IMPORT AGREGADO AQUÍ
 import com.google.firebase.auth.FirebaseAuth
+import android.widget.Toast
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import com.dsm.clubnauticoposeidon.ui.screens.login.validarAcceso
+import com.dsm.clubnauticoposeidon.ui.theme.Gold500
+import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 
 @Composable
 fun NavigationWrapper(
@@ -24,9 +37,57 @@ fun NavigationWrapper(
     auth: FirebaseAuth
 ) {
     // Evalúa si existe una sesión activa
-    val startDest = if (auth.currentUser != null) "home" else "initial"
+    val startDest = if (auth.currentUser != null) "router" else "initial"
 
     NavHost(navController = navHostController, startDestination = startDest) {
+        composable("router") {
+            val context = LocalContext.current
+            
+            LaunchedEffect(Unit) {
+                validarAcceso(
+                    auth = auth,
+                    onSocio = {
+                        navHostController.navigate("home") {
+                            popUpTo("router") { inclusive = true }
+                        }
+                    },
+                    onAdmin = {
+                        navHostController.navigate("home_operaciones") {
+                            popUpTo("router") { inclusive = true }
+                        }
+                    },
+                    onSecretaria = {
+                        navHostController.navigate("secretaria") {
+                            popUpTo("router") { inclusive = true }
+                        }
+                    },
+                    onSeguimiento = {
+                        navHostController.navigate("seguimiento") {
+                            popUpTo("router") { inclusive = true }
+                        }
+                    },
+                    onError = { msg ->
+                        auth.signOut()
+                        navHostController.navigate("login") {
+                            popUpTo("router") { inclusive = true }
+                        }
+                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                    }
+                )
+            }
+
+            Scaffold(containerColor = Navy900) { paddingValues ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Gold500)
+                }
+            }
+        }
+
         composable("initial") {
             InitialScreen(
                 onLogin = { navHostController.navigate("login") },
