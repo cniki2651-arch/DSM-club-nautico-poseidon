@@ -283,7 +283,9 @@ fun NavigationWrapper(
         }
 
         composable("bandeja_aprobaciones") {
-            // TODO: Aquí irá la BandejaJefaturaScreen que crearemos en el siguiente paso
+            com.dsm.clubnauticoposeidon.ui.screens.jefatura.BandejaAprobacionesScreen(
+                onBackClick = { navHostController.popBackStack() }
+            )
         }
     }
 }
