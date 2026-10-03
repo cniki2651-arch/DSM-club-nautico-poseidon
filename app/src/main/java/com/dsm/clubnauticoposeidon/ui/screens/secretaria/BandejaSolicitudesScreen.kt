@@ -111,12 +111,20 @@ fun SecretariaScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostulanteCard(postulante: PostulanteModel, db: FirebaseFirestore) {
     val context = LocalContext.current
-    var expandido by remember { mutableStateOf(false) }
-    var clasificacionSeleccionada by remember { mutableStateOf("Seleccionar...") }
-    val opciones = listOf("pagador", "honorario", "deportivo") // La HU exige que solo 'pagador' pueda ser aprobado luego por el jefe
+    var showDialog by remember { mutableStateOf(false) }
+
+    // Estados del formulario dentro del AlertDialog
+    var clubConsultado by remember { mutableStateOf("") }
+    var nombreContacto by remember { mutableStateOf("") }
+    
+    // Lista exacta de historiales requeridos
+    val historiales = listOf("Puntual", "Atrasos ocasionales", "Deudor / Problemático")
+    var historialSeleccionado by remember { mutableStateOf(historiales[0]) }
+    var expandidoHistorial by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -138,71 +146,154 @@ fun PostulanteCard(postulante: PostulanteModel, db: FirebaseFirestore) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Selector de Clasificación (Dropdown)
-            Box(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = clasificacionSeleccionada,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Clasificación de Socio") },
-                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = "Desplegar") },
-                    modifier = Modifier.fillMaxWidth().clickable { expandido = true },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        disabledTextColor = Color.White,
-                        focusedBorderColor = Gold500,
-                        unfocusedBorderColor = Color.Gray
-                    ),
-                    enabled = false // Para que solo reaccione al click
-                )
-                DropdownMenu(
-                    expanded = expandido,
-                    onDismissRequest = { expandido = false },
-                    modifier = Modifier.background(Navy900)
-                ) {
-                    opciones.forEach { opcion ->
-                        DropdownMenuItem(
-                            text = { Text(opcion.uppercase(), color = Color.White) },
-                            onClick = {
-                                clasificacionSeleccionada = opcion
-                                expandido = false
-                            }
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Botón de Enviar a Jefatura
+            // Botón Único: Realizar Verificación Externa
             Button(
-                onClick = {
-                    if (clasificacionSeleccionada == "Seleccionar...") {
-                        Toast.makeText(context, "Debe asignar una clasificación primero", Toast.LENGTH_SHORT).show()
-                        return@Button
-                    }
-
-                    // Actualizamos el estado en Firestore a "revisado_secretaria"
-                    db.collection("usuarios").document(postulante.id)
-                        .update(
-                            mapOf(
-                                "estado" to "revisado_secretaria",
-                                "clasificacion" to clasificacionSeleccionada
-                            )
-                        )
-                        .addOnSuccessListener {
-                            Toast.makeText(context, "Enviado al Jefe de Atención al Cliente", Toast.LENGTH_SHORT).show()
-                        }
-                        .addOnFailureListener {
-                            Toast.makeText(context, "Error al actualizar", Toast.LENGTH_SHORT).show()
-                        }
-                },
-                modifier = Modifier.align(Alignment.End),
+                onClick = { showDialog = true },
+                modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = Gold500)
             ) {
-                Text("Enviar a Jefatura", color = Navy900, fontWeight = FontWeight.Bold)
+                Text("Realizar Verificación Externa", color = Navy900, fontWeight = FontWeight.Bold)
             }
         }
+    }
+
+    // ALertDialog Temático
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            containerColor = Navy900,
+            title = {
+                Text(
+                    text = "Verificación de Antecedentes",
+                    color = Gold500,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = clubConsultado,
+                        onValueChange = { clubConsultado = it },
+                        label = { Text("Club Consultado", color = Color.LightGray) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Gold500,
+                            unfocusedBorderColor = Color.Gray,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            cursorColor = Gold500
+                        ),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = nombreContacto,
+                        onValueChange = { nombreContacto = it },
+                        label = { Text("Nombre del Contacto", color = Color.LightGray) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Gold500,
+                            unfocusedBorderColor = Color.Gray,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            cursorColor = Gold500
+                        ),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Selector de Historial Reportado
+                    ExposedDropdownMenuBox(
+                        expanded = expandidoHistorial,
+                        onExpandedChange = { expandidoHistorial = !expandidoHistorial }
+                    ) {
+                        OutlinedTextField(
+                            value = historialSeleccionado,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Historial Reportado", color = Color.LightGray) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandidoHistorial) },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Gold500,
+                                unfocusedBorderColor = Color.Gray,
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White
+                            ),
+                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expandidoHistorial,
+                            onDismissRequest = { expandidoHistorial = false },
+                            modifier = Modifier.background(Navy900)
+                        ) {
+                            historiales.forEach { historial ->
+                                DropdownMenuItem(
+                                    text = { Text(historial, color = Color.White) },
+                                    onClick = {
+                                        historialSeleccionado = historial
+                                        expandidoHistorial = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // Validación de campos vacíos
+                        if (clubConsultado.isBlank() || nombreContacto.isBlank()) {
+                            Toast.makeText(context, "Debe completar todos los campos", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
+                        // Lógica de Clasificación
+                        val clasificacionCalculada = when (historialSeleccionado) {
+                            "Puntual" -> "socio pagador"
+                            "Atrasos ocasionales" -> "socio pagador esporádico"
+                            "Deudor / Problemático" -> "socio renuente a pago"
+                            else -> "socio pagador" // Fallback de seguridad
+                        }
+
+                        // Actualización a Firestore
+                        db.collection("usuarios").document(postulante.id)
+                            .update(
+                                mapOf(
+                                    "estado" to "revisado_secretaria",
+                                    "clasificacion" to clasificacionCalculada,
+                                    "verificacion_externa" to mapOf(
+                                        "club" to clubConsultado,
+                                        "contacto" to nombreContacto,
+                                        "historial" to historialSeleccionado
+                                    )
+                                )
+                            )
+                            .addOnSuccessListener {
+                                Toast.makeText(
+                                    context, 
+                                    "Enviado a Jefatura con clasificación: $clasificacionCalculada", 
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                showDialog = false
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(context, "Error al guardar verificación", Toast.LENGTH_SHORT).show()
+                            }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Gold500)
+                ) {
+                    Text("Guardar y Enviar", color = Navy900, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Cancelar", color = Color.LightGray)
+                }
+            }
+        )
     }
 }
