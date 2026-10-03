@@ -147,6 +147,7 @@ fun SignUpScreen(
 
     // Switch para embarcación opcional
     var tieneEmbarcacion by remember { mutableStateOf(false) }
+    var cantidadEmbarcaciones by remember { mutableStateOf("") }
     var matricula by remember { mutableStateOf("") }
     var nombreEmbarcacion by remember { mutableStateOf("") }
 
@@ -159,7 +160,11 @@ fun SignUpScreen(
     val isEmailValid = Patterns.EMAIL_ADDRESS.matcher(email).matches()
     val isPasswordValid = password.length >= 8
     
-    val isEmbarcacionValid = if (tieneEmbarcacion) matricula.isNotBlank() && nombreEmbarcacion.isNotBlank() else true
+    val isEmbarcacionValid = if (tieneEmbarcacion) {
+        matricula.isNotBlank() && nombreEmbarcacion.isNotBlank() && cantidadEmbarcaciones.isNotBlank()
+    } else {
+        true
+    }
 
     val isFormValid = nombres.isNotBlank() &&
             apellidos.isNotBlank() &&
@@ -432,53 +437,67 @@ fun SignUpScreen(
             Spacer(modifier = Modifier.height(16.dp))
             
             // Switch de Embarcación Opcional
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "¿Posee embarcación propia?",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Switch(
-                    checked = tieneEmbarcacion,
-                    onCheckedChange = { tieneEmbarcacion = it },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Navy900,
-                        checkedTrackColor = Gold500,
-                        uncheckedThumbColor = Color.LightGray,
-                        uncheckedTrackColor = Color.DarkGray
-                    )
-                )
-            }
-            
-            if (tieneEmbarcacion) {
-                Spacer(modifier = Modifier.height(16.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "¿Desea registrar embarcaciones en el club?",
+            color = Color.White,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium
+        )
+        Switch(
+            checked = tieneEmbarcacion,
+            onCheckedChange = { tieneEmbarcacion = it },
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Navy900,
+                checkedTrackColor = Gold500,
+                uncheckedThumbColor = Color.LightGray,
+                uncheckedTrackColor = Color.DarkGray
+            )
+        )
+    }
+    
+    if (tieneEmbarcacion) {
+        Spacer(modifier = Modifier.height(16.dp))
 
-                TextField(
-                    value = matricula,
-                    onValueChange = { matricula = it },
-                    placeholder = { Text("Matrícula", color = Muted) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = textFieldColors
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+        TextField(
+            value = cantidadEmbarcaciones,
+            onValueChange = { 
+                // Solo acepta números
+                cantidadEmbarcaciones = it.filter { char -> char.isDigit() }
+            },
+            placeholder = { Text("¿Cuántas embarcaciones posee?", color = Muted) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            colors = textFieldColors
+        )
+        Spacer(modifier = Modifier.height(16.dp))
 
-                TextField(
-                    value = nombreEmbarcacion,
-                    onValueChange = { nombreEmbarcacion = it },
-                    placeholder = { Text("Nombre de la embarcación", color = Muted) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = textFieldColors
-                )
-            }
+        TextField(
+            value = matricula,
+            onValueChange = { matricula = it },
+            placeholder = { Text("Matrícula principal", color = Muted) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            colors = textFieldColors
+        )
+        Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(32.dp))
+        TextField(
+            value = nombreEmbarcacion,
+            onValueChange = { nombreEmbarcacion = it },
+            placeholder = { Text("Nombre de la embarcación principal", color = Muted) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            colors = textFieldColors
+        )
+    }
+
+    Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = {
@@ -521,7 +540,8 @@ fun SignUpScreen(
                                             "rol" to "postulante",
                                             "estado" to "pendiente",
                                             "proveedor" to "password",
-                                            "fechaRegistro" to System.currentTimeMillis()
+                                            "fechaRegistro" to System.currentTimeMillis(),
+                                            "cantidad_embarcaciones" to if (tieneEmbarcacion) cantidadEmbarcaciones.toIntOrNull() ?: 0 else 0
                                         )
 
                                         if (tieneEmbarcacion) {
