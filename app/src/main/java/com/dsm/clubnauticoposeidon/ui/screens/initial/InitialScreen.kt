@@ -57,7 +57,8 @@ fun InitialScreen(
     onNavigateToSocio: () -> Unit = {},
     onNavigateToSeguimiento: () -> Unit = {},
     onNavigateToAdmin: () -> Unit = {},
-    onNavigateToSecretaria: () -> Unit = {}
+    onNavigateToSecretaria: () -> Unit = {},
+    onNavigateToJefe: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -127,6 +128,10 @@ fun InitialScreen(
                         onSecretaria = {
                             cargando = false
                             onNavigateToSecretaria()
+                        },
+                        onJefe = {
+                            cargando = false
+                            onNavigateToJefe()
                         },
                         onError = { msg ->
                             cargando = false

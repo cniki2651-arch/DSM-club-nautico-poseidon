@@ -20,6 +20,7 @@ suspend fun signInWithGoogle(
     onSocio: () -> Unit,
     onAdmin: () -> Unit,
     onSecretaria: () -> Unit,
+    onJefe: () -> Unit,
     onSeguimiento: () -> Unit,
     onError: (String) -> Unit
 ) {
@@ -35,8 +36,7 @@ suspend fun signInWithGoogle(
 
         auth.signInWithCredential(firebaseCred).addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                // <--- 2. Pasamos los 4 parámetros correctos a validarAcceso
-                validarAcceso(auth, onSocio, onAdmin, onSeguimiento,onSecretaria, onError)
+                validarAcceso(auth, onSocio, onAdmin, onSecretaria, onJefe, onSeguimiento, onError)
             } else {
                 onError(task.exception?.message ?: "Error al iniciar sesión con Google")
             }
@@ -54,6 +54,7 @@ fun validarAcceso(
     onSocio: () -> Unit,
     onAdmin: () -> Unit,
     onSecretaria: () -> Unit,
+    onJefe: () -> Unit,
     onSeguimiento: () -> Unit,
     onError: (String) -> Unit
 ) {
@@ -79,8 +80,9 @@ fun validarAcceso(
             val estado = doc.getString("estado")
             val rol = doc.getString("rol")
 
-            // 4. Lógica de ruteo de la HU02
+            // Lógica de ruteo
             when {
+                rol == "jefe" -> onJefe()
                 rol == "naviero" -> onAdmin()
                 estado == "aprobado" || rol == "socio" -> onSocio()
                 rol == "secretaria" -> onSecretaria()

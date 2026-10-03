@@ -61,6 +61,11 @@ fun NavigationWrapper(
                             popUpTo("router") { inclusive = true }
                         }
                     },
+                    onJefe = {
+                        navHostController.navigate("jefe") {
+                            popUpTo("router") { inclusive = true }
+                        }
+                    },
                     onSeguimiento = {
                         navHostController.navigate("seguimiento") {
                             popUpTo("router") { inclusive = true }
@@ -107,6 +112,11 @@ fun NavigationWrapper(
                         popUpTo("initial") { inclusive = true }
                     }
                 },
+                onNavigateToJefe = {
+                    navHostController.navigate("jefe") {
+                        popUpTo("initial") { inclusive = true }
+                    }
+                },
                 onNavigateToSeguimiento = {
                     navHostController.navigate("seguimiento") {
                         popUpTo("initial") { inclusive = true }
@@ -122,6 +132,7 @@ fun NavigationWrapper(
                 onNavigateToSocio = { navHostController.navigate("home") },
                 onNavigateToAdmin = { navHostController.navigate("home_operaciones") },
                 onNavigateToSecretaria = { navHostController.navigate("secretaria") },
+                onNavigateToJefe = { navHostController.navigate("jefe") { popUpTo(0) } },
                 onBackClick = { navHostController.popBackStack() },
                 onNavigateToSeguimiento = { navHostController.navigate("seguimiento") }, // CORREGIDO AQUÍ
                 onForgotPassword = { navHostController.navigate("recuperar_password") }
@@ -237,7 +248,7 @@ fun NavigationWrapper(
             SeguimientoScreen(
                 auth = auth,
                 onSignOut = {
-                    navHostController.navigate("login") { // CORREGIDO AQUÍ
+                    navHostController.navigate("login") {
                         popUpTo(0)
                     }
                 }
@@ -259,6 +270,20 @@ fun NavigationWrapper(
             com.dsm.clubnauticoposeidon.ui.screens.admin.SecretariaScreen(
                 onBackClick = { navHostController.popBackStack() }
             )
+        }
+
+        composable("jefe") {
+            com.dsm.clubnauticoposeidon.ui.screens.jefatura.HomeJefaturaScreen(
+                onNavigateToAprobaciones = { navHostController.navigate("bandeja_aprobaciones") },
+                onLogout = {
+                    auth.signOut()
+                    navHostController.navigate("login") { popUpTo(0) }
+                }
+            )
+        }
+
+        composable("bandeja_aprobaciones") {
+            // TODO: Aquí irá la BandejaJefaturaScreen que crearemos en el siguiente paso
         }
     }
 }
