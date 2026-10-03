@@ -95,7 +95,7 @@ fun NavigationWrapper(
                     // Cierra sesión en Firebase y regresa al inicio
                     auth.signOut()
                     navHostController.navigate("initial") {
-                        popUpTo(0) // Borra el historial para que no pueda volver con la flecha
+                        popUpTo(0)
                     }
                 }
             )
@@ -183,11 +183,20 @@ fun NavigationWrapper(
             )
         }
         composable("secretaria") {
-            com.dsm.clubnauticoposeidon.ui.screens.admin.SecretariaScreen(
-                onBackClick = {
+            com.dsm.clubnauticoposeidon.ui.screens.secretaria.HomeSecretariaScreen(
+                onNavigateToSolicitudes = {
+                    navHostController.navigate("bandeja_solicitudes")
+                },
+                onLogout = {
                     auth.signOut()
                     navHostController.navigate("login") { popUpTo(0) }
                 }
+            )
+        }
+        
+        composable("bandeja_solicitudes") {
+            com.dsm.clubnauticoposeidon.ui.screens.admin.SecretariaScreen(
+                onBackClick = { navHostController.popBackStack() }
             )
         }
     }
