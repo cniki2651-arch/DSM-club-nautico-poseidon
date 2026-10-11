@@ -1,6 +1,7 @@
 package com.dsm.clubnauticoposeidon.ui.screens.initial
 
 import android.widget.Toast
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,7 +30,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -65,115 +69,165 @@ fun InitialScreen(
     val webClientId = stringResource(R.string.google_web_client_id)
     var cargando by remember { mutableStateOf(false) }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Navy900, Navy800), startY = 0f, endY = 600f)),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(Brush.verticalGradient(listOf(Navy900, Navy800)))
     ) {
-        Spacer(modifier = Modifier.weight(1f))
-        Image(
-            painter = painterResource(id = R.drawable.logo),
-            contentDescription = stringResource(R.string.login_logo_descripcion),
-            modifier = Modifier
-                .size(200.dp)
-                .clip(CircleShape)
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Text(
-            text = stringResource(R.string.welcome_titulo),
-            style = TituloNautico,
-            color = Ink,
-            textAlign = TextAlign.Center
-        )
+        // Decoración de fondo: resplandor dorado + olas
+        FondoNautico()
 
-        Spacer(modifier = Modifier.weight(1f))
-        Button(
-            onClick = { onSignUp() },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .padding(horizontal = 32.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Gold500)
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.weight(1f))
+            Image(
+                painter = painterResource(id = R.drawable.logo),
+                contentDescription = stringResource(R.string.login_logo_descripcion),
+                modifier = Modifier
+                    .size(200.dp)
+                    .border(2.dp, Gold500.copy(alpha = 0.85f), CircleShape)
+                    .padding(6.dp)
+                    .clip(CircleShape)
+            )
+            Spacer(modifier = Modifier.weight(1f))
             Text(
-                text = stringResource(R.string.welcome_crear_cuenta),
-                color = Navy900,
+                text = stringResource(R.string.welcome_titulo),
+                style = TituloNautico,
+                color = Ink,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+            Button(
+                onClick = { onSignUp() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .padding(horizontal = 32.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Gold500)
+            ) {
+                Text(
+                    text = stringResource(R.string.welcome_crear_cuenta),
+                    color = Navy900,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Botón Google
+            CustomButton(
+                modifier = Modifier,
+                painter = painterResource(id = R.drawable.google),
+                title = stringResource(R.string.welcome_google),
+                enabled = !cargando,
+                onClick = {
+                    cargando = true
+                    scope.launch {
+                        signInWithGoogle(
+                            context = context,
+                            auth = FirebaseAuth.getInstance(),
+                            webClientId = webClientId,
+                            onSocio = {
+                                cargando = false
+                                onNavigateToSocio()
+                            },
+                            onAdmin = {
+                                cargando = false
+                                onNavigateToAdmin()
+                            },
+                            onSeguimiento = {
+                                cargando = false
+                                onNavigateToSeguimiento()
+                            },
+                            onSecretaria = {
+                                cargando = false
+                                onNavigateToSecretaria()
+                            },
+                            onJefe = {
+                                cargando = false
+                                onNavigateToJefe()
+                            },
+                            onError = { msg ->
+                                cargando = false
+                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                            }
+                        )
+                    }
+                }
+            )
+
+            Text(
+                text = stringResource(R.string.welcome_iniciar_sesion),
+                color = Gold400,
+                modifier = Modifier
+                    .padding(24.dp)
+                    .clickable { onLogin() },
                 fontWeight = FontWeight.Bold
             )
+            Spacer(modifier = Modifier.weight(1f))
         }
-        Spacer(modifier = Modifier.height(8.dp))
+    }
+}
 
-        // Botón Google
-        CustomButton(
-            modifier = Modifier.clickable(enabled = !cargando) {
-                cargando = true
-                scope.launch {
-                    signInWithGoogle(
-                        context = context,
-                        auth = FirebaseAuth.getInstance(),
-                        webClientId = webClientId,
-                        onSocio = {
-                            cargando = false
-                            onNavigateToSocio()
-                        },
-                        onAdmin = {
-                            cargando = false
-                            onNavigateToAdmin()
-                        },
-                        onSeguimiento = {
-                            cargando = false
-                            onNavigateToSeguimiento()
-                        },
-                        onSecretaria = {
-                            cargando = false
-                            onNavigateToSecretaria()
-                        },
-                        onJefe = {
-                            cargando = false
-                            onNavigateToJefe()
-                        },
-                        onError = { msg ->
-                            cargando = false
-                            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-                        }
-                    )
-                }
-            },
-            painter = painterResource(id = R.drawable.google),
-            title = stringResource(R.string.welcome_google)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
+// Fondo decorativo dibujado con código (no necesita imágenes nuevas)
+@Composable
+private fun FondoNautico() {
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val w = size.width
+        val h = size.height
 
-        // Botón Facebook (pendiente de configurar en Meta)
-        CustomButton(
-            modifier = Modifier.clickable {
-                Toast.makeText(context, "Facebook estará disponible próximamente", Toast.LENGTH_SHORT).show()
-            },
-            painter = painterResource(id = R.drawable.facebook),
-            title = stringResource(R.string.welcome_facebook)
+        // Resplandor dorado suave detrás del logo
+        val centro = Offset(w / 2f, h * 0.22f)
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(Gold500.copy(alpha = 0.20f), Color.Transparent),
+                center = centro,
+                radius = w * 0.85f
+            ),
+            radius = w * 0.85f,
+            center = centro
         )
 
-
-        Text(
-            text = stringResource(R.string.welcome_iniciar_sesion),
-            color = Gold400,
-            modifier = Modifier
-                .padding(24.dp)
-                .clickable { onLogin() },
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.weight(1f))
+        // Olas en la parte inferior
+        fun ola(altura: Float, amplitud: Float, color: Color) {
+            val path = Path().apply {
+                moveTo(0f, h)
+                lineTo(0f, altura)
+                cubicTo(
+                    w * 0.25f, altura - amplitud,
+                    w * 0.75f, altura + amplitud,
+                    w, altura
+                )
+                lineTo(w, h)
+                close()
+            }
+            drawPath(path, color)
+        }
+        ola(h * 0.86f, h * 0.05f, Navy700.copy(alpha = 0.35f))
+        ola(h * 0.92f, h * 0.04f, Navy600.copy(alpha = 0.30f))
     }
 }
 
 @Composable
-fun CustomButton(modifier: Modifier, painter: Painter, title: String) {
+fun CustomButton(
+    modifier: Modifier,
+    painter: Painter,
+    title: String,
+    onClick: (() -> Unit)? = null,
+    enabled: Boolean = true
+) {
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(48.dp)
             .padding(horizontal = 32.dp)
+            .clip(CircleShape)
+            .then(
+                if (onClick != null) Modifier.clickable(enabled = enabled, onClick = onClick)
+                else Modifier
+            )
             .background(Navy700)
             .border(1.dp, Navy600, CircleShape),
         contentAlignment = Alignment.CenterStart
@@ -202,6 +256,7 @@ fun CustomIconButton(modifier: Modifier, title: String) {
             .fillMaxWidth()
             .height(48.dp)
             .padding(horizontal = 32.dp)
+            .clip(CircleShape)
             .background(Navy700)
             .border(1.dp, Navy600, CircleShape),
         contentAlignment = Alignment.CenterStart
