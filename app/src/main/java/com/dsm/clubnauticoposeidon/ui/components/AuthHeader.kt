@@ -22,6 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dsm.clubnauticoposeidon.R
@@ -31,11 +32,14 @@ import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import com.dsm.clubnauticoposeidon.ui.theme.TituloNautico
 
 @Composable
-fun AuthHeader() {
+fun AuthHeader(
+    aspectRatio: Float = 1.35f,   // mayor valor = cabecera más baja
+    logoSize: Dp = 110.dp         // tamaño del logo circular
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1.35f)   // sube este valor para una cabecera más baja
+            .aspectRatio(aspectRatio)
     ) {
         Image(
             painter = painterResource(id = R.drawable.poseidon_marina),
@@ -68,7 +72,7 @@ fun AuthHeader() {
                 painter = painterResource(id = R.drawable.logo),
                 contentDescription = stringResource(R.string.login_logo_descripcion),
                 modifier = Modifier
-                    .size(110.dp)   // logo más grande (antes 76.dp)
+                    .size(logoSize)
                     .clip(CircleShape)
             )
 
