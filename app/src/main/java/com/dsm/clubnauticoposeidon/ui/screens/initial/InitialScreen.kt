@@ -40,6 +40,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -61,9 +63,22 @@ import com.dsm.clubnauticoposeidon.ui.theme.TituloNautico
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import kotlin.math.PI
+import kotlin.math.atan
+import kotlin.math.cos
 import kotlin.math.sin
 
-// Medidas compartidas: "Crear cuenta" y "Continuar con Google" quedan idénticos
+// ---- Medidas ajustables ----
+// Diámetro del círculo del logo (el aro dorado y la imagen miden lo mismo)
+private val TamanoLogo = 200.dp
+
+// Si el PNG del logo tiene márgenes transparentes y se ve más pequeño que el aro,
+// sube este valor (1.1f, 1.2f, 1.3f...) hasta que llene el círculo
+private const val EscalaLogo = 1.0f
+
+// Espacio entre el título y el botón "Crear cuenta"
+private val EspacioTituloBotones = 40.dp
+
+// "Crear cuenta" y "Continuar con Google" usan exactamente las mismas medidas
 private val AlturaBoton = 48.dp
 private val MargenBoton = 32.dp
 
@@ -87,7 +102,7 @@ fun InitialScreen(
             .fillMaxSize()
             .background(Brush.verticalGradient(listOf(Navy900, Navy800)))
     ) {
-        // Decoración de fondo: resplandor dorado + olas en movimiento
+        // Decoración de fondo: resplandor dorado, 3 olas en movimiento y un barco
         FondoNautico()
 
         Column(
@@ -96,16 +111,22 @@ fun InitialScreen(
         ) {
             Spacer(modifier = Modifier.weight(1f))
 
-            // El logo ocupa todo el círculo; el aro dorado queda justo en su borde
-            Image(
-                painter = painterResource(id = R.drawable.logo),
-                contentDescription = stringResource(R.string.login_logo_descripcion),
-                contentScale = ContentScale.Crop,
+            // El logo llena todo el círculo; el aro dorado queda en su borde
+            Box(
                 modifier = Modifier
-                    .size(200.dp)
+                    .size(TamanoLogo)
                     .clip(CircleShape)
                     .border(3.dp, Gold500, CircleShape)
-            )
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.logo),
+                    contentDescription = stringResource(R.string.login_logo_descripcion),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer(scaleX = EscalaLogo, scaleY = EscalaLogo)
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
             Text(
@@ -115,7 +136,8 @@ fun InitialScreen(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.weight(1f))
+            // Botones justo debajo del título (ya no se empujan al fondo)
+            Spacer(modifier = Modifier.height(EspacioTituloBotones))
             Button(
                 onClick = { onSignUp() },
                 modifier = Modifier
@@ -183,7 +205,9 @@ fun InitialScreen(
                     .clickable { onLogin() },
                 fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.weight(1f))
+
+            // Un poco más de espacio abajo para dejar ver las olas y el barco
+            Spacer(modifier = Modifier.weight(1.4f))
         }
     }
 }
@@ -192,7 +216,7 @@ fun InitialScreen(
 @Composable
 private fun FondoNautico() {
     val dosPi = (2 * PI).toFloat()
-    val transition = rememberInfiniteTransition(label = "olas")
+    val transition = rememberInfiniteTransition(label = "mar")
 
     // Cada ola avanza a distinta velocidad y dirección
     val fase1 = transition.animateFloat(
@@ -213,13 +237,20 @@ private fun FondoNautico() {
         animationSpec = infiniteRepeatable(tween(13000, easing = LinearEasing), RepeatMode.Restart),
         label = "fase3"
     )
+    // Posición horizontal del barco (de izquierda a derecha, 40 s por travesía)
+    val barcoX = transition.animateFloat(
+        initialValue = -0.2f,
+        targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(tween(40000, easing = LinearEasing), RepeatMode.Restart),
+        label = "barco"
+    )
 
     Canvas(modifier = Modifier.fillMaxSize()) {
         val w = size.width
         val h = size.height
 
         // Resplandor dorado suave detrás del logo
-        val centro = Offset(w / 2f, h * 0.22f)
+        val centro = Offset(w / 2f, h * 0.30f)
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(Gold500.copy(alpha = 0.20f), Color.Transparent),
@@ -230,26 +261,83 @@ private fun FondoNautico() {
             center = centro
         )
 
-        // Ola ondulada: sinusoide que se desplaza según la fase
+        // Altura de una ola en la posición x
+        fun yOla(x: Float, altura: Float, amplitud: Float, ciclos: Float, fase: Float): Float =
+            altura + amplitud * sin((x / w) * ciclos * dosPi + fase)
+
+        // Dibuja una ola rellena hasta el fondo de la pantalla
         fun ola(altura: Float, amplitud: Float, ciclos: Float, fase: Float, color: Color) {
             val path = Path().apply {
                 moveTo(0f, h)
                 var x = 0f
                 while (x <= w) {
-                    val y = altura + amplitud * sin((x / w) * ciclos * dosPi + fase)
-                    lineTo(x, y)
+                    lineTo(x, yOla(x, altura, amplitud, ciclos, fase))
                     x += 6f
                 }
-                lineTo(w, altura + amplitud * sin(ciclos * dosPi + fase))
+                lineTo(w, yOla(w, altura, amplitud, ciclos, fase))
                 lineTo(w, h)
                 close()
             }
             drawPath(path, color)
         }
 
-        ola(h * 0.85f, h * 0.012f, 1.5f, fase1.value, Navy700.copy(alpha = 0.40f))
-        ola(h * 0.90f, h * 0.015f, 1.0f, fase2.value, Navy600.copy(alpha = 0.35f))
-        ola(h * 0.95f, h * 0.012f, 2.0f, fase3.value, Navy700.copy(alpha = 0.45f))
+        // Parámetros de las 3 olas
+        val altura1 = h * 0.84f
+        val altura2 = h * 0.89f
+        val altura3 = h * 0.94f
+        val amp1 = h * 0.012f
+        val amp2 = h * 0.015f
+        val amp3 = h * 0.012f
+
+        // 1) Ola de atrás
+        ola(altura1, amp1, 1.5f, fase1.value, Navy600.copy(alpha = 0.40f))
+
+        // 2) Barco: navega sobre la ola del medio, sube y baja y se inclina con ella
+        val bw = w * 0.18f
+        val xb = w * barcoX.value
+        val yb = yOla(xb, altura2, amp2, 1.0f, fase2.value)
+        val pendiente = amp2 * cos((xb / w) * 1.0f * dosPi + fase2.value) * (1.0f * dosPi / w)
+        val grados = atan(pendiente) * 180f / PI.toFloat() * 1.5f
+
+        rotate(degrees = grados, pivot = Offset(xb, yb)) {
+            fun pt(dx: Float, dy: Float) = Offset(xb + dx * bw, yb + dy * bw)
+
+            fun poligono(color: Color, puntos: List<Offset>) {
+                val path = Path().apply {
+                    moveTo(puntos[0].x, puntos[0].y)
+                    for (i in 1 until puntos.size) lineTo(puntos[i].x, puntos[i].y)
+                    close()
+                }
+                drawPath(path, color)
+            }
+
+            // Casco
+            poligono(
+                Gold500,
+                listOf(pt(-0.50f, -0.05f), pt(0.55f, -0.05f), pt(0.34f, 0.11f), pt(-0.34f, 0.11f))
+            )
+            // Vela mayor (atrás)
+            poligono(
+                Ink.copy(alpha = 0.92f),
+                listOf(pt(-0.03f, -0.80f), pt(-0.03f, -0.12f), pt(-0.40f, -0.12f))
+            )
+            // Vela de proa (adelante)
+            poligono(
+                Ink.copy(alpha = 0.80f),
+                listOf(pt(0.03f, -0.70f), pt(0.03f, -0.12f), pt(0.32f, -0.12f))
+            )
+            // Mástil
+            drawLine(
+                color = Ink,
+                start = pt(0f, -0.84f),
+                end = pt(0f, -0.05f),
+                strokeWidth = bw * 0.025f
+            )
+        }
+
+        // 3) Ola del medio (cubre un poco el casco) y 4) ola del frente, más oscura
+        ola(altura2, amp2, 1.0f, fase2.value, Navy700.copy(alpha = 0.50f))
+        ola(altura3, amp3, 2.0f, fase3.value, Navy900.copy(alpha = 0.60f))
     }
 }
 
