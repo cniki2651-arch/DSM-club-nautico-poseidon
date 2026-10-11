@@ -24,8 +24,8 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DirectionsBoat
 import androidx.compose.material.icons.filled.Event
-import androidx.compose.material.icons.filled.RoomService
 import androidx.compose.material.icons.filled.QrCode2
+import androidx.compose.material.icons.filled.RoomService
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -41,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +56,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import java.time.LocalDate
@@ -64,12 +66,15 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeSocioScreen(
+    viewModel: HomeViewModel = viewModel(),
     onLogout: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToServicios: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var menuExpanded by remember { mutableStateOf(false) }
+
+    val nombreSocio by viewModel.nombreSocio.collectAsState()
 
     // Fecha actual formateada
     val currentDate = remember {
@@ -83,7 +88,7 @@ fun HomeSocioScreen(
             TopAppBar(
                 title = { 
                     Column {
-                        Text("Hola, Khalep", color = Gold500, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Text("Hola, $nombreSocio", color = Gold500, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                         Text(currentDate, color = Color.LightGray, fontSize = 14.sp)
                     }
                 },
@@ -119,6 +124,7 @@ fun HomeSocioScreen(
                                 text = { Text("Cerrar sesión", color = Color.Red, fontWeight = FontWeight.Medium) },
                                 onClick = {
                                     menuExpanded = false
+                                    viewModel.cerrarSesion()
                                     onLogout()
                                 }
                             )
@@ -257,7 +263,7 @@ fun DashboardGridItem(
 ) {
     Card(
         modifier = modifier
-            .aspectRatio(1f) // Para hacerlo cuadrado
+            .aspectRatio(1f)
             .clip(RoundedCornerShape(16.dp))
             .clickable { onClick() },
         colors = CardDefaults.cardColors(

@@ -1,60 +1,46 @@
 package com.dsm.clubnauticoposeidon.ui.screens.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-enum class EstadoSocio {
-    CARGANDO,
-    INVITADO,       // Aún no envió solicitud de inscripción
-    PENDIENTE,      // Ya envió solicitud, esperando revisión/aprobación
-    APROBADO        // Ya es socio activo del club
-}
-
 class HomeViewModel : ViewModel() {
-    private var db: FirebaseFirestore = Firebase.firestore
 
-    private val _estadoSocio = MutableStateFlow(EstadoSocio.CARGANDO)
-    val estadoSocio: StateFlow<EstadoSocio> = _estadoSocio
+    private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
-    private val _nombreUsuario = MutableStateFlow("")
-    val nombreUsuario: StateFlow<String> = _nombreUsuario
+    private val _nombreSocio = MutableStateFlow("Cargando...")
+    val nombreSocio: StateFlow<String> = _nombreSocio
 
     init {
-        verificarEstadoSocio()
+        cargarDatosSocio()
     }
 
-    private fun verificarEstadoSocio() {
-        val uid = Firebase.auth.currentUser?.uid
-
-        if (uid == null) {
-            _estadoSocio.value = EstadoSocio.INVITADO
-            return
-        }
-
-        _nombreUsuario.value = Firebase.auth.currentUser?.email ?: ""
-
-        db.collection("socios")
-            .document(uid)
-            .get()
-            .addOnSuccessListener { doc ->
-                if (!doc.exists()) {
-                    _estadoSocio.value = EstadoSocio.INVITADO
-                } else {
-                    when (doc.getString("estado_socio")) {
-                        "aprobado" -> _estadoSocio.value = EstadoSocio.APROBADO
-                        "pendiente", "revisado_secretaria" -> _estadoSocio.value = EstadoSocio.PENDIENTE
-                        else -> _estadoSocio.value = EstadoSocio.INVITADO
+    private fun cargarDatosSocio() {
+        val uid = auth.currentUser?.uid
+        if (uid != null) {
+            db.collection("usuarios").document(uid).get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        val nombre = document.getString("nombre")
+                        _nombreSocio.value = if (!nombre.isNullOrBlank()) nombre else "Socio"
+                    } else {
+                        _nombreSocio.value = "Socio"
                     }
                 }
-            }
-            .addOnFailureListener { e ->
-                android.util.Log.e("HOME", "Error al verificar estado de socio: ${e.message}")
-                _estadoSocio.value = EstadoSocio.INVITADO
-            }
+                .addOnFailureListener { e ->
+                    Log.e("HomeViewModel", "Error al cargar datos del socio", e)
+                    _nombreSocio.value = "Socio"
+                }
+        } else {
+            _nombreSocio.value = "Socio"
+        }
+    }
+
+    fun cerrarSesion() {
+        auth.signOut()
     }
 }
