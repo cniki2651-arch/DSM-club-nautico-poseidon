@@ -1,11 +1,11 @@
 package com.dsm.clubnauticoposeidon.ui.screens.signup
 
-import android.util.Log
 import android.util.Patterns
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,6 +36,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,7 +60,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.Row
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dsm.clubnauticoposeidon.R
 import com.dsm.clubnauticoposeidon.ui.components.AuthHeader
 import com.dsm.clubnauticoposeidon.ui.theme.Gold400
@@ -66,8 +68,6 @@ import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Ink
 import com.dsm.clubnauticoposeidon.ui.theme.Muted
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import java.time.LocalDate
 import java.time.Period
 
@@ -118,14 +118,16 @@ fun isValidDate(date: String): Boolean {
     }
 }
 
+// 3. La Vista (SignUpScreen)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
-    auth: FirebaseAuth,
+    viewModel: SignUpViewModel = viewModel(),
     onLogin: () -> Unit = {},
     onBackClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsState()
 
     var nombres by remember { mutableStateOf("") }
     var apellidos by remember { mutableStateOf("") }
@@ -151,15 +153,32 @@ fun SignUpScreen(
     var matricula by remember { mutableStateOf("") }
     var nombreEmbarcacion by remember { mutableStateOf("") }
 
-    // Evita clics repetidos mientras Firebase responde
-    var enviando by remember { mutableStateOf(false) }
+    // Reaccionar a los cambios de estado en el ViewModel
+    LaunchedEffect(uiState) {
+        when (val state = uiState) {
+            is SignUpState.Success -> {
+                Toast.makeText(
+                    context,
+                    "Registro enviado exitosamente. Cuando el club lo apruebe, podrás ingresar.",
+                    Toast.LENGTH_LONG
+                ).show()
+                viewModel.resetState()
+                onBackClick()
+            }
+            is SignUpState.Error -> {
+                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                viewModel.resetState()
+            }
+            else -> {}
+        }
+    }
 
-    // Validaciones reactivas
+    // Validaciones reactivas de cliente
     val passwordsMatch = password == confirmPassword
     val isDateValid = fechaNacimiento.length == 8 && isValidDate(fechaNacimiento)
     val isEmailValid = Patterns.EMAIL_ADDRESS.matcher(email).matches()
     val isPasswordValid = password.length >= 8
-    
+
     val isEmbarcacionValid = if (tieneEmbarcacion) {
         matricula.isNotBlank() && nombreEmbarcacion.isNotBlank() && cantidadEmbarcaciones.isNotBlank()
     } else {
@@ -175,6 +194,8 @@ fun SignUpScreen(
             isPasswordValid &&
             passwordsMatch &&
             isEmbarcacionValid
+
+    val isCargando = uiState is SignUpState.Loading
 
     Column(
         modifier = Modifier
@@ -435,162 +456,88 @@ fun SignUpScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Switch de Embarcación Opcional
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "¿Desea registrar embarcaciones en el club?",
-            color = Color.White,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium
-        )
-        Switch(
-            checked = tieneEmbarcacion,
-            onCheckedChange = { tieneEmbarcacion = it },
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Navy900,
-                checkedTrackColor = Gold500,
-                uncheckedThumbColor = Color.LightGray,
-                uncheckedTrackColor = Color.DarkGray
-            )
-        )
-    }
-    
-    if (tieneEmbarcacion) {
-        Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "¿Desea registrar embarcaciones en el club?",
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Switch(
+                    checked = tieneEmbarcacion,
+                    onCheckedChange = { tieneEmbarcacion = it },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Navy900,
+                        checkedTrackColor = Gold500,
+                        uncheckedThumbColor = Color.LightGray,
+                        uncheckedTrackColor = Color.DarkGray
+                    )
+                )
+            }
 
-        TextField(
-            value = cantidadEmbarcaciones,
-            onValueChange = { 
-                // Solo acepta números
-                cantidadEmbarcaciones = it.filter { char -> char.isDigit() }
-            },
-            placeholder = { Text("¿Cuántas embarcaciones posee?", color = Muted) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            colors = textFieldColors
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+            if (tieneEmbarcacion) {
+                Spacer(modifier = Modifier.height(16.dp))
 
-        TextField(
-            value = matricula,
-            onValueChange = { matricula = it },
-            placeholder = { Text("Matrícula principal", color = Muted) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+                TextField(
+                    value = cantidadEmbarcaciones,
+                    onValueChange = {
+                        cantidadEmbarcaciones = it.filter { char -> char.isDigit() }
+                    },
+                    placeholder = { Text("¿Cuántas embarcaciones posee?", color = Muted) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = textFieldColors
+                )
+                Spacer(modifier = Modifier.height(16.dp))
 
-        TextField(
-            value = nombreEmbarcacion,
-            onValueChange = { nombreEmbarcacion = it },
-            placeholder = { Text("Nombre de la embarcación principal", color = Muted) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors
-        )
-    }
+                TextField(
+                    value = matricula,
+                    onValueChange = { matricula = it },
+                    placeholder = { Text("Matrícula principal", color = Muted) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = textFieldColors
+                )
+                Spacer(modifier = Modifier.height(16.dp))
 
-    Spacer(modifier = Modifier.height(32.dp))
+                TextField(
+                    value = nombreEmbarcacion,
+                    onValueChange = { nombreEmbarcacion = it },
+                    placeholder = { Text("Nombre de la embarcación principal", color = Muted) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = textFieldColors
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = {
-                    enviando = true
-                    val correo = email.trim().lowercase()
-                    val db = FirebaseFirestore.getInstance()
-
-                    // Validación para evitar doble registro por DNI
-                    db.collection("usuarios").whereEqualTo("dni", numDocumento).get()
-                        .addOnSuccessListener { querySnapshot ->
-                            if (!querySnapshot.isEmpty) {
-                                // El DNI ya se encuentra registrado
-                                enviando = false
-                                Toast.makeText(context, "El DNI ya se encuentra registrado.", Toast.LENGTH_LONG).show()
-                            } else {
-                                // Procede con la creación del usuario en Authentication
-                                auth.createUserWithEmailAndPassword(correo, password).addOnCompleteListener { task ->
-                                    if (task.isSuccessful) {
-                                        val user = task.result?.user
-                                        Log.d("AUTH", "Usuario creado: ${user?.email}")
-
-                                        if (user == null) {
-                                            enviando = false
-                                            Toast.makeText(context, "Error al crear el usuario.", Toast.LENGTH_SHORT).show()
-                                            return@addOnCompleteListener
-                                        }
-
-                                        // Transacción Batch en Firestore que asigna el rol 'postulante' y el estado 'pendiente'
-                                        val batch = db.batch()
-                                        val userRef = db.collection("usuarios").document(user.uid)
-                                        
-                                        val userData = hashMapOf<String, Any>(
-                                            "nombre" to nombres,
-                                            "apellidos" to apellidos,
-                                            "tipoDocumento" to tipoDocumento,
-                                            "dni" to numDocumento,
-                                            "fechaNacimiento" to fechaNacimiento,
-                                            "telefono" to telefono,
-                                            "correo" to correo,
-                                            "rol" to "postulante",
-                                            "estado" to "pendiente",
-                                            "proveedor" to "password",
-                                            "fechaRegistro" to System.currentTimeMillis(),
-                                            "cantidad_embarcaciones" to if (tieneEmbarcacion) cantidadEmbarcaciones.toIntOrNull() ?: 0 else 0
-                                        )
-
-                                        if (tieneEmbarcacion) {
-                                            userData["tieneEmbarcacion"] = true
-                                            userData["matricula"] = matricula
-                                            userData["nombreEmbarcacion"] = nombreEmbarcacion
-                                        } else {
-                                            userData["tieneEmbarcacion"] = false
-                                        }
-
-                                        batch.set(userRef, userData)
-                                        batch.commit()
-                                            .addOnSuccessListener {
-                                                Log.d("FIRESTORE", "Postulante guardado exitosamente en BD")
-                                                // El socio debe esperar aprobación: cerramos la sesión
-                                                auth.signOut()
-                                                enviando = false
-                                                Toast.makeText(
-                                                    context,
-                                                    "Registro enviado. Cuando el club lo apruebe, podrás ingresar.",
-                                                    Toast.LENGTH_LONG
-                                                ).show()
-                                                onBackClick()
-                                            }
-                                            .addOnFailureListener { e ->
-                                                Log.e("FIRESTORE", "Error al guardar el usuario", e)
-                                                // Deshacer: borrar el usuario creado en Authentication
-                                                user.delete()
-                                                enviando = false
-                                                Toast.makeText(
-                                                    context,
-                                                    "Error al guardar los datos. Intenta nuevamente.",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-                                    } else {
-                                        enviando = false
-                                        Log.e("AUTH", "Error: ${task.exception?.message}")
-                                        Toast.makeText(context, "Error: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                            }
-                        }
-                        .addOnFailureListener {
-                            enviando = false
-                            Toast.makeText(context, "Error al validar la información.", Toast.LENGTH_SHORT).show()
-                        }
+                    val cantidad = if (tieneEmbarcacion) cantidadEmbarcaciones.toIntOrNull() ?: 0 else 0
+                    viewModel.registrarUsuario(
+                        nombre = nombres,
+                        apellidos = apellidos,
+                        tipoDocumento = tipoDocumento,
+                        dni = numDocumento,
+                        fechaNacimiento = fechaNacimiento,
+                        telefono = telefono,
+                        correo = email.trim().lowercase(),
+                        password = password,
+                        tieneEmbarcacion = tieneEmbarcacion,
+                        cantidadEmbarcaciones = cantidad,
+                        matricula = matricula,
+                        nombreEmbarcacion = nombreEmbarcacion
+                    )
                 },
-                enabled = isFormValid && !enviando,
+                enabled = isFormValid && !isCargando,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -601,7 +548,7 @@ fun SignUpScreen(
                 ),
                 shape = RoundedCornerShape(50)
             ) {
-                if (enviando) {
+                if (isCargando) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(22.dp),
                         color = Navy900,
