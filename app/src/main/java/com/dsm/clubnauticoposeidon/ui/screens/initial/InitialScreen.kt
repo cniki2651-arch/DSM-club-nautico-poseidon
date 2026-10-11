@@ -69,11 +69,11 @@ import kotlin.math.sin
 
 // ---- Medidas ajustables ----
 // Diámetro del círculo del logo (el aro dorado y la imagen miden lo mismo)
-private val TamanoLogo = 200.dp
+private val TamanoLogo = 240.dp
 
 // Si el PNG del logo tiene márgenes transparentes y se ve más pequeño que el aro,
 // sube este valor (1.1f, 1.2f, 1.3f...) hasta que llene el círculo
-private const val EscalaLogo = 1.0f
+private const val EscalaLogo = 1.25f
 
 // Espacio entre el título y el botón "Crear cuenta"
 private val EspacioTituloBotones = 40.dp
