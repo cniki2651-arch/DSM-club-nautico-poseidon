@@ -41,6 +41,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,6 +64,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dsm.clubnauticoposeidon.R
 import com.dsm.clubnauticoposeidon.ui.components.AuthHeader
+import com.dsm.clubnauticoposeidon.ui.components.ExitoDialog
 import com.dsm.clubnauticoposeidon.ui.theme.Gold400
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Ink
@@ -70,8 +72,6 @@ import com.dsm.clubnauticoposeidon.ui.theme.Muted
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import java.time.LocalDate
 import java.time.Period
-import androidx.compose.runtime.saveable.rememberSaveable
-import com.dsm.clubnauticoposeidon.ui.components.ExitoDialog
 
 class DateVisualTransformation : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {
@@ -155,17 +155,15 @@ fun SignUpScreen(
     var matricula by remember { mutableStateOf("") }
     var nombreEmbarcacion by remember { mutableStateOf("") }
 
+    // Controla el cuadro de "Enviado correctamente"
+    var mostrarExito by rememberSaveable { mutableStateOf(false) }
+
     // Reaccionar a los cambios de estado en el ViewModel
     LaunchedEffect(uiState) {
         when (val state = uiState) {
             is SignUpState.Success -> {
-                Toast.makeText(
-                    context,
-                    "Registro enviado exitosamente. Cuando el club lo apruebe, podrás ingresar.",
-                    Toast.LENGTH_LONG
-                ).show()
+                mostrarExito = true
                 viewModel.resetState()
-                onBackClick()
             }
             is SignUpState.Error -> {
                 Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
@@ -199,6 +197,16 @@ fun SignUpScreen(
 
     val isCargando = uiState is SignUpState.Loading
 
+    // Cuadro de éxito con el barco
+    if (mostrarExito) {
+        ExitoDialog(
+            onDismiss = {
+                mostrarExito = false
+                onBackClick()
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -211,7 +219,7 @@ fun SignUpScreen(
             onClick = onBackClick,
             modifier = Modifier
                 .align(Alignment.Start)
-                .padding(top = 24.dp, start = 16.dp)   // CAMBIO: antes top = 32.dp
+                .padding(top = 24.dp, start = 16.dp)
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -223,7 +231,7 @@ fun SignUpScreen(
         // cabecera y logo
         AuthHeader(aspectRatio = 3.0f, logoSize = 56.dp)
 
-        Spacer(modifier = Modifier.height(12.dp))   // CAMBIO: antes 24.dp
+        Spacer(modifier = Modifier.height(12.dp))
 
         Column(
             modifier = Modifier
