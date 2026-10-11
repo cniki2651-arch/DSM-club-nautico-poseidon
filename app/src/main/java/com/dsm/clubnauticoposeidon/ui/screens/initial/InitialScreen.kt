@@ -71,9 +71,10 @@ import kotlin.math.sin
 // Diámetro del círculo del logo (el aro dorado y la imagen miden lo mismo)
 private val TamanoLogo = 240.dp
 
-// Si el PNG del logo tiene márgenes transparentes y se ve más pequeño que el aro,
-// sube este valor (1.1f, 1.2f, 1.3f...) hasta que llene el círculo
-private const val EscalaLogo = 1.25f
+// El logo.png ya está recortado exactamente al círculo, así que no necesita escala.
+// (Solo súbelos, por ejemplo a 1.05f, si notas un borde fino entre el logo y el aro)
+private const val EscalaLogoX = 1.0f
+private const val EscalaLogoY = 1.0f
 
 // Espacio entre el título y el botón "Crear cuenta"
 private val EspacioTituloBotones = 40.dp
@@ -124,7 +125,7 @@ fun InitialScreen(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxSize()
-                        .graphicsLayer(scaleX = EscalaLogo, scaleY = EscalaLogo)
+                        .graphicsLayer(scaleX = EscalaLogoX, scaleY = EscalaLogoY)
                 )
             }
 
