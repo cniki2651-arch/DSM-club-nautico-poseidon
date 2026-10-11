@@ -1,3 +1,4 @@
+
 package com.dsm.clubnauticoposeidon.ui.screens.initial
 
 import android.widget.Toast
@@ -67,18 +68,13 @@ import kotlin.math.atan
 import kotlin.math.cos
 import kotlin.math.sin
 
-
-// Diámetro del círculo del logo (el aro dorado y la imagen miden lo mismo)
+// Configuración del logo y los botones
 private val TamanoLogo = 240.dp
-
 
 private const val EscalaLogoX = 1.0f
 private const val EscalaLogoY = 1.0f
 
-// Espacio entre el título y el botón
 private val EspacioTituloBotones = 40.dp
-
-
 private val AlturaBoton = 48.dp
 private val MargenBoton = 32.dp
 
@@ -90,19 +86,26 @@ fun InitialScreen(
     onNavigateToSeguimiento: () -> Unit = {},
     onNavigateToAdmin: () -> Unit = {},
     onNavigateToSecretaria: () -> Unit = {},
-    onNavigateToJefe: () -> Unit = {}
+    onNavigateToJefe: () -> Unit = {},
+    onNavigateToFinanzas: () -> Unit = {},
+    onNavigateToMantenimiento: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val webClientId = stringResource(R.string.google_web_client_id)
+
     var cargando by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Navy900, Navy800)))
+            .background(
+                Brush.verticalGradient(
+                    listOf(Navy900, Navy800)
+                )
+            )
     ) {
-        // Decoración
+        // Fondo decorativo
         FondoNautico()
 
         Column(
@@ -111,7 +114,7 @@ fun InitialScreen(
         ) {
             Spacer(modifier = Modifier.weight(1f))
 
-
+            // Logo circular
             Box(
                 modifier = Modifier
                     .size(TamanoLogo)
@@ -120,15 +123,22 @@ fun InitialScreen(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.logo),
-                    contentDescription = stringResource(R.string.login_logo_descripcion),
+                    contentDescription = stringResource(
+                        R.string.login_logo_descripcion
+                    ),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxSize()
-                        .graphicsLayer(scaleX = EscalaLogoX, scaleY = EscalaLogoY)
+                        .graphicsLayer(
+                            scaleX = EscalaLogoX,
+                            scaleY = EscalaLogoY
+                        )
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+
+            // Título de bienvenida
             Text(
                 text = stringResource(R.string.welcome_titulo),
                 style = TituloNautico,
@@ -136,8 +146,11 @@ fun InitialScreen(
                 textAlign = TextAlign.Center
             )
 
-            // Botones
-            Spacer(modifier = Modifier.height(EspacioTituloBotones))
+            // Botón crear cuenta
+            Spacer(
+                modifier = Modifier.height(EspacioTituloBotones)
+            )
+
             Button(
                 onClick = { onSignUp() },
                 modifier = Modifier
@@ -145,115 +158,186 @@ fun InitialScreen(
                     .padding(horizontal = MargenBoton)
                     .height(AlturaBoton),
                 shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(containerColor = Gold500)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Gold500
+                )
             ) {
                 Text(
-                    text = stringResource(R.string.welcome_crear_cuenta),
+                    text = stringResource(
+                        R.string.welcome_crear_cuenta
+                    ),
                     color = Navy900,
                     fontWeight = FontWeight.Bold
                 )
             }
+
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Botón Google
+            // Botón de inicio de sesión con Google
             CustomButton(
                 modifier = Modifier,
                 painter = painterResource(id = R.drawable.google),
                 title = stringResource(R.string.welcome_google),
                 enabled = !cargando,
                 onClick = {
-                    cargando = true
-                    scope.launch {
-                        signInWithGoogle(
-                            context = context,
-                            auth = FirebaseAuth.getInstance(),
-                            webClientId = webClientId,
-                            onSocio = {
+                    if (!cargando) {
+                        cargando = true
+
+                        scope.launch {
+                            try {
+                                signInWithGoogle(
+                                    context = context,
+                                    auth = FirebaseAuth.getInstance(),
+                                    webClientId = webClientId,
+
+                                    onSocio = {
+                                        cargando = false
+                                        onNavigateToSocio()
+                                    },
+
+                                    onAdmin = {
+                                        cargando = false
+                                        onNavigateToAdmin()
+                                    },
+
+                                    onSecretaria = {
+                                        cargando = false
+                                        onNavigateToSecretaria()
+                                    },
+
+                                    onJefe = {
+                                        cargando = false
+                                        onNavigateToJefe()
+                                    },
+
+                                    onFinanzas = {
+                                        cargando = false
+                                        onNavigateToFinanzas()
+                                    },
+
+                                    onMantenimiento = {
+                                        cargando = false
+                                        onNavigateToMantenimiento()
+                                    },
+
+                                    onSeguimiento = {
+                                        cargando = false
+                                        onNavigateToSeguimiento()
+                                    },
+
+                                    onError = { msg ->
+                                        cargando = false
+
+                                        Toast.makeText(
+                                            context,
+                                            msg,
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                )
+                            } catch (e: Exception) {
                                 cargando = false
-                                onNavigateToSocio()
-                            },
-                            onAdmin = {
-                                cargando = false
-                                onNavigateToAdmin()
-                            },
-                            onSeguimiento = {
-                                cargando = false
-                                onNavigateToSeguimiento()
-                            },
-                            onSecretaria = {
-                                cargando = false
-                                onNavigateToSecretaria()
-                            },
-                            onJefe = {
-                                cargando = false
-                                onNavigateToJefe()
-                            },
-                            onError = { msg ->
-                                cargando = false
-                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+
+                                Toast.makeText(
+                                    context,
+                                    e.message
+                                        ?: "Error al iniciar sesión con Google",
+                                    Toast.LENGTH_LONG
+                                ).show()
                             }
-                        )
+                        }
                     }
                 }
             )
 
+            // Botón de inicio de sesión tradicional
             Text(
-                text = stringResource(R.string.welcome_iniciar_sesion),
+                text = stringResource(
+                    R.string.welcome_iniciar_sesion
+                ),
                 color = Gold400,
                 modifier = Modifier
                     .padding(24.dp)
-                    .clickable { onLogin() },
+                    .clickable {
+                        onLogin()
+                    },
                 fontWeight = FontWeight.Bold
             )
-
 
             Spacer(modifier = Modifier.weight(1.4f))
         }
     }
 }
 
-// Fondo decorativo
+// Fondo decorativo con olas animadas y un barco
 @Composable
 private fun FondoNautico() {
     val dosPi = (2 * PI).toFloat()
+
     val transition = rememberInfiniteTransition(label = "mar")
 
-    // Cada ola avanza a distinta velocidad y dirección
-    val fase1 = transition.animateFloat(
+    // Animación de las olas
+    val fase1 by transition.animateFloat(
         initialValue = 0f,
         targetValue = dosPi,
-        animationSpec = infiniteRepeatable(tween(7000, easing = LinearEasing), RepeatMode.Restart),
+        animationSpec = infiniteRepeatable(
+            tween(7000, easing = LinearEasing),
+            RepeatMode.Restart
+        ),
         label = "fase1"
     )
-    val fase2 = transition.animateFloat(
+
+    val fase2 by transition.animateFloat(
         initialValue = dosPi,
         targetValue = 0f,
-        animationSpec = infiniteRepeatable(tween(10000, easing = LinearEasing), RepeatMode.Restart),
+        animationSpec = infiniteRepeatable(
+            tween(10000, easing = LinearEasing),
+            RepeatMode.Restart
+        ),
         label = "fase2"
     )
-    val fase3 = transition.animateFloat(
+
+    val fase3 by transition.animateFloat(
         initialValue = 0f,
         targetValue = dosPi,
-        animationSpec = infiniteRepeatable(tween(13000, easing = LinearEasing), RepeatMode.Restart),
+        animationSpec = infiniteRepeatable(
+            tween(13000, easing = LinearEasing),
+            RepeatMode.Restart
+        ),
         label = "fase3"
     )
-    // Posición horizontal del barco (de izquierda a derecha)
-    val barcoX = transition.animateFloat(
+
+    // Movimiento horizontal del barco
+    val barcoX by transition.animateFloat(
         initialValue = -0.2f,
         targetValue = 1.2f,
-        animationSpec = infiniteRepeatable(tween(40000, easing = LinearEasing), RepeatMode.Restart),
+        animationSpec = infiniteRepeatable(
+            tween(40000, easing = LinearEasing),
+            RepeatMode.Restart
+        ),
         label = "barco"
     )
 
-    Canvas(modifier = Modifier.fillMaxSize()) {
+    Canvas(
+        modifier = Modifier.fillMaxSize()
+    ) {
         val w = size.width
         val h = size.height
 
+        // Evitar divisiones entre cero
+        if (w <= 0f || h <= 0f) {
+            return@Canvas
+        }
+
         // Resplandor dorado detrás del logo
         val centro = Offset(w / 2f, h * 0.30f)
+
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(Gold500.copy(alpha = 0.20f), Color.Transparent),
+                colors = listOf(
+                    Gold500.copy(alpha = 0.20f),
+                    Color.Transparent
+                ),
                 center = centro,
                 radius = w * 0.85f
             ),
@@ -261,71 +345,179 @@ private fun FondoNautico() {
             center = centro
         )
 
-        // Altura de una ola en la posición x
-        fun yOla(x: Float, altura: Float, amplitud: Float, ciclos: Float, fase: Float): Float =
-            altura + amplitud * sin((x / w) * ciclos * dosPi + fase)
+        // Calcula la altura de una ola
+        fun yOla(
+            x: Float,
+            altura: Float,
+            amplitud: Float,
+            ciclos: Float,
+            fase: Float
+        ): Float {
+            return altura +
+                    amplitud * sin(
+                (x / w) * ciclos * dosPi + fase
+            )
+        }
 
-        // Dibujo de olas
-        fun ola(altura: Float, amplitud: Float, ciclos: Float, fase: Float, color: Color) {
+        // Dibuja una ola
+        fun ola(
+            altura: Float,
+            amplitud: Float,
+            ciclos: Float,
+            fase: Float,
+            color: Color
+        ) {
             val path = Path().apply {
                 moveTo(0f, h)
+
                 var x = 0f
+
                 while (x <= w) {
-                    lineTo(x, yOla(x, altura, amplitud, ciclos, fase))
+                    lineTo(
+                        x,
+                        yOla(
+                            x,
+                            altura,
+                            amplitud,
+                            ciclos,
+                            fase
+                        )
+                    )
                     x += 6f
                 }
-                lineTo(w, yOla(w, altura, amplitud, ciclos, fase))
+
+                lineTo(
+                    w,
+                    yOla(
+                        w,
+                        altura,
+                        amplitud,
+                        ciclos,
+                        fase
+                    )
+                )
+
                 lineTo(w, h)
                 close()
             }
-            drawPath(path, color)
+
+            drawPath(
+                path = path,
+                color = color
+            )
         }
 
-        // Parámetros de las 3 olas
+        // Parámetros de las tres olas
         val altura1 = h * 0.84f
         val altura2 = h * 0.89f
         val altura3 = h * 0.94f
+
         val amp1 = h * 0.012f
         val amp2 = h * 0.015f
         val amp3 = h * 0.012f
 
-        // Ola de atrás
-        ola(altura1, amp1, 1.5f, fase1.value, Navy600.copy(alpha = 0.40f))
+        // Ola del fondo
+        ola(
+            altura1,
+            amp1,
+            1.5f,
+            fase1,
+            Navy600.copy(alpha = 0.40f)
+        )
 
-        // Barco
+        // Posición y orientación del barco
         val bw = w * 0.18f
-        val xb = w * barcoX.value
-        val yb = yOla(xb, altura2, amp2, 1.0f, fase2.value)
-        val pendiente = amp2 * cos((xb / w) * 1.0f * dosPi + fase2.value) * (1.0f * dosPi / w)
-        val grados = atan(pendiente) * 180f / PI.toFloat() * 1.5f
+        val xb = w * barcoX
 
-        rotate(degrees = grados, pivot = Offset(xb, yb)) {
-            fun pt(dx: Float, dy: Float) = Offset(xb + dx * bw, yb + dy * bw)
+        val yb = yOla(
+            xb,
+            altura2,
+            amp2,
+            1.0f,
+            fase2
+        )
 
-            fun poligono(color: Color, puntos: List<Offset>) {
-                val path = Path().apply {
-                    moveTo(puntos[0].x, puntos[0].y)
-                    for (i in 1 until puntos.size) lineTo(puntos[i].x, puntos[i].y)
-                    close()
-                }
-                drawPath(path, color)
+        val pendiente =
+            amp2 *
+                    cos(
+                        (xb / w) * dosPi + fase2
+                    ) *
+                    (dosPi / w)
+
+        val grados =
+            atan(pendiente) * 180f / PI.toFloat() * 1.5f
+
+        // Dibujo del barco
+        rotate(
+            degrees = grados,
+            pivot = Offset(xb, yb)
+        ) {
+            fun pt(dx: Float, dy: Float): Offset {
+                return Offset(
+                    xb + dx * bw,
+                    yb + dy * bw
+                )
             }
 
-            // Casco
+            fun poligono(
+                color: Color,
+                puntos: List<Offset>
+            ) {
+                val path = Path().apply {
+                    if (puntos.isNotEmpty()) {
+                        moveTo(
+                            puntos[0].x,
+                            puntos[0].y
+                        )
+
+                        for (i in 1 until puntos.size) {
+                            lineTo(
+                                puntos[i].x,
+                                puntos[i].y
+                            )
+                        }
+
+                        close()
+                    }
+                }
+
+                drawPath(
+                    path = path,
+                    color = color
+                )
+            }
+
+            // Casco del barco
             poligono(
                 Gold500,
-                listOf(pt(-0.50f, -0.05f), pt(0.55f, -0.05f), pt(0.34f, 0.11f), pt(-0.34f, 0.11f))
+                listOf(
+                    pt(-0.50f, -0.05f),
+                    pt(0.55f, -0.05f),
+                    pt(0.34f, 0.11f),
+                    pt(-0.34f, 0.11f)
+                )
             )
-            // Vela mayor (atrás)
+
+            // Vela mayor
             poligono(
                 Ink.copy(alpha = 0.92f),
-                listOf(pt(-0.03f, -0.80f), pt(-0.03f, -0.12f), pt(-0.40f, -0.12f))
+                listOf(
+                    pt(-0.03f, -0.80f),
+                    pt(-0.03f, -0.12f),
+                    pt(-0.40f, -0.12f)
+                )
             )
-            // Vela de proa (adelante)
+
+            // Vela de proa
             poligono(
                 Ink.copy(alpha = 0.80f),
-                listOf(pt(0.03f, -0.70f), pt(0.03f, -0.12f), pt(0.32f, -0.12f))
+                listOf(
+                    pt(0.03f, -0.70f),
+                    pt(0.03f, -0.12f),
+                    pt(0.32f, -0.12f)
+                )
             )
+
             // Mástil
             drawLine(
                 color = Ink,
@@ -335,12 +527,27 @@ private fun FondoNautico() {
             )
         }
 
+        // Ola intermedia
+        ola(
+            altura2,
+            amp2,
+            1.0f,
+            fase2,
+            Navy700.copy(alpha = 0.50f)
+        )
 
-        ola(altura2, amp2, 1.0f, fase2.value, Navy700.copy(alpha = 0.50f))
-        ola(altura3, amp3, 2.0f, fase3.value, Navy900.copy(alpha = 0.60f))
+        // Ola delantera
+        ola(
+            altura3,
+            amp3,
+            2.0f,
+            fase3,
+            Navy900.copy(alpha = 0.60f)
+        )
     }
 }
 
+// Botón personalizado con imagen
 @Composable
 fun CustomButton(
     modifier: Modifier,
@@ -356,20 +563,31 @@ fun CustomButton(
             .height(AlturaBoton)
             .clip(CircleShape)
             .then(
-                if (onClick != null) Modifier.clickable(enabled = enabled, onClick = onClick)
-                else Modifier
+                if (onClick != null) {
+                    Modifier.clickable(
+                        enabled = enabled,
+                        onClick = onClick
+                    )
+                } else {
+                    Modifier
+                }
             )
             .background(Navy700)
-            .border(1.dp, Navy600, CircleShape),
+            .border(
+                1.dp,
+                Navy600,
+                CircleShape
+            ),
         contentAlignment = Alignment.CenterStart
     ) {
         Image(
             painter = painter,
-            contentDescription = "",
+            contentDescription = null,
             modifier = Modifier
                 .padding(start = 16.dp)
                 .size(16.dp)
         )
+
         Text(
             text = title,
             color = Ink,
@@ -380,8 +598,12 @@ fun CustomButton(
     }
 }
 
+// Botón personalizado con icono de huella
 @Composable
-fun CustomIconButton(modifier: Modifier, title: String) {
+fun CustomIconButton(
+    modifier: Modifier,
+    title: String
+) {
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -389,17 +611,22 @@ fun CustomIconButton(modifier: Modifier, title: String) {
             .height(AlturaBoton)
             .clip(CircleShape)
             .background(Navy700)
-            .border(1.dp, Navy600, CircleShape),
+            .border(
+                1.dp,
+                Navy600,
+                CircleShape
+            ),
         contentAlignment = Alignment.CenterStart
     ) {
         Icon(
             imageVector = Icons.Default.Fingerprint,
-            contentDescription = "",
+            contentDescription = null,
             tint = Gold400,
             modifier = Modifier
                 .padding(start = 16.dp)
                 .size(18.dp)
         )
+
         Text(
             text = title,
             color = Ink,
