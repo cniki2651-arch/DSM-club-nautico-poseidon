@@ -26,7 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,70 +43,22 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 
-// Datos del socio leídos desde Firestore
-data class PerfilSocio(
-    val nombreCompleto: String = "",
-    val dni: String = "",
-    val tipoDocumento: String = "",
-    val correo: String = "",
-    val telefono: String = "",
-    val estado: String = ""
-)
-
 @Composable
 fun ProfileScreen(
-    onBackClick: () -> Unit
+    viewModel: ProfileViewModel = viewModel(),
+    onBackClick: () -> Unit = {}
 ) {
     var showQR by remember { mutableStateOf(false) }
-    var perfil by remember { mutableStateOf<PerfilSocio?>(null) }
-    var cargando by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
 
-    // Carga el perfil del usuario que inició sesión (búsqueda por correo, igual que validarAcceso)
-    LaunchedEffect(Unit) {
-        val user = FirebaseAuth.getInstance().currentUser
-        val correo = user?.email?.trim()?.lowercase()
-        if (correo == null) {
-            error = "No hay una sesión activa"
-            cargando = false
-            return@LaunchedEffect
-        }
-
-        FirebaseFirestore.getInstance()
-            .collection("usuarios")
-            .whereEqualTo("correo", correo)
-            .limit(1)
-            .get()
-            .addOnSuccessListener { result ->
-                val doc = result.documents.firstOrNull()
-                if (doc == null) {
-                    error = "No se encontró tu registro de socio"
-                } else {
-                    val nombre = doc.getString("nombre") ?: ""
-                    val apellidos = doc.getString("apellidos") ?: ""
-                    perfil = PerfilSocio(
-                        nombreCompleto = "$nombre $apellidos".trim(),
-                        dni = doc.getString("dni") ?: "",
-                        tipoDocumento = doc.getString("tipoDocumento") ?: "DNI",
-                        correo = doc.getString("correo") ?: correo,
-                        telefono = doc.getString("telefono") ?: "",
-                        estado = doc.getString("estado") ?: ""
-                    )
-                }
-                cargando = false
-            }
-            .addOnFailureListener {
-                error = "No se pudieron cargar tus datos"
-                cargando = false
-            }
-    }
+    val perfil by viewModel.perfil.collectAsState()
+    val cargando by viewModel.cargando.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     Column(
         modifier = Modifier
@@ -174,7 +126,7 @@ fun ProfileScreen(
                 )
 
                 val (textoEstado, colorEstado) = when (p.estado) {
-                    "activo" -> "SOCIO ACTIVO" to Color(0xFF4CAF50)
+                    "aprobado", "activo" -> "SOCIO ACTIVO" to Color(0xFF4CAF50)
                     "pendiente" -> "PENDIENTE DE APROBACIÓN" to Color(0xFFFFB74D)
                     "" -> "SIN ESTADO" to Color.LightGray
                     else -> p.estado.uppercase() to Color.LightGray
@@ -187,10 +139,11 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(48.dp))
 
-                // El QR solo se habilita para socios activos
+                // El QR se habilita para socios activos / aprobados
+                val esSocioActivo = p.estado == "aprobado" || p.estado == "activo"
                 Button(
                     onClick = { showQR = true },
-                    enabled = p.estado == "activo" && p.dni.isNotBlank(),
+                    enabled = esSocioActivo && p.dni.isNotBlank(),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
@@ -291,7 +244,7 @@ fun ProfileDataCard(
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.08f) // Fondo oscuro translúcido sobre Navy900
+            containerColor = Color.White.copy(alpha = 0.08f)
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -353,7 +306,6 @@ fun QrCodeImage(content: String, size: Dp, modifier: Modifier = Modifier) {
             contentScale = ContentScale.Fit
         )
     } else {
-        // Fallback visual en caso de que ocurra algún error
         Box(
             modifier = modifier
                 .size(size)
