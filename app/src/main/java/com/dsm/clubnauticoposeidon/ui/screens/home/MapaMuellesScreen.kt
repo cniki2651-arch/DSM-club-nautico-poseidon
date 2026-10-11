@@ -22,9 +22,11 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DirectionsBoat
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,6 +35,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,8 +47,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dsm.clubnauticoposeidon.data.repository.RadaRepository
+import com.dsm.clubnauticoposeidon.model.EstadoRada
+import com.dsm.clubnauticoposeidon.model.Rada
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
+import kotlinx.coroutines.flow.catch
+
+private val ColorDisponible = Color(0xFF1B5E20)
+private val ColorOcupada = Color(0xFFB71C1C)
+private val ColorMantenimiento = Color(0xFFF9A825)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,19 +65,29 @@ fun MapaMuellesScreen(
     onRadaSelected: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
-    
-    // Lista del 1 al 20
-    val radaList = (1..20).toList()
+    val repo = remember { RadaRepository() }
+
+    var radas by remember { mutableStateOf<List<Rada>>(emptyList()) }
+    var cargando by remember { mutableStateOf(true) }
+
+    // Radas reales de Firestore, en tiempo real
+    LaunchedEffect(Unit) {
+        repo.observarRadas()
+            .catch {
+                cargando = false
+                Toast.makeText(context, "Error al cargar radas: ${it.message}", Toast.LENGTH_LONG).show()
+            }
+            .collect { lista ->
+                radas = lista.sortedBy { it.codigo }
+                cargando = false
+            }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
-                    Text(
-                        text = "Mapa de Muelles", 
-                        color = Gold500, 
-                        fontWeight = FontWeight.Bold
-                    ) 
+                title = {
+                    Text("Mapa de Muelles", color = Gold500, fontWeight = FontWeight.Bold)
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -87,36 +112,36 @@ fun MapaMuellesScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Cuadrícula (El Mapa)
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.weight(1f) // Ocupa el espacio disponible antes de la leyenda
-            ) {
-                items(radaList) { number ->
-                    val isOcupada = number % 2 == 0
-                    val formattedNumber = number.toString().padStart(2, '0') // "01", "02"...
-                    
-                    RadaItem(
-                        numberStr = "R-$formattedNumber",
-                        isOcupada = isOcupada,
-                        onClick = {
-                            if (isOcupada) {
-                                Toast.makeText(context, "Rada no disponible", Toast.LENGTH_SHORT).show()
-                            } else {
-                                val radaName = "R-$formattedNumber"
-                                Toast.makeText(context, "Rada $radaName seleccionada", Toast.LENGTH_SHORT).show()
-                                onRadaSelected(radaName) // <-- Llamada para enviar el dato de regreso
+            if (cargando) {
+                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Gold500)
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    items(radas, key = { it.id }) { rada ->
+                        RadaItem(
+                            codigo = rada.codigo.ifBlank { rada.id },
+                            estado = rada.estado,
+                            onClick = {
+                                if (rada.estado == EstadoRada.DISPONIBLE) {
+                                    Toast.makeText(context, "Rada ${rada.id} seleccionada", Toast.LENGTH_SHORT).show()
+                                    onRadaSelected(rada.id)
+                                } else {
+                                    Toast.makeText(context, "Rada no disponible", Toast.LENGTH_SHORT).show()
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Leyenda Inferior
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -124,66 +149,70 @@ fun MapaMuellesScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Leyenda Disponible
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(16.dp)
-                            .background(Color(0xFF1B5E20), RoundedCornerShape(4.dp))
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Disponible", color = Color.White, fontSize = 14.sp)
-                }
-                
-                Spacer(modifier = Modifier.width(32.dp))
-                
-                // Leyenda Ocupada
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(16.dp)
-                            .background(Color(0xFFB71C1C), RoundedCornerShape(4.dp))
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Ocupada", color = Color.White, fontSize = 14.sp)
-                }
+                Leyenda(ColorDisponible, "Disponible")
+                Spacer(modifier = Modifier.width(20.dp))
+                Leyenda(ColorOcupada, "Ocupada")
+                Spacer(modifier = Modifier.width(20.dp))
+                Leyenda(ColorMantenimiento, "Mantenimiento")
             }
         }
     }
 }
 
 @Composable
+private fun Leyenda(color: Color, texto: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(16.dp)
+                .background(color, RoundedCornerShape(4.dp))
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text = texto, color = Color.White, fontSize = 13.sp)
+    }
+}
+
+@Composable
 fun RadaItem(
-    numberStr: String,
-    isOcupada: Boolean,
+    codigo: String,
+    estado: String,
     onClick: () -> Unit
 ) {
-    // Colores basados en el estado
-    val bgColor = if (isOcupada) Color(0xFFB71C1C) else Color(0xFF1B5E20)
-    val borderColor = if (isOcupada) Color(0xFFE57373) else Color(0xFF4CAF50)
+    val bgColor = when (estado) {
+        EstadoRada.OCUPADA -> ColorOcupada
+        EstadoRada.MANTENIMIENTO -> ColorMantenimiento
+        else -> ColorDisponible
+    }
+    val borderColor = when (estado) {
+        EstadoRada.OCUPADA -> Color(0xFFE57373)
+        EstadoRada.MANTENIMIENTO -> Color(0xFFFFE082)
+        else -> Color(0xFF4CAF50)
+    }
 
     Card(
         modifier = Modifier
-            .aspectRatio(1f) // Para que sea cuadrada
+            .aspectRatio(1f)
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = bgColor),
         border = BorderStroke(2.dp, borderColor)
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            if (isOcupada) {
-                Icon(
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            when (estado) {
+                EstadoRada.OCUPADA -> Icon(
                     imageVector = Icons.Default.DirectionsBoat,
-                    contentDescription = "Barco Ocupando Rada",
+                    contentDescription = "Barco ocupando rada",
                     tint = Color.White,
                     modifier = Modifier.size(36.dp)
                 )
-            } else {
-                Text(
-                    text = numberStr,
+                EstadoRada.MANTENIMIENTO -> Icon(
+                    imageVector = Icons.Default.Build,
+                    contentDescription = "Rada en mantenimiento",
+                    tint = Color.White,
+                    modifier = Modifier.size(32.dp)
+                )
+                else -> Text(
+                    text = codigo,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
