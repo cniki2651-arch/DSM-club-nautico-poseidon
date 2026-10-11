@@ -7,7 +7,6 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,8 +44,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -69,26 +66,6 @@ import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Ink
 import com.dsm.clubnauticoposeidon.ui.theme.Muted
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
-import kotlin.math.roundToInt
-
-// ---- Medidas ajustables ----
-// Tamaño de la cabecera (logo/imagen superior): 1.0f = original, 0.7f = 30 % más pequeña
-private const val EscalaCabecera = 0.7f
-
-// Escala un componente y también el espacio que ocupa en pantalla
-// (a diferencia de graphicsLayer, que solo lo encoge visualmente y deja el hueco)
-private fun Modifier.escalar(factor: Float): Modifier = this.layout { measurable, constraints ->
-    val placeable = measurable.measure(constraints)
-    val ancho = (placeable.width * factor).roundToInt()
-    val alto = (placeable.height * factor).roundToInt()
-    layout(ancho, alto) {
-        placeable.placeWithLayer(0, 0) {
-            scaleX = factor
-            scaleY = factor
-            transformOrigin = TransformOrigin(0f, 0f)
-        }
-    }
-}
 
 // 3. La Vista (LoginScreen)
 @Composable
@@ -148,10 +125,8 @@ fun LoginScreen(
             )
         }
 
-        // Cabecera más pequeña
-        Box(modifier = Modifier.escalar(EscalaCabecera)) {
-            AuthHeader()
-        }
+        // Cabecera a todo el ancho de la pantalla
+        AuthHeader()
 
         Spacer(modifier = Modifier.height(8.dp))
 
