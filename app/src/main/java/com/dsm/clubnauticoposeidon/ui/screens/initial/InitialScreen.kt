@@ -1,6 +1,12 @@
 package com.dsm.clubnauticoposeidon.ui.screens.initial
 
 import android.widget.Toast
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -35,6 +41,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -53,6 +60,12 @@ import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import com.dsm.clubnauticoposeidon.ui.theme.TituloNautico
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
+import kotlin.math.PI
+import kotlin.math.sin
+
+// Medidas compartidas: "Crear cuenta" y "Continuar con Google" quedan idénticos
+private val AlturaBoton = 48.dp
+private val MargenBoton = 32.dp
 
 @Composable
 fun InitialScreen(
@@ -74,7 +87,7 @@ fun InitialScreen(
             .fillMaxSize()
             .background(Brush.verticalGradient(listOf(Navy900, Navy800)))
     ) {
-        // Decoración de fondo: resplandor dorado + olas
+        // Decoración de fondo: resplandor dorado + olas en movimiento
         FondoNautico()
 
         Column(
@@ -82,15 +95,18 @@ fun InitialScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.weight(1f))
+
+            // El logo ocupa todo el círculo; el aro dorado queda justo en su borde
             Image(
                 painter = painterResource(id = R.drawable.logo),
                 contentDescription = stringResource(R.string.login_logo_descripcion),
+                contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(200.dp)
-                    .border(2.dp, Gold500.copy(alpha = 0.85f), CircleShape)
-                    .padding(6.dp)
                     .clip(CircleShape)
+                    .border(3.dp, Gold500, CircleShape)
             )
+
             Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = stringResource(R.string.welcome_titulo),
@@ -104,8 +120,9 @@ fun InitialScreen(
                 onClick = { onSignUp() },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp)
-                    .padding(horizontal = 32.dp),
+                    .padding(horizontal = MargenBoton)
+                    .height(AlturaBoton),
+                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = Gold500)
             ) {
                 Text(
@@ -174,6 +191,29 @@ fun InitialScreen(
 // Fondo decorativo dibujado con código (no necesita imágenes nuevas)
 @Composable
 private fun FondoNautico() {
+    val dosPi = (2 * PI).toFloat()
+    val transition = rememberInfiniteTransition(label = "olas")
+
+    // Cada ola avanza a distinta velocidad y dirección
+    val fase1 = transition.animateFloat(
+        initialValue = 0f,
+        targetValue = dosPi,
+        animationSpec = infiniteRepeatable(tween(7000, easing = LinearEasing), RepeatMode.Restart),
+        label = "fase1"
+    )
+    val fase2 = transition.animateFloat(
+        initialValue = dosPi,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(tween(10000, easing = LinearEasing), RepeatMode.Restart),
+        label = "fase2"
+    )
+    val fase3 = transition.animateFloat(
+        initialValue = 0f,
+        targetValue = dosPi,
+        animationSpec = infiniteRepeatable(tween(13000, easing = LinearEasing), RepeatMode.Restart),
+        label = "fase3"
+    )
+
     Canvas(modifier = Modifier.fillMaxSize()) {
         val w = size.width
         val h = size.height
@@ -190,23 +230,26 @@ private fun FondoNautico() {
             center = centro
         )
 
-        // Olas en la parte inferior
-        fun ola(altura: Float, amplitud: Float, color: Color) {
+        // Ola ondulada: sinusoide que se desplaza según la fase
+        fun ola(altura: Float, amplitud: Float, ciclos: Float, fase: Float, color: Color) {
             val path = Path().apply {
                 moveTo(0f, h)
-                lineTo(0f, altura)
-                cubicTo(
-                    w * 0.25f, altura - amplitud,
-                    w * 0.75f, altura + amplitud,
-                    w, altura
-                )
+                var x = 0f
+                while (x <= w) {
+                    val y = altura + amplitud * sin((x / w) * ciclos * dosPi + fase)
+                    lineTo(x, y)
+                    x += 6f
+                }
+                lineTo(w, altura + amplitud * sin(ciclos * dosPi + fase))
                 lineTo(w, h)
                 close()
             }
             drawPath(path, color)
         }
-        ola(h * 0.86f, h * 0.05f, Navy700.copy(alpha = 0.35f))
-        ola(h * 0.92f, h * 0.04f, Navy600.copy(alpha = 0.30f))
+
+        ola(h * 0.85f, h * 0.012f, 1.5f, fase1.value, Navy700.copy(alpha = 0.40f))
+        ola(h * 0.90f, h * 0.015f, 1.0f, fase2.value, Navy600.copy(alpha = 0.35f))
+        ola(h * 0.95f, h * 0.012f, 2.0f, fase3.value, Navy700.copy(alpha = 0.45f))
     }
 }
 
@@ -221,8 +264,8 @@ fun CustomButton(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp)
-            .padding(horizontal = 32.dp)
+            .padding(horizontal = MargenBoton)
+            .height(AlturaBoton)
             .clip(CircleShape)
             .then(
                 if (onClick != null) Modifier.clickable(enabled = enabled, onClick = onClick)
@@ -254,8 +297,8 @@ fun CustomIconButton(modifier: Modifier, title: String) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp)
-            .padding(horizontal = 32.dp)
+            .padding(horizontal = MargenBoton)
+            .height(AlturaBoton)
             .clip(CircleShape)
             .background(Navy700)
             .border(1.dp, Navy600, CircleShape),
