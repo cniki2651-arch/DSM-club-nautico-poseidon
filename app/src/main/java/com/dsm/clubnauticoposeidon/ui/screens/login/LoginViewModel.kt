@@ -9,15 +9,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-// 1. El Estado (LoginState)
 sealed interface LoginState {
     object Idle : LoginState
     object Loading : LoginState
-    data class Success(val rol: String) : LoginState   // ahora lleva el rol
+    data class Success(val destino: Destino) : LoginState
     data class Error(val message: String) : LoginState
 }
 
-// 2. El ViewModel (LoginViewModel)
 class LoginViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow<LoginState>(LoginState.Idle)
@@ -32,11 +30,10 @@ class LoginViewModel : ViewModel() {
 
     fun iniciarSesion(correo: String, password: String) {
         _uiState.value = LoginState.Loading
-
         viewModelScope.launch {
             try {
                 auth.signInWithEmailAndPassword(correo, password).await()
-                validarRolYContinuar()
+                resolverAcceso()
             } catch (e: Exception) {
                 _uiState.value = LoginState.Error(e.message ?: "Error al iniciar sesión")
             }
@@ -49,45 +46,33 @@ class LoginViewModel : ViewModel() {
             return
         }
         _uiState.value = LoginState.Loading
-        viewModelScope.launch { validarRolYContinuar() }
+        viewModelScope.launch { resolverAcceso() }
     }
 
-    // Lee usuarios/{uid}, bloquea postulantes y expone el rol
-    private suspend fun validarRolYContinuar() {
+    // Lee usuarios/{uid} y decide el destino con la misma lógica que Google
+    private suspend fun resolverAcceso() {
         val uid = auth.currentUser?.uid
         if (uid == null) {
             _uiState.value = LoginState.Error("No hay sesión activa")
             return
         }
-
         try {
             val doc = db.collection("usuarios").document(uid).get().await()
-            val rol = doc.getString("rol")
-
-            when {
-                !doc.exists() || rol.isNullOrBlank() -> {
-                    auth.signOut()
-                    _uiState.value = LoginState.Error(
-                        "Tu cuenta no tiene un perfil asignado. Contacta al club."
-                    )
-                }
-                rol == ROL_POSTULANTE -> {
-                    auth.signOut()
-                    _uiState.value = LoginState.Error(
-                        "Tu solicitud aún está en revisión. Podrás ingresar cuando el club la apruebe."
-                    )
-                }
-                else -> _uiState.value = LoginState.Success(rol)
+            if (!doc.exists()) {
+                auth.signOut()
+                _uiState.value = LoginState.Error("No tienes registro. Regístrate primero y espera la aprobación.")
+                return
+            }
+            val destino = resolverDestino(doc.getString("rol"), doc.getString("estado"))
+            if (destino == null) {
+                auth.signOut()
+                _uiState.value = LoginState.Error("Tu solicitud aún está en revisión. Te avisaremos cuando esté activa.")
+            } else {
+                _uiState.value = LoginState.Success(destino)
             }
         } catch (e: Exception) {
             auth.signOut()
-            _uiState.value = LoginState.Error(
-                "No se pudo verificar tu perfil: ${e.message}"
-            )
+            _uiState.value = LoginState.Error("No se pudo verificar tu cuenta: ${e.message}")
         }
-    }
-
-    companion object {
-        const val ROL_POSTULANTE = "postulante"
     }
 }
