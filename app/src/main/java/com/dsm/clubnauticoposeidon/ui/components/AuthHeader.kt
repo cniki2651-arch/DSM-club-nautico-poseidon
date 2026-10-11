@@ -33,8 +33,8 @@ import com.dsm.clubnauticoposeidon.ui.theme.TituloNautico
 
 @Composable
 fun AuthHeader(
-    aspectRatio: Float = 2.3f,   // mayor valor = cabecera más baja
-    logoSize: Dp = 70.dp         // tamaño del logo circular
+    aspectRatio: Float = 1.35f,
+    logoSize: Dp = 110.dp
 ) {
     Box(
         modifier = Modifier

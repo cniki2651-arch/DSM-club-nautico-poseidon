@@ -218,8 +218,8 @@ fun SignUpScreen(
             )
         }
 
-        // CAMBIO: cabecera más baja y logo un poco más pequeño solo en el registro
-        AuthHeader(aspectRatio = 1.8f, logoSize = 90.dp)
+        // cabecera y logo
+        AuthHeader(aspectRatio = 3.0f, logoSize = 56.dp)
 
         Spacer(modifier = Modifier.height(12.dp))   // CAMBIO: antes 24.dp
 
