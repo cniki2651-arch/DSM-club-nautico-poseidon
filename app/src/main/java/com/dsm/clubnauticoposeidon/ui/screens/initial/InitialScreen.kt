@@ -67,19 +67,18 @@ import kotlin.math.atan
 import kotlin.math.cos
 import kotlin.math.sin
 
-// ---- Medidas ajustables ----
+
 // Diámetro del círculo del logo (el aro dorado y la imagen miden lo mismo)
 private val TamanoLogo = 240.dp
 
-// El logo.png ya está recortado exactamente al círculo, así que no necesita escala.
-// (Solo súbelos, por ejemplo a 1.05f, si notas un borde fino entre el logo y el aro)
+
 private const val EscalaLogoX = 1.0f
 private const val EscalaLogoY = 1.0f
 
-// Espacio entre el título y el botón "Crear cuenta"
+// Espacio entre el título y el botón
 private val EspacioTituloBotones = 40.dp
 
-// "Crear cuenta" y "Continuar con Google" usan exactamente las mismas medidas
+
 private val AlturaBoton = 48.dp
 private val MargenBoton = 32.dp
 
@@ -103,7 +102,7 @@ fun InitialScreen(
             .fillMaxSize()
             .background(Brush.verticalGradient(listOf(Navy900, Navy800)))
     ) {
-        // Decoración de fondo: resplandor dorado, 3 olas en movimiento y un barco
+        // Decoración
         FondoNautico()
 
         Column(
@@ -112,7 +111,7 @@ fun InitialScreen(
         ) {
             Spacer(modifier = Modifier.weight(1f))
 
-            // El logo llena todo el círculo; el aro dorado queda en su borde
+
             Box(
                 modifier = Modifier
                     .size(TamanoLogo)
@@ -137,7 +136,7 @@ fun InitialScreen(
                 textAlign = TextAlign.Center
             )
 
-            // Botones justo debajo del título (ya no se empujan al fondo)
+            // Botones
             Spacer(modifier = Modifier.height(EspacioTituloBotones))
             Button(
                 onClick = { onSignUp() },
@@ -207,13 +206,13 @@ fun InitialScreen(
                 fontWeight = FontWeight.Bold
             )
 
-            // Un poco más de espacio abajo para dejar ver las olas y el barco
+
             Spacer(modifier = Modifier.weight(1.4f))
         }
     }
 }
 
-// Fondo decorativo dibujado con código (no necesita imágenes nuevas)
+// Fondo decorativo
 @Composable
 private fun FondoNautico() {
     val dosPi = (2 * PI).toFloat()
@@ -238,7 +237,7 @@ private fun FondoNautico() {
         animationSpec = infiniteRepeatable(tween(13000, easing = LinearEasing), RepeatMode.Restart),
         label = "fase3"
     )
-    // Posición horizontal del barco (de izquierda a derecha, 40 s por travesía)
+    // Posición horizontal del barco (de izquierda a derecha)
     val barcoX = transition.animateFloat(
         initialValue = -0.2f,
         targetValue = 1.2f,
@@ -250,7 +249,7 @@ private fun FondoNautico() {
         val w = size.width
         val h = size.height
 
-        // Resplandor dorado suave detrás del logo
+        // Resplandor dorado detrás del logo
         val centro = Offset(w / 2f, h * 0.30f)
         drawCircle(
             brush = Brush.radialGradient(
@@ -266,7 +265,7 @@ private fun FondoNautico() {
         fun yOla(x: Float, altura: Float, amplitud: Float, ciclos: Float, fase: Float): Float =
             altura + amplitud * sin((x / w) * ciclos * dosPi + fase)
 
-        // Dibuja una ola rellena hasta el fondo de la pantalla
+        // Dibujo de olas
         fun ola(altura: Float, amplitud: Float, ciclos: Float, fase: Float, color: Color) {
             val path = Path().apply {
                 moveTo(0f, h)
@@ -290,10 +289,10 @@ private fun FondoNautico() {
         val amp2 = h * 0.015f
         val amp3 = h * 0.012f
 
-        // 1) Ola de atrás
+        // Ola de atrás
         ola(altura1, amp1, 1.5f, fase1.value, Navy600.copy(alpha = 0.40f))
 
-        // 2) Barco: navega sobre la ola del medio, sube y baja y se inclina con ella
+        // Barco
         val bw = w * 0.18f
         val xb = w * barcoX.value
         val yb = yOla(xb, altura2, amp2, 1.0f, fase2.value)
@@ -336,7 +335,7 @@ private fun FondoNautico() {
             )
         }
 
-        // 3) Ola del medio (cubre un poco el casco) y 4) ola del frente, más oscura
+
         ola(altura2, amp2, 1.0f, fase2.value, Navy700.copy(alpha = 0.50f))
         ola(altura3, amp3, 2.0f, fase3.value, Navy900.copy(alpha = 0.60f))
     }

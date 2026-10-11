@@ -7,13 +7,16 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
@@ -42,6 +45,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -64,6 +69,26 @@ import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Ink
 import com.dsm.clubnauticoposeidon.ui.theme.Muted
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
+import kotlin.math.roundToInt
+
+// ---- Medidas ajustables ----
+// Tamaño de la cabecera (logo/imagen superior): 1.0f = original, 0.7f = 30 % más pequeña
+private const val EscalaCabecera = 0.7f
+
+// Escala un componente y también el espacio que ocupa en pantalla
+// (a diferencia de graphicsLayer, que solo lo encoge visualmente y deja el hueco)
+private fun Modifier.escalar(factor: Float): Modifier = this.layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    val ancho = (placeable.width * factor).roundToInt()
+    val alto = (placeable.height * factor).roundToInt()
+    layout(ancho, alto) {
+        placeable.placeWithLayer(0, 0) {
+            scaleX = factor
+            scaleY = factor
+            transformOrigin = TransformOrigin(0f, 0f)
+        }
+    }
+}
 
 // 3. La Vista (LoginScreen)
 @Composable
@@ -103,7 +128,9 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Navy900)
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(rememberScrollState())
+            // Deja libre la barra de botones del sistema para que no tape el texto de abajo
+            .navigationBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Botón de Retroceso en la esquina superior izquierda
@@ -111,7 +138,8 @@ fun LoginScreen(
             onClick = onBackClick,
             modifier = Modifier
                 .align(Alignment.Start)
-                .padding(top = 32.dp, start = 16.dp)
+                .statusBarsPadding()
+                .padding(start = 8.dp)
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -120,9 +148,12 @@ fun LoginScreen(
             )
         }
 
-        AuthHeader()
+        // Cabecera más pequeña
+        Box(modifier = Modifier.escalar(EscalaCabecera)) {
+            AuthHeader()
+        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Column(
             modifier = Modifier
@@ -150,7 +181,7 @@ fun LoginScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             TextField(
                 value = password,
@@ -184,7 +215,7 @@ fun LoginScreen(
                 }
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Enlace "¿Olvidaste tu contraseña?" alineado a la derecha
             Text(
@@ -199,7 +230,7 @@ fun LoginScreen(
                     .clickable(enabled = !isCargando) { onForgotPassword() }
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Botón principal de Iniciar Sesión
             Button(
@@ -236,7 +267,7 @@ fun LoginScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Botón de huella digital (HU01 - Login Biométrico)
             IconButton(
@@ -266,18 +297,18 @@ fun LoginScreen(
                 },
                 enabled = !isCargando,
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(72.dp)
                     .background(Color.Transparent)
             ) {
                 Icon(
                     imageVector = Icons.Default.Fingerprint,
                     contentDescription = "Acceso Biométrico",
                     tint = Gold500,
-                    modifier = Modifier.size(56.dp)
+                    modifier = Modifier.size(52.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             val annotatedText = buildAnnotatedString {
                 append(stringResource(R.string.login_registro_pregunta))
@@ -299,7 +330,8 @@ fun LoginScreen(
                             }
                     }
                 },
-                modifier = Modifier.padding(bottom = 16.dp),
+                // Espacio extra abajo para separarlo de los botones del sistema
+                modifier = Modifier.padding(top = 4.dp, bottom = 32.dp),
                 style = TextStyle(color = Ink, fontSize = 14.sp)
             )
         }
