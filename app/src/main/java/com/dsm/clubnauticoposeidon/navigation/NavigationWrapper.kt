@@ -267,7 +267,7 @@ fun NavigationWrapper(
         }
         
         composable("bandeja_solicitudes") {
-            com.dsm.clubnauticoposeidon.ui.screens.admin.SecretariaScreen(
+            com.dsm.clubnauticoposeidon.ui.screens.secretaria.BandejaSecretariaScreen(
                 onBackClick = { navHostController.popBackStack() }
             )
         }
