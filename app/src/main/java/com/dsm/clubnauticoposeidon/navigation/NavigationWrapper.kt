@@ -127,14 +127,13 @@ fun NavigationWrapper(
 
         composable("login") {
             LoginScreen(
-                auth = auth,
+                onLoginSuccess = {
+                    navHostController.navigate("router") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
                 onSignUp = { navHostController.navigate("signup") },
-                onNavigateToSocio = { navHostController.navigate("home") },
-                onNavigateToAdmin = { navHostController.navigate("home_operaciones") },
-                onNavigateToSecretaria = { navHostController.navigate("secretaria") },
-                onNavigateToJefe = { navHostController.navigate("jefe") { popUpTo(0) } },
                 onBackClick = { navHostController.popBackStack() },
-                onNavigateToSeguimiento = { navHostController.navigate("seguimiento") }, // CORREGIDO AQUÍ
                 onForgotPassword = { navHostController.navigate("recuperar_password") }
             )
         }

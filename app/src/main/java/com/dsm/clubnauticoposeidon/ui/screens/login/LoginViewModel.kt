@@ -2,26 +2,45 @@ package com.dsm.clubnauticoposeidon.ui.screens.login
 
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
-/**
- * ViewModel para gestionar la lógica de negocio de la pantalla de inicio de sesión (Login).
- * Sigue los principios de Clean Code y MVVM.
- */
+// 1. El Estado (LoginState)
+sealed interface LoginState {
+    object Idle : LoginState
+    object Loading : LoginState
+    object Success : LoginState
+    data class Error(val message: String) : LoginState
+}
+
+// 2. El ViewModel (LoginViewModel)
 class LoginViewModel : ViewModel() {
 
-    /**
-     * Valida si existe una sesión activa guardada en Firebase (auth.currentUser != null).
-     * - Si existe, ejecuta [onNavigateHome] para omitir contraseña y entrar al dashboard.
-     * - Si no existe, ejecuta [onNoSession] para notificar al usuario que debe iniciar sesión con correo por primera vez.
-     */
-    fun handleBiometricSuccess(
-        auth: FirebaseAuth,
-        onNavigateHome: () -> Unit,
-        onNoSession: () -> Unit
-    ) {
-        val currentUser = auth.currentUser
-        if (currentUser != null) {
-            onNavigateHome()
+    private val _uiState = MutableStateFlow<LoginState>(LoginState.Idle)
+    val uiState: StateFlow<LoginState> = _uiState
+
+    private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
+
+    fun resetState() {
+        _uiState.value = LoginState.Idle
+    }
+
+    fun iniciarSesion(correo: String, password: String) {
+        _uiState.value = LoginState.Loading
+
+        auth.signInWithEmailAndPassword(correo, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    _uiState.value = LoginState.Success
+                } else {
+                    _uiState.value = LoginState.Error(task.exception?.message ?: "Error al iniciar sesión")
+                }
+            }
+    }
+
+    fun handleBiometricLogin(onNoSession: () -> Unit) {
+        if (auth.currentUser != null) {
+            _uiState.value = LoginState.Success
         } else {
             onNoSession()
         }

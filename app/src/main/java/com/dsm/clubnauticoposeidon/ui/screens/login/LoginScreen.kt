@@ -33,6 +33,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,64 +64,39 @@ import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Ink
 import com.dsm.clubnauticoposeidon.ui.theme.Muted
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
-import com.dsm.clubnauticoposeidon.utils.poblarBaseDeDatos
-import com.dsm.clubnauticoposeidon.utils.poblarServiciosYPlatosAdicionales
-import com.dsm.clubnauticoposeidon.utils.poblarSociosYEmbarcaciones
-import com.google.firebase.auth.FirebaseAuth
 
+// 3. La Vista (LoginScreen)
 @Composable
 fun LoginScreen(
-    auth: FirebaseAuth,
+    viewModel: LoginViewModel = viewModel(),
+    onLoginSuccess: () -> Unit = {},
     onSignUp: () -> Unit = {},
-    onNavigateToSocio: () -> Unit = {},
-    onNavigateToAdmin: () -> Unit = {},
-    onNavigateToSecretaria: () -> Unit = {},
-    onNavigateToJefe: () -> Unit = {},
-    onNavigateToSeguimiento: () -> Unit = {},
     onBackClick: () -> Unit = {},
-    onForgotPassword: () -> Unit = {},
-    viewModel: LoginViewModel = viewModel()
+    onForgotPassword: () -> Unit = {}
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var cargando by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val activity = context.findActivity()
+    val uiState by viewModel.uiState.collectAsState()
 
-    // Lógica única de acceso: revisa registro, estado y rol en Firestore
-    fun verificarAcceso() {
-        validarAcceso(
-            auth = auth,
-            onSocio = {
-                cargando = false
-                Toast.makeText(context, "Login correcto", Toast.LENGTH_SHORT).show()
-                onNavigateToSocio()
-            },
-            onAdmin = {
-                cargando = false
-                Toast.makeText(context, "Login correcto", Toast.LENGTH_SHORT).show()
-                onNavigateToAdmin()
-            },
-            onSeguimiento = {
-                cargando = false
-                onNavigateToSeguimiento()
-            },
-            onSecretaria = {
-                cargando = false
-                onNavigateToSecretaria()
-            },
-            onJefe = {
-                cargando = false
-                Toast.makeText(context, "Login correcto", Toast.LENGTH_SHORT).show()
-                onNavigateToJefe()
-            },
-            onError = { msg ->
-                cargando = false
-                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+    val isCargando = uiState is LoginState.Loading
+
+    // Reaccionar a los cambios de estado del ViewModel
+    LaunchedEffect(uiState) {
+        when (val state = uiState) {
+            is LoginState.Success -> {
+                viewModel.resetState()
+                onLoginSuccess()
             }
-        )
+            is LoginState.Error -> {
+                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                viewModel.resetState()
+            }
+            else -> {}
+        }
     }
 
     Column(
@@ -159,6 +136,7 @@ fun LoginScreen(
                 onValueChange = { email = it.filter { c -> !c.isWhitespace() } },
                 placeholder = { Text(stringResource(R.string.login_email), color = Muted) },
                 singleLine = true,
+                enabled = !isCargando,
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 colors = TextFieldDefaults.colors(
@@ -179,6 +157,7 @@ fun LoginScreen(
                 onValueChange = { password = it },
                 placeholder = { Text(stringResource(R.string.login_password), color = Muted) },
                 singleLine = true,
+                enabled = !isCargando,
                 modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
                     focusedTextColor = Ink,
@@ -217,7 +196,7 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 4.dp)
-                    .clickable { onForgotPassword() }
+                    .clickable(enabled = !isCargando) { onForgotPassword() }
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -231,25 +210,17 @@ fun LoginScreen(
                     } else if (!Patterns.EMAIL_ADDRESS.matcher(correo).matches()) {
                         Toast.makeText(context, "Formato de correo inválido", Toast.LENGTH_SHORT).show()
                     } else {
-                        cargando = true
-                        auth.signInWithEmailAndPassword(correo, password).addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                verificarAcceso()
-                            } else {
-                                cargando = false
-                                Toast.makeText(context, "Error: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
-                            }
-                        }
+                        viewModel.iniciarSesion(correo, password)
                     }
                 },
-                enabled = !cargando,
+                enabled = !isCargando,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Gold500),
                 shape = RoundedCornerShape(50)
             ) {
-                if (cargando) {
+                if (isCargando) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(22.dp),
                         color = Navy900,
@@ -276,13 +247,7 @@ fun LoginScreen(
                             title = "Acceso al Club Poseidón",
                             subtitle = "Autentícate con tu huella digital para ingresar",
                             onSuccess = {
-                                viewModel.handleBiometricSuccess(
-                                    auth = auth,
-                                    onNavigateHome = {
-                                        // Ahora también revisa estado y rol (naviero → Admin)
-                                        cargando = true
-                                        verificarAcceso()
-                                    },
+                                viewModel.handleBiometricLogin(
                                     onNoSession = {
                                         Toast.makeText(context, "Inicie sesión con correo y contraseña por primera vez", Toast.LENGTH_LONG).show()
                                     }
@@ -299,6 +264,7 @@ fun LoginScreen(
                         Toast.makeText(context, "Dispositivo no compatible con huella digital", Toast.LENGTH_SHORT).show()
                     }
                 },
+                enabled = !isCargando,
                 modifier = Modifier
                     .size(80.dp)
                     .background(Color.Transparent)
@@ -326,10 +292,12 @@ fun LoginScreen(
             ClickableText(
                 text = annotatedText,
                 onClick = { offset ->
-                    annotatedText.getStringAnnotations(tag = "signup", start = offset, end = offset)
-                        .firstOrNull()?.let {
-                            onSignUp()
-                        }
+                    if (!isCargando) {
+                        annotatedText.getStringAnnotations(tag = "signup", start = offset, end = offset)
+                            .firstOrNull()?.let {
+                                onSignUp()
+                            }
+                    }
                 },
                 modifier = Modifier.padding(bottom = 16.dp),
                 style = TextStyle(color = Ink, fontSize = 14.sp)
