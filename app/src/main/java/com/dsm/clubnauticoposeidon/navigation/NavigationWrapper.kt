@@ -1,35 +1,34 @@
 package com.dsm.clubnauticoposeidon.navigation
 
-import androidx.compose.runtime.Composable
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import com.dsm.clubnauticoposeidon.ui.screens.home.HomeOperacionesScreen
-import com.dsm.clubnauticoposeidon.ui.screens.initial.InitialScreen
-import com.dsm.clubnauticoposeidon.ui.screens.login.LoginScreen
-import com.dsm.clubnauticoposeidon.ui.screens.recovery.RecuperarPasswordScreen
-import com.dsm.clubnauticoposeidon.ui.screens.signup.SignUpScreen
-import com.dsm.clubnauticoposeidon.ui.screens.home.HomeScreen
-import com.dsm.clubnauticoposeidon.ui.screens.home.HomeSocioScreen
-import com.dsm.clubnauticoposeidon.ui.screens.home.MapaMuellesScreen
-import com.dsm.clubnauticoposeidon.ui.screens.profile.ProfileScreen
-import com.dsm.clubnauticoposeidon.ui.screens.radas.AsignarRadaScreen
-import com.dsm.clubnauticoposeidon.ui.screens.postulante.SeguimientoScreen // IMPORT AGREGADO AQUÍ
-import com.google.firebase.auth.FirebaseAuth
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import com.dsm.clubnauticoposeidon.ui.screens.home.HomeOperacionesScreen
+import com.dsm.clubnauticoposeidon.ui.screens.home.HomeSocioScreen
+import com.dsm.clubnauticoposeidon.ui.screens.home.MapaMuellesScreen
+import com.dsm.clubnauticoposeidon.ui.screens.initial.InitialScreen
+import com.dsm.clubnauticoposeidon.ui.screens.login.LoginScreen
 import com.dsm.clubnauticoposeidon.ui.screens.login.validarAcceso
+import com.dsm.clubnauticoposeidon.ui.screens.postulante.SeguimientoScreen
+import com.dsm.clubnauticoposeidon.ui.screens.profile.ProfileScreen
+import com.dsm.clubnauticoposeidon.ui.screens.radas.AsignarRadaScreen
+import com.dsm.clubnauticoposeidon.ui.screens.recovery.RecuperarPasswordScreen
+import com.dsm.clubnauticoposeidon.ui.screens.signup.SignUpScreen
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun NavigationWrapper(
@@ -39,10 +38,18 @@ fun NavigationWrapper(
     // Evalúa si existe una sesión activa
     val startDest = if (auth.currentUser != null) "router" else "initial"
 
+    // Cierra sesión y vuelve al inicio (se reutiliza en todos los paneles)
+    val cerrarSesion: () -> Unit = {
+        auth.signOut()
+        navHostController.navigate("initial") { popUpTo(0) }
+    }
+
     NavHost(navController = navHostController, startDestination = startDest) {
+
+        // ---------- ROUTER (decide el panel según el rol) ----------
         composable("router") {
             val context = LocalContext.current
-            
+
             LaunchedEffect(Unit) {
                 validarAcceso(
                     auth = auth,
@@ -65,6 +72,21 @@ fun NavigationWrapper(
                         navHostController.navigate("jefe") {
                             popUpTo("router") { inclusive = true }
                         }
+                    },
+                    // Finanzas y mantenimiento: aún sin panel (próxima semana)
+                    onFinanzas = {
+                        auth.signOut()
+                        navHostController.navigate("login") {
+                            popUpTo("router") { inclusive = true }
+                        }
+                        Toast.makeText(context, "Panel de finanzas próximamente", Toast.LENGTH_LONG).show()
+                    },
+                    onMantenimiento = {
+                        auth.signOut()
+                        navHostController.navigate("login") {
+                            popUpTo("router") { inclusive = true }
+                        }
+                        Toast.makeText(context, "Panel de mantenimiento próximamente", Toast.LENGTH_LONG).show()
                     },
                     onSeguimiento = {
                         navHostController.navigate("seguimiento") {
@@ -93,6 +115,7 @@ fun NavigationWrapper(
             }
         }
 
+        // ---------- INICIO, LOGIN, REGISTRO ----------
         composable("initial") {
             InitialScreen(
                 onLogin = { navHostController.navigate("login") },
@@ -122,12 +145,15 @@ fun NavigationWrapper(
                         popUpTo("initial") { inclusive = true }
                     }
                 }
+                // onNavigateToFinanzas y onNavigateToMantenimiento: se usan los valores
+                // por defecto; el aviso se muestra desde InitialScreen
             )
         }
 
         composable("login") {
             LoginScreen(
                 onLoginSuccess = {
+                    // El router lee el rol y manda a cada persona a su panel
                     navHostController.navigate("router") {
                         popUpTo("login") { inclusive = true }
                     }
@@ -152,30 +178,16 @@ fun NavigationWrapper(
             )
         }
 
+        // ---------- SOCIO ----------
         composable("home") {
             HomeSocioScreen(
-                onNavigateToProfile = {
-                    // Navega a la pantalla del código QR
-                    navHostController.navigate("profile")
-                },
-                onNavigateToServicios = {
-                    navHostController.navigate("servicios")
-                },
-                onLogout = {
-                    // Cierra sesión en Firebase y regresa al inicio
-                    auth.signOut()
-                    navHostController.navigate("initial") {
-                        popUpTo(0)
-                    }
-                }
+                onNavigateToProfile = { navHostController.navigate("profile") },
+                onNavigateToServicios = { navHostController.navigate("servicios") },
+                onLogout = cerrarSesion
             )
         }
-        composable(route = "profile") {
-            ProfileScreen(
-                onBackClick = {
-                    navHostController.popBackStack()
-                }
-            )
+        composable("profile") {
+            ProfileScreen(onBackClick = { navHostController.popBackStack() })
         }
         composable("servicios") {
             com.dsm.clubnauticoposeidon.ui.screens.Socios.ServiciosScreen(
@@ -206,21 +218,19 @@ fun NavigationWrapper(
                 onBackClick = { navHostController.popBackStack() }
             )
         }
+
+        // ---------- NAVIERO (operaciones y radas) ----------
         composable("home_operaciones") {
             HomeOperacionesScreen(
-                onLogout = {
-                    auth.signOut()
-                    navHostController.navigate("initial") {
-                        popUpTo(0)
-                    }
-                },
+                onLogout = cerrarSesion,
                 onNavigateToAsignarRada = { navHostController.navigate("asignar_rada") },
                 onNavigateToMapa = { navHostController.navigate("mapa_muelles") }
             )
         }
 
         composable("asignar_rada") { backStackEntry ->
-            val radaDelMapa = backStackEntry.savedStateHandle.get("rada_seleccionada") ?: ""
+            val radaDelMapa: String =
+                backStackEntry.savedStateHandle.get<String>("rada_seleccionada") ?: ""
 
             AsignarRadaScreen(
                 radaSeleccionada = radaDelMapa,
@@ -242,6 +252,7 @@ fun NavigationWrapper(
             )
         }
 
+        // ---------- POSTULANTE ----------
         composable("seguimiento") {
             SeguimientoScreen(
                 onNavigateToHomeSocio = {
@@ -249,41 +260,30 @@ fun NavigationWrapper(
                         popUpTo("seguimiento") { inclusive = true }
                     }
                 },
-                onLogout = {
-                    navHostController.navigate("login") {
-                        popUpTo(0)
-                    }
-                }
+                onLogout = cerrarSesion
             )
         }
+
+        // ---------- SECRETARIA ----------
         composable("secretaria") {
             com.dsm.clubnauticoposeidon.ui.screens.secretaria.HomeSecretariaScreen(
-                onNavigateToSolicitudes = {
-                    navHostController.navigate("bandeja_solicitudes")
-                },
-                onLogout = {
-                    auth.signOut()
-                    navHostController.navigate("login") { popUpTo(0) }
-                }
+                onNavigateToSolicitudes = { navHostController.navigate("bandeja_solicitudes") },
+                onLogout = cerrarSesion
             )
         }
-        
         composable("bandeja_solicitudes") {
             com.dsm.clubnauticoposeidon.ui.screens.secretaria.BandejaSecretariaScreen(
                 onBackClick = { navHostController.popBackStack() }
             )
         }
 
+        // ---------- JEFE ----------
         composable("jefe") {
             com.dsm.clubnauticoposeidon.ui.screens.jefatura.HomeJefaturaScreen(
                 onNavigateToAprobaciones = { navHostController.navigate("bandeja_aprobaciones") },
-                onLogout = {
-                    auth.signOut()
-                    navHostController.navigate("login") { popUpTo(0) }
-                }
+                onLogout = cerrarSesion
             )
         }
-
         composable("bandeja_aprobaciones") {
             com.dsm.clubnauticoposeidon.ui.screens.jefatura.BandejaAprobacionesScreen(
                 onBackClick = { navHostController.popBackStack() }
