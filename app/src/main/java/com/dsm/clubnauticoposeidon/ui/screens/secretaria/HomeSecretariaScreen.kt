@@ -35,6 +35,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,12 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.util.Log
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.setValue
-import com.google.firebase.firestore.FirebaseFirestore
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import java.time.LocalDate
@@ -60,31 +57,14 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeSecretariaScreen(
+    viewModel: HomeSecretariaViewModel = viewModel(),
     onNavigateToSolicitudes: () -> Unit,
     onLogout: () -> Unit
 ) {
-    var solicitudesPendientes by remember { mutableIntStateOf(0) }
+    val nombreSecretaria by viewModel.nombreSecretaria.collectAsState()
+    val solicitudesPendientes by viewModel.solicitudesPendientes.collectAsState()
 
-    DisposableEffect(Unit) {
-        val db = FirebaseFirestore.getInstance()
-        val listener = db.collection("usuarios")
-            .whereEqualTo("rol", "postulante")
-            .whereEqualTo("estado", "pendiente")
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    Log.e("HomeSecretaria", "Error al obtener solicitudes pendientes", error)
-                    return@addSnapshotListener
-                }
-                if (snapshot != null) {
-                    solicitudesPendientes = snapshot.size()
-                }
-            }
-        onDispose {
-            listener.remove()
-        }
-    }
-
-    // Calculo de la fecha actual
+    // Cálculo de la fecha actual
     val currentDate = remember {
         val localeEs = Locale.Builder().setLanguage("es").setRegion("ES").build()
         val formatter = DateTimeFormatter.ofPattern("'Hoy,' d 'de' MMMM", localeEs)
@@ -102,7 +82,12 @@ fun HomeSecretariaScreen(
                     )
                 },
                 actions = {
-                    IconButton(onClick = onLogout) {
+                    IconButton(
+                        onClick = {
+                            viewModel.cerrarSesion()
+                            onLogout()
+                        }
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Logout,
                             contentDescription = "Cerrar sesión",
@@ -125,9 +110,10 @@ fun HomeSecretariaScreen(
 
             // Cabecera: Saludo
             Text(
-                text = "Bienvenida,",
-                color = Color.LightGray,
-                fontSize = 18.sp
+                text = "Bienvenida, $nombreSecretaria",
+                color = Color.White,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.SemiBold
             )
             Text(
                 text = currentDate,
