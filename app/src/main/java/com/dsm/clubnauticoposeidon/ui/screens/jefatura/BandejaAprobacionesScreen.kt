@@ -23,6 +23,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,7 +36,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,62 +49,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
-import com.google.firebase.firestore.FirebaseFirestore
 
-// Modelo de datos mapeado de Firestore
-data class CandidatoModel(
-    val id: String = "",
-    val nombre: String = "",
-    val apellidos: String = "",
-    val dni: String = "",
-    val correo: String = "",
-    val clasificacion: String = "",
-    val verificacionExterna: Map<String, String>? = null
-)
-
+// 3. Vista (UI)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BandejaAprobacionesScreen(
+    viewModel: BandejaAprobacionesViewModel = viewModel(),
     onBackClick: () -> Unit
 ) {
     val context = LocalContext.current
-    var candidatos by remember { mutableStateOf<List<CandidatoModel>>(emptyList()) }
-
-    // Conexión y escucha en tiempo real a Firestore
-    DisposableEffect(Unit) {
-        val db = FirebaseFirestore.getInstance()
-        val listener = db.collection("usuarios")
-            .whereEqualTo("rol", "postulante")
-            .whereEqualTo("estado", "revisado_secretaria")
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    Toast.makeText(context, "Error al cargar las aprobaciones pendientes", Toast.LENGTH_SHORT).show()
-                    return@addSnapshotListener
-                }
-
-                if (snapshot != null) {
-                    val listaCandidatos = snapshot.documents.map { doc ->
-                        @Suppress("UNCHECKED_CAST")
-                        CandidatoModel(
-                            id = doc.id,
-                            nombre = doc.getString("nombre") ?: "",
-                            apellidos = doc.getString("apellidos") ?: "",
-                            dni = doc.getString("dni") ?: "",
-                            correo = doc.getString("correo") ?: "",
-                            clasificacion = doc.getString("clasificacion") ?: "",
-                            verificacionExterna = doc.get("verificacion_externa") as? Map<String, String>
-                        )
-                    }
-                    candidatos = listaCandidatos
-                }
-            }
-
-        onDispose {
-            listener.remove()
-        }
-    }
+    val postulantes by viewModel.postulantes.collectAsState()
+    val cargando by viewModel.cargando.collectAsState()
 
     Scaffold(
         topBar = {
@@ -137,7 +96,11 @@ fun BandejaAprobacionesScreen(
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (candidatos.isEmpty()) {
+            if (cargando) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Gold500)
+                }
+            } else if (postulantes.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
                         text = "No hay solicitudes pendientes de aprobación",
@@ -151,8 +114,35 @@ fun BandejaAprobacionesScreen(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(candidatos) { candidato ->
-                        PostulanteAprobacionCard(candidato = candidato)
+                    items(postulantes) { candidato ->
+                        PostulanteAprobacionCard(
+                            candidato = candidato,
+                            onAprobar = {
+                                viewModel.aprobarSocio(
+                                    postulanteId = candidato.id,
+                                    clasificacion = candidato.clasificacion,
+                                    onSuccess = {
+                                        Toast.makeText(context, "Socio aprobado exitosamente", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onError = { errorMsg ->
+                                        Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+                                    }
+                                )
+                            },
+                            onRechazar = { motivo, onCompletado ->
+                                viewModel.rechazarSocio(
+                                    postulanteId = candidato.id,
+                                    motivo = motivo,
+                                    onSuccess = {
+                                        Toast.makeText(context, "Solicitud rechazada correctamente", Toast.LENGTH_SHORT).show()
+                                        onCompletado()
+                                    },
+                                    onError = { errorMsg ->
+                                        Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+                                    }
+                                )
+                            }
+                        )
                     }
                     item { Spacer(modifier = Modifier.height(24.dp)) }
                 }
@@ -162,9 +152,12 @@ fun BandejaAprobacionesScreen(
 }
 
 @Composable
-fun PostulanteAprobacionCard(candidato: CandidatoModel) {
+fun PostulanteAprobacionCard(
+    candidato: PostulanteAprobacion,
+    onAprobar: () -> Unit,
+    onRechazar: (motivo: String, onCompletado: () -> Unit) -> Unit
+) {
     val context = LocalContext.current
-    val db = FirebaseFirestore.getInstance()
     var mostrarDialogoRechazo by remember { mutableStateOf(false) }
     var motivoRechazo by remember { mutableStateOf("") }
 
@@ -202,9 +195,9 @@ fun PostulanteAprobacionCard(candidato: CandidatoModel) {
                         fontWeight = FontWeight.SemiBold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     val colorClasificacion = if (candidato.clasificacion == "socio pagador") Gold500 else Color(0xFFFF5252)
-                    
+
                     Row {
                         Text(text = "Clasificación Asignada: ", color = Color.LightGray, fontSize = 14.sp)
                         Text(
@@ -214,7 +207,7 @@ fun PostulanteAprobacionCard(candidato: CandidatoModel) {
                             fontWeight = FontWeight.Bold
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.height(6.dp))
 
                     if (candidato.verificacionExterna != null) {
@@ -259,30 +252,12 @@ fun PostulanteAprobacionCard(candidato: CandidatoModel) {
                 ) {
                     Text("Rechazar")
                 }
-                
+
                 Spacer(modifier = Modifier.width(12.dp))
 
                 // Botón Aprobar
                 Button(
-                    onClick = {
-                        if (candidato.clasificacion == "socio pagador") {
-                            db.collection("usuarios").document(candidato.id)
-                                .update(
-                                    mapOf(
-                                        "estado" to "aprobado",
-                                        "rol" to "socio"
-                                    )
-                                )
-                                .addOnSuccessListener {
-                                    Toast.makeText(context, "Socio aprobado exitosamente", Toast.LENGTH_SHORT).show()
-                                }
-                                .addOnFailureListener {
-                                    Toast.makeText(context, "Error al aprobar al socio", Toast.LENGTH_SHORT).show()
-                                }
-                        } else {
-                            Toast.makeText(context, "Error: La política del club solo admite socios clasificados como 'pagador'.", Toast.LENGTH_LONG).show()
-                        }
-                    },
+                    onClick = onAprobar,
                     colors = ButtonDefaults.buttonColors(containerColor = Gold500),
                     shape = RoundedCornerShape(50)
                 ) {
@@ -336,21 +311,10 @@ fun PostulanteAprobacionCard(candidato: CandidatoModel) {
                             return@Button
                         }
 
-                        db.collection("usuarios").document(candidato.id)
-                            .update(
-                                mapOf(
-                                    "estado" to "rechazado",
-                                    "motivo_rechazo" to motivoRechazo
-                                )
-                            )
-                            .addOnSuccessListener {
-                                Toast.makeText(context, "Solicitud rechazada correctamente", Toast.LENGTH_SHORT).show()
-                                mostrarDialogoRechazo = false
-                                motivoRechazo = "" // Limpia el estado
-                            }
-                            .addOnFailureListener {
-                                Toast.makeText(context, "Error al rechazar solicitud", Toast.LENGTH_SHORT).show()
-                            }
+                        onRechazar(motivoRechazo) {
+                            mostrarDialogoRechazo = false
+                            motivoRechazo = "" // Limpia el estado
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828))
                 ) {
@@ -359,8 +323,8 @@ fun PostulanteAprobacionCard(candidato: CandidatoModel) {
             },
             dismissButton = {
                 TextButton(
-                    onClick = { 
-                        mostrarDialogoRechazo = false 
+                    onClick = {
+                        mostrarDialogoRechazo = false
                         motivoRechazo = ""
                     }
                 ) {

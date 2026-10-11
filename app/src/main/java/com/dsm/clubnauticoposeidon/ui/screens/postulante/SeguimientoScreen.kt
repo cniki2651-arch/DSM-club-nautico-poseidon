@@ -28,11 +28,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,45 +38,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SeguimientoScreen(
-    auth: FirebaseAuth,
-    onSignOut: () -> Unit,
-    onNavigateToHomeSocio: () -> Unit = {}
+    viewModel: SeguimientoViewModel = viewModel(),
+    onNavigateToHomeSocio: () -> Unit = {},
+    onLogout: () -> Unit
 ) {
     val context = LocalContext.current
-    var estadoActual by remember { mutableStateOf("Cargando...") }
-    var motivoRechazo by remember { mutableStateOf("") }
-    val uid = auth.currentUser?.uid
-
-    // Escucha en tiempo real del documento del postulante
-    DisposableEffect(uid) {
-        if (uid == null) return@DisposableEffect onDispose {}
-
-        val db = FirebaseFirestore.getInstance()
-        val listener = db.collection("usuarios").document(uid)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    Toast.makeText(context, "Error al sincronizar datos", Toast.LENGTH_SHORT).show()
-                    return@addSnapshotListener
-                }
-                
-                if (snapshot != null && snapshot.exists()) {
-                    estadoActual = snapshot.getString("estado") ?: "desconocido"
-                    motivoRechazo = snapshot.getString("motivo_rechazo") ?: ""
-                }
-            }
-            
-        onDispose {
-            listener.remove()
-        }
-    }
+    val estadoActual by viewModel.estadoActual.collectAsState()
+    val motivoRechazo by viewModel.motivoRechazo.collectAsState()
 
     Scaffold(
         topBar = {
@@ -93,8 +65,8 @@ fun SeguimientoScreen(
                 },
                 actions = {
                     IconButton(onClick = {
-                        auth.signOut()
-                        onSignOut()
+                        viewModel.cerrarSesion()
+                        onLogout()
                     }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Logout,
@@ -119,9 +91,8 @@ fun SeguimientoScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                
                 when (estadoActual) {
-                    "Cargando..." -> {
+                    "cargando" -> {
                         CircularProgressIndicator(color = Gold500, modifier = Modifier.size(60.dp))
                         Spacer(modifier = Modifier.height(24.dp))
                         Text(
@@ -131,7 +102,7 @@ fun SeguimientoScreen(
                             textAlign = TextAlign.Center
                         )
                     }
-                    
+
                     "pendiente", "revisado_secretaria" -> {
                         CircularProgressIndicator(color = Gold500, modifier = Modifier.size(60.dp))
                         Spacer(modifier = Modifier.height(24.dp))
@@ -150,7 +121,7 @@ fun SeguimientoScreen(
                             textAlign = TextAlign.Center
                         )
                     }
-                    
+
                     "aprobado" -> {
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
@@ -185,7 +156,7 @@ fun SeguimientoScreen(
                             Text("Ir al Portal de Socios", color = Navy900, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }
                     }
-                    
+
                     "rechazado" -> {
                         Icon(
                             imageVector = Icons.Default.Warning,
@@ -202,7 +173,7 @@ fun SeguimientoScreen(
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(24.dp))
-                        
+
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
@@ -229,26 +200,19 @@ fun SeguimientoScreen(
                                 )
                             }
                         }
-                        
+
                         Spacer(modifier = Modifier.height(32.dp))
-                        
+
                         Button(
                             onClick = {
-                                if (uid != null) {
-                                    FirebaseFirestore.getInstance().collection("usuarios").document(uid)
-                                        .update(
-                                            mapOf(
-                                                "estado" to "pendiente",
-                                                "motivo_rechazo" to ""
-                                            )
-                                        )
-                                        .addOnSuccessListener {
-                                            Toast.makeText(context, "Solicitud reenviada con éxito", Toast.LENGTH_SHORT).show()
-                                        }
-                                        .addOnFailureListener {
-                                            Toast.makeText(context, "Error al reenviar la solicitud", Toast.LENGTH_SHORT).show()
-                                        }
-                                }
+                                viewModel.subsanarSolicitud(
+                                    onSuccess = {
+                                        Toast.makeText(context, "Solicitud reenviada con éxito", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onError = { errorMsg ->
+                                        Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
+                                    }
+                                )
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -259,7 +223,7 @@ fun SeguimientoScreen(
                             Text("Subsanar y Volver a Enviar", color = Navy900, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }
                     }
-                    
+
                     else -> {
                         // Fallback de seguridad
                         Text(

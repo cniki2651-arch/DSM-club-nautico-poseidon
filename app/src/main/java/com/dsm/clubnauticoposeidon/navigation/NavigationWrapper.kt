@@ -246,8 +246,12 @@ fun NavigationWrapper(
 
         composable("seguimiento") {
             SeguimientoScreen(
-                auth = auth,
-                onSignOut = {
+                onNavigateToHomeSocio = {
+                    navHostController.navigate("home") {
+                        popUpTo("seguimiento") { inclusive = true }
+                    }
+                },
+                onLogout = {
                     navHostController.navigate("login") {
                         popUpTo(0)
                     }
