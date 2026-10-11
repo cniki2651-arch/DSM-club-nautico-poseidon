@@ -4,8 +4,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -33,19 +35,18 @@ fun AuthHeader() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1.2f)
+            .aspectRatio(1.35f)   // sube este valor para una cabecera más baja
     ) {
         Image(
             painter = painterResource(id = R.drawable.poseidon_marina),
             contentDescription = stringResource(R.string.login_logo_descripcion),
             contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.matchParentSize()
         )
 
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1.2f)
+                .matchParentSize()
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
@@ -60,18 +61,18 @@ fun AuthHeader() {
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 24.dp),
+                .padding(bottom = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Image(
                 painter = painterResource(id = R.drawable.logo),
                 contentDescription = stringResource(R.string.login_logo_descripcion),
                 modifier = Modifier
-                    .size(76.dp)
+                    .size(110.dp)   // logo más grande (antes 76.dp)
                     .clip(CircleShape)
             )
 
-            androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(top = 12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Text(
                 text = stringResource(R.string.login_titulo),
@@ -83,7 +84,7 @@ fun AuthHeader() {
             Text(
                 text = stringResource(R.string.marca_subtitulo),
                 color = Gold400,
-                fontSize = 11.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 3.sp
             )
