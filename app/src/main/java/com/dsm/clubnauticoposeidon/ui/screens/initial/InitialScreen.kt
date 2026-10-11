@@ -212,12 +212,13 @@ fun InitialScreen(
 
                                     onFinanzas = {
                                         cargando = false
-                                        onNavigateToFinanzas()
+                                        FirebaseAuth.getInstance().signOut()
+                                        Toast.makeText(context, "Panel de finanzas próximamente", Toast.LENGTH_LONG).show()
                                     },
-
                                     onMantenimiento = {
                                         cargando = false
-                                        onNavigateToMantenimiento()
+                                        FirebaseAuth.getInstance().signOut()
+                                        Toast.makeText(context, "Panel de mantenimiento próximamente", Toast.LENGTH_LONG).show()
                                     },
 
                                     onSeguimiento = {
