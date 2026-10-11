@@ -1,6 +1,5 @@
 package com.dsm.clubnauticoposeidon.ui.screens.jefatura
 
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,12 +35,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,10 +47,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -62,59 +57,12 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeJefaturaScreen(
+    viewModel: HomeJefaturaViewModel = viewModel(),
     onNavigateToAprobaciones: () -> Unit,
     onLogout: () -> Unit
 ) {
-    // Estado para nombre del jefe
-    var nombreJefe by remember { mutableStateOf("Cargando...") }
-
-    // Estado para notificaciones en tiempo real
-    var aprobacionesPendientes by remember { mutableIntStateOf(0) }
-
-    // Listener de Firestore
-    DisposableEffect(Unit) {
-        val db = FirebaseFirestore.getInstance()
-        val uid = FirebaseAuth.getInstance().currentUser?.uid
-
-        // Obtener nombre del jefe
-        if (uid != null) {
-            db.collection("usuarios").document(uid).get()
-                .addOnSuccessListener { document ->
-                    if (document.exists()) {
-                        val nombre = document.getString("nombre")
-                        if (!nombre.isNullOrBlank()) {
-                            nombreJefe = nombre
-                        } else {
-                            nombreJefe = "Jefatura"
-                        }
-                    } else {
-                        nombreJefe = "Jefatura"
-                    }
-                }
-                .addOnFailureListener {
-                    nombreJefe = "Jefatura"
-                    Log.e("HomeJefatura", "Error al obtener el nombre del jefe", it)
-                }
-        } else {
-            nombreJefe = "Jefatura"
-        }
-
-        val listener = db.collection("usuarios")
-            .whereEqualTo("rol", "postulante")
-            .whereEqualTo("estado", "revisado_secretaria")
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    Log.e("HomeJefatura", "Error al obtener solicitudes pendientes", error)
-                    return@addSnapshotListener
-                }
-                if (snapshot != null) {
-                    aprobacionesPendientes = snapshot.size()
-                }
-            }
-        onDispose {
-            listener.remove()
-        }
-    }
+    val nombreJefe by viewModel.nombreJefe.collectAsState()
+    val aprobacionesPendientes by viewModel.aprobacionesPendientes.collectAsState()
 
     // Cálculo de la fecha actual
     val currentDate = remember {
@@ -134,7 +82,12 @@ fun HomeJefaturaScreen(
                     )
                 },
                 actions = {
-                    IconButton(onClick = onLogout) {
+                    IconButton(
+                        onClick = {
+                            viewModel.cerrarSesion()
+                            onLogout()
+                        }
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Logout,
                             contentDescription = "Cerrar sesión",
@@ -155,7 +108,7 @@ fun HomeJefaturaScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Cabecera: Saludo (Limpia sin avatar)
+            // Cabecera: Saludo
             Column {
                 Text(
                     text = "Hola, $nombreJefe",
@@ -263,7 +216,7 @@ fun DashboardCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1f) // Lo hace completamente cuadrado
+            .aspectRatio(1f)
             .clip(RoundedCornerShape(16.dp))
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
@@ -288,7 +241,7 @@ fun DashboardCard(
                 badge = {
                     if (badgeCount != null && badgeCount > 0) {
                         Badge(
-                            containerColor = Color(0xFFC62828), // Rojo oscuro/alerta
+                            containerColor = Color(0xFFC62828),
                             contentColor = Color.White
                         ) {
                             Text("$badgeCount")
