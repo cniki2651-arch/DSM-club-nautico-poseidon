@@ -1,7 +1,6 @@
-
-
 package com.dsm.clubnauticoposeidon.ui.screens.recovery
 
+import android.util.Patterns
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -32,7 +32,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -41,43 +40,40 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.dsm.clubnauticoposeidon.ui.theme.Gold400
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Ink
 import com.dsm.clubnauticoposeidon.ui.theme.Muted
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
+import com.google.firebase.FirebaseNetworkException
+import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-
-
-// Modelo de datos que se guarda en Firestore
-
-data class SolicitudPassword(
-    val nombre: String = "",
-    val correo: String = "",
-    val mensaje: String = "",
-    val fecha: Long = System.currentTimeMillis(),
-    val estado: String = "pendiente"
-)
 
 
 // ViewModel
 
 class RecuperarPasswordViewModel : ViewModel() {
 
+    private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
 
-    var nombre by mutableStateOf("")
     var correo by mutableStateOf("")
-    var mensaje by mutableStateOf("")
     var enviando by mutableStateOf(false)
     var exito by mutableStateOf(false)
     var error by mutableStateOf<String?>(null)
 
     fun enviar() {
-        if (nombre.isBlank() || correo.isBlank() || mensaje.isBlank()) {
-            error = "Completa todos los campos"
+        val email = correo.trim()
+
+        if (email.isBlank()) {
+            error = "Ingresa tu correo electrónico"
+            return
+        }
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            error = "El correo no tiene un formato válido"
             return
         }
 
@@ -85,15 +81,29 @@ class RecuperarPasswordViewModel : ViewModel() {
             enviando = true
             error = null
             try {
-                val solicitud = SolicitudPassword(
-                    nombre = nombre,
-                    correo = correo,
-                    mensaje = mensaje
-                )
-                firestore.collection("solicitudes_password").add(solicitud).await()
+                // Usa la plantilla "Restablecer contraseña" configurada en Firebase
+                auth.useAppLanguage()
+                auth.sendPasswordResetEmail(email).await()
+
+                // Registro opcional en Firestore (si falla, no afecta al usuario)
+                try {
+                    firestore.collection("solicitudes_password").add(
+                        mapOf(
+                            "correo" to email,
+                            "fecha" to Timestamp.now(),
+                            "estado" to "solicitado"
+                        )
+                    ).await()
+                } catch (_: Exception) {
+                }
+
                 exito = true
+            } catch (e: FirebaseAuthInvalidCredentialsException) {
+                error = "El correo no tiene un formato válido"
+            } catch (e: FirebaseNetworkException) {
+                error = "Sin conexión. Revisa tu internet e inténtalo de nuevo"
             } catch (e: Exception) {
-                error = e.message ?: "No se pudo enviar la solicitud"
+                error = "No se pudo enviar el correo. Inténtalo más tarde"
             } finally {
                 enviando = false
             }
@@ -146,7 +156,7 @@ fun RecuperarPasswordScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Envía tus datos y el área administrativa revisará tu solicitud para actualizar tu contraseña.",
+                text = "Ingresa el correo con el que creaste tu cuenta y te enviaremos un enlace para restablecer tu contraseña.",
                 color = Muted,
                 fontSize = 14.sp
             )
@@ -154,32 +164,11 @@ fun RecuperarPasswordScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             TextField(
-                value = viewModel.nombre,
-                onValueChange = { viewModel.nombre = it },
-                placeholder = { Text("Nombre", color = Muted) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedTextColor = Ink,
-                    unfocusedTextColor = Ink,
-                    cursorColor = Ink,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Gold500,
-                    unfocusedIndicatorColor = Muted
-                )
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            TextField(
                 value = viewModel.correo,
                 onValueChange = { viewModel.correo = it },
                 placeholder = { Text("Correo electrónico", color = Muted) },
                 singleLine = true,
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                    keyboardType = KeyboardType.Email
-                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
                     focusedTextColor = Ink,
@@ -192,23 +181,12 @@ fun RecuperarPasswordScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            TextField(
-                value = viewModel.mensaje,
-                onValueChange = { viewModel.mensaje = it },
-                placeholder = { Text("Mensaje", color = Muted) },
-                minLines = 4,
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedTextColor = Ink,
-                    unfocusedTextColor = Ink,
-                    cursorColor = Ink,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Gold500,
-                    unfocusedIndicatorColor = Muted
-                )
+            Text(
+                text = "Si ingresas con Google no necesitas recuperar contraseña: usa el botón «Continuar con Google».",
+                color = Muted,
+                fontSize = 12.sp
             )
 
             viewModel.error?.let { mensajeError ->
@@ -235,7 +213,7 @@ fun RecuperarPasswordScreen(
                     )
                 } else {
                     Text(
-                        text = "Enviar",
+                        text = "Enviar enlace",
                         color = Navy900,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
@@ -250,8 +228,6 @@ fun RecuperarPasswordScreen(
 
 @Composable
 private fun PantallaConfirmacion(onVolver: () -> Unit) {
-    val context = LocalContext.current
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -268,14 +244,14 @@ private fun PantallaConfirmacion(onVolver: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Solicitud enviada",
+            text = "Revisa tu correo",
             color = Ink,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "El área administrativa revisará tu solicitud y se pondrá en contacto contigo.",
+            text = "Si el correo está registrado con contraseña, recibirás un enlace para restablecerla. Revisa también la carpeta de spam.\n\nSi ingresas con Google, usa el botón «Continuar con Google».",
             color = Muted,
             fontSize = 14.sp,
             textAlign = TextAlign.Center
