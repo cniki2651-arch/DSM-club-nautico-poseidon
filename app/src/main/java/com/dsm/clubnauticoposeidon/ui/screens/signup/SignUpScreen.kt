@@ -209,7 +209,7 @@ fun SignUpScreen(
             onClick = onBackClick,
             modifier = Modifier
                 .align(Alignment.Start)
-                .padding(top = 32.dp, start = 16.dp)
+                .padding(top = 24.dp, start = 16.dp)   // CAMBIO: antes top = 32.dp
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -218,9 +218,10 @@ fun SignUpScreen(
             )
         }
 
-        AuthHeader()
+        // CAMBIO: cabecera más baja y logo un poco más pequeño solo en el registro
+        AuthHeader(aspectRatio = 1.8f, logoSize = 90.dp)
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))   // CAMBIO: antes 24.dp
 
         Column(
             modifier = Modifier
