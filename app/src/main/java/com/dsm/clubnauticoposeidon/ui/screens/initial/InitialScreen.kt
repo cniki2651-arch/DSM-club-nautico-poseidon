@@ -91,7 +91,7 @@ fun InitialScreen(
                     .padding(6.dp)
                     .clip(CircleShape)
             )
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = stringResource(R.string.welcome_titulo),
                 style = TituloNautico,
