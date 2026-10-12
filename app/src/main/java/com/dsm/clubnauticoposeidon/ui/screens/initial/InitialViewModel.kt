@@ -24,7 +24,7 @@ data class InitialUiState(
     val cargando: Boolean = false
 )
 
-// Destinos a los que puede navegar la pantalla inicial
+
 enum class DestinoInicial {
     SOCIO,
     ADMIN,

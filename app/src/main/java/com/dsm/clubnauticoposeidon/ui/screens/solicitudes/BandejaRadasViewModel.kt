@@ -17,6 +17,7 @@ data class BandejaRadasUiState(
     val radas: List<Rada> = emptyList(),
     val cargando: Boolean = true,
     val procesando: Boolean = false,
+    val completado: Boolean = false,   // true cuando se aprobó o rechazó con éxito
     val mensaje: String? = null
 )
 
@@ -48,7 +49,7 @@ class BandejaRadasViewModel(
             _ui.update { it.copy(procesando = true) }
             try {
                 solicitudRepo.aprobar(solicitud, radaId)
-                _ui.update { it.copy(procesando = false, mensaje = "Rada $radaId asignada") }
+                _ui.update { it.copy(procesando = false, completado = true, mensaje = "Rada $radaId asignada") }
             } catch (e: Exception) {
                 _ui.update { it.copy(procesando = false, mensaje = e.message ?: "No se pudo aprobar") }
             }
@@ -60,7 +61,7 @@ class BandejaRadasViewModel(
             _ui.update { it.copy(procesando = true) }
             try {
                 solicitudRepo.rechazar(solicitudId, motivo.trim())
-                _ui.update { it.copy(procesando = false, mensaje = "Solicitud rechazada") }
+                _ui.update { it.copy(procesando = false, completado = true, mensaje = "Solicitud rechazada") }
             } catch (e: Exception) {
                 _ui.update { it.copy(procesando = false, mensaje = e.message ?: "No se pudo rechazar") }
             }
