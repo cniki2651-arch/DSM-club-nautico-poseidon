@@ -25,6 +25,10 @@ class ClimaViewModel : ViewModel() {
         cargarClima()
     }
 
+    /**
+     * Consulta de forma asíncrona los datos climáticos y marítimos a través del repositorio.
+     * Actualiza el flujo reactivo de estado y maneja posibles errores de conexión.
+     */
     fun cargarClima() {
         viewModelScope.launch {
             _cargando.value = true

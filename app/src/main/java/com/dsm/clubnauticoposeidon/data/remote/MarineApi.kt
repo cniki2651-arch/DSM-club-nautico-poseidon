@@ -5,6 +5,10 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 interface MarineApi {
+    /**
+     * Consulta parámetros oceánicos y de oleaje (altura de olas, dirección y periodo)
+     * para las coordenadas marítimas del Callao.
+     */
     @GET("v1/marine")
     suspend fun obtenerDatosMarinos(
         @Query("latitude") latitud: Double,

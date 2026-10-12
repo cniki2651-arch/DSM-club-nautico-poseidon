@@ -14,6 +14,10 @@ interface ClimaApi {
         @Query("current") current: String = "temperature_2m,wind_speed_10m"
     ): ClimaResponse
 
+    /**
+     * Consulta variables meteorológicas atmosféricas completas (sensación térmica, humedad,
+     * nubosidad, ráfagas, presión y pronóstico diario) para la pantalla de detalle del socio (HU05).
+     */
     @GET("v1/forecast")
     suspend fun obtenerClimaDetallado(
         @Query("latitude") latitud: Double,
