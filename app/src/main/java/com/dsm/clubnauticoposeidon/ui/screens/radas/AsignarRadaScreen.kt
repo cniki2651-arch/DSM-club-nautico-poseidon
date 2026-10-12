@@ -61,7 +61,7 @@ fun AsignarRadaScreen(
     onAbrirMapaClick: () -> Unit,
     radaSeleccionada: String = "",
     viewModel: BandejaRadasViewModel = viewModel(),
-    radaViewModel: RadaViewModel = viewModel()   // solo para el aviso de clima
+    radaViewModel: RadaViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val ui by viewModel.ui.collectAsState()
@@ -170,7 +170,7 @@ fun AsignarRadaScreen(
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Aviso del clima (solo informativo, no bloquea la aprobación)
+
                 clima.clima?.let { c ->
                     val seguro = clima.vientoSeguro == true
                     Text(
@@ -186,7 +186,7 @@ fun AsignarRadaScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                // Datos de la solicitud (solo lectura)
+                // Datos de la solicitud
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),

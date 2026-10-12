@@ -21,7 +21,7 @@ data class RadasUiState(
     val embarcacion: Embarcacion? = null,
     val sugerida: Rada? = null,
     val clima: ClimaActual? = null,
-    val vientoSeguro: Boolean? = null,   // null = clima no disponible
+    val vientoSeguro: Boolean? = null,   
     val cargando: Boolean = false,
     val mensaje: String? = null,
     val guardado: Boolean = false
@@ -64,7 +64,7 @@ class RadaViewModel(
         }
     }
 
-    // Busca la nave, valida que sea del socio y sugiere la mejor rada
+
     fun buscarNave(dni: String, matricula: String) {
         viewModelScope.launch {
             _ui.update { it.copy(cargando = true, embarcacion = null, sugerida = null) }
