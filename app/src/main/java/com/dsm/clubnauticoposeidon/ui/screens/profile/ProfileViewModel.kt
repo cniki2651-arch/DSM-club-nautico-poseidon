@@ -9,13 +9,18 @@ import kotlinx.coroutines.flow.StateFlow
 
 // Modelo de datos del perfil del usuario
 data class UserProfile(
-    val nombreCompleto: String = "",
+    val nombre: String = "",
+    val apellidos: String = "",
     val dni: String = "",
     val tipoDocumento: String = "DNI",
     val correo: String = "",
     val telefono: String = "",
+    val rol: String = "socio",
     val estado: String = ""
-)
+) {
+    val nombreCompleto: String
+        get() = "$nombre $apellidos".trim()
+}
 
 class ProfileViewModel : ViewModel() {
 
@@ -53,14 +58,17 @@ class ProfileViewModel : ViewModel() {
                 if (doc == null) {
                     _error.value = "No se encontró tu registro de socio"
                 } else {
-                    val nombre = doc.getString("nombre") ?: ""
-                    val apellidos = doc.getString("apellidos") ?: ""
+                    val nombreStr = doc.getString("nombre") ?: ""
+                    val apellidosStr = doc.getString("apellidos") ?: ""
+                    val rolStr = doc.getString("rol") ?: "socio"
                     _perfil.value = UserProfile(
-                        nombreCompleto = "$nombre $apellidos".trim(),
+                        nombre = nombreStr,
+                        apellidos = apellidosStr,
                         dni = doc.getString("dni") ?: "",
                         tipoDocumento = doc.getString("tipoDocumento") ?: "DNI",
                         correo = doc.getString("correo") ?: correo,
                         telefono = doc.getString("telefono") ?: "",
+                        rol = rolStr,
                         estado = doc.getString("estado") ?: ""
                     )
                 }

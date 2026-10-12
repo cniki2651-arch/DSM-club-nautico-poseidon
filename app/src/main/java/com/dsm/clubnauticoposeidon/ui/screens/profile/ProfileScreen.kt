@@ -171,6 +171,15 @@ fun ProfileScreen(
     val p = perfil
     if (showQR && p != null) {
         val idSocio = "POS-${p.dni}"
+        val qrContent = """
+            BEGIN:VCARD
+            VERSION:3.0
+            FN:${p.nombre} ${p.apellidos}
+            ORG:Club Náutico Poseidón
+            TITLE:Rol: ${p.rol.uppercase()}
+            NOTE:DNI: ${p.dni} | Estado: ${p.estado.uppercase()}
+            END:VCARD
+        """.trimIndent()
 
         Dialog(onDismissRequest = { showQR = false }) {
             Card(
@@ -202,9 +211,9 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // QR generado dinámicamente con ZXing usando el ID real del socio
+                    // QR generado dinámicamente con ZXing en formato vCard nativamente escaneable
                     QrCodeImage(
-                        content = idSocio,
+                        content = qrContent,
                         size = 250.dp
                     )
 
