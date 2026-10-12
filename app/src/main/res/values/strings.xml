@@ -46,5 +46,9 @@
     <string name="signup_login_pregunta">¿Ya eres socio? </string>
     <string name="signup_login_accion">Inicia sesión</string>
 
+    <string name="panel_finanzas">Panel de finanzas </string>
+    <string name="panel_mantenimiento">Panel de mantenimiento </string>
+    <string name="error_inicio_sesion_google">Error al iniciar sesión con Google</string>
+
     <string name="google_web_client_id">276810070049-fht9sagka87o1af36ubt463rags7pqdt.apps.googleusercontent.com</string>
 </resources>
