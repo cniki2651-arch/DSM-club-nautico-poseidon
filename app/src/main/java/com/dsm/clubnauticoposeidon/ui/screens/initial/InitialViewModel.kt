@@ -70,11 +70,11 @@ class InitialViewModel : ViewModel() {
 
                     onFinanzas = {
                         auth.signOut()
-                        terminar(InitialEvent.MensajeRes(R.string.panel_finanzas_proximamente))
+                        terminar(InitialEvent.MensajeRes(R.string.panel_finanzas))
                     },
                     onMantenimiento = {
                         auth.signOut()
-                        terminar(InitialEvent.MensajeRes(R.string.panel_mantenimiento_proximamente))
+                        terminar(InitialEvent.MensajeRes(R.string.panel_mantenimiento))
                     },
 
                     onError = { msg -> terminar(InitialEvent.Mensaje(msg)) }
