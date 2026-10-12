@@ -114,7 +114,7 @@ fun HomeOperacionesScreen(
                 }
             )
         },
-        containerColor = Navy900 // Fondo de toda la pantalla
+        containerColor = Navy900
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -126,7 +126,7 @@ fun HomeOperacionesScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Tarjeta de Estado de Radas (Dashboard de Ocupación)
+            // Tarjeta de Estado de Radas (datos reales de Firestore)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -189,7 +189,7 @@ fun HomeOperacionesScreen(
                 Toast.makeText(context, "Módulo en desarrollo", Toast.LENGTH_SHORT).show()
             }
 
-            // Cuadrícula de Gestión (Grid)
+            // Cuadrícula de Gestión
             Row(modifier = Modifier.fillMaxWidth()) {
                 NavieroGridItem(
                     title = "Mapa de Muelles",
@@ -210,16 +210,16 @@ fun HomeOperacionesScreen(
 
             Row(modifier = Modifier.fillMaxWidth()) {
                 NavieroGridItem(
-                    title = "Historial de Tránsito",
-                    icon = Icons.Default.History,
-                    onClick = onNavigateToHistorial,
+                    title = "Reportes de Daños",
+                    icon = Icons.Default.Build,
+                    onClick = showToast,
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 NavieroGridItem(
                     title = "Historial de Tránsito",
                     icon = Icons.Default.History,
-                    onClick = showToast,
+                    onClick = onNavigateToHistorial,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -244,7 +244,7 @@ fun ContadorRadas(
         )
         Text(
             text = label,
-            color = Color.LightGray,
+            color = color.copy(alpha = 0.85f),
             fontSize = 12.sp
         )
     }
