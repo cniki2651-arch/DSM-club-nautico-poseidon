@@ -1,14 +1,6 @@
-
 package com.dsm.clubnauticoposeidon.ui.screens.initial
 
 import android.widget.Toast
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,28 +14,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -51,22 +32,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dsm.clubnauticoposeidon.R
-import com.dsm.clubnauticoposeidon.ui.screens.login.signInWithGoogle
+import com.dsm.clubnauticoposeidon.ui.components.AlturaBoton
+import com.dsm.clubnauticoposeidon.ui.components.CustomButton
+import com.dsm.clubnauticoposeidon.ui.components.FondoNautico
+import com.dsm.clubnauticoposeidon.ui.components.MargenBoton
 import com.dsm.clubnauticoposeidon.ui.theme.Gold400
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Ink
-import com.dsm.clubnauticoposeidon.ui.theme.Navy600
-import com.dsm.clubnauticoposeidon.ui.theme.Navy700
 import com.dsm.clubnauticoposeidon.ui.theme.Navy800
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import com.dsm.clubnauticoposeidon.ui.theme.TituloNautico
-import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.launch
-import kotlin.math.PI
-import kotlin.math.atan
-import kotlin.math.cos
-import kotlin.math.sin
 
 // Configuración del logo y los botones
 private val TamanoLogo = 240.dp
@@ -75,8 +53,6 @@ private const val EscalaLogoX = 1.0f
 private const val EscalaLogoY = 1.0f
 
 private val EspacioTituloBotones = 40.dp
-private val AlturaBoton = 48.dp
-private val MargenBoton = 32.dp
 
 @Composable
 fun InitialScreen(
@@ -88,13 +64,34 @@ fun InitialScreen(
     onNavigateToSecretaria: () -> Unit = {},
     onNavigateToJefe: () -> Unit = {},
     onNavigateToFinanzas: () -> Unit = {},
-    onNavigateToMantenimiento: () -> Unit = {}
+    onNavigateToMantenimiento: () -> Unit = {},
+    viewModel: InitialViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val webClientId = stringResource(R.string.google_web_client_id)
 
-    var cargando by remember { mutableStateOf(false) }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // Reacciona a los eventos del ViewModel (navegación y mensajes)
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { evento ->
+            when (evento) {
+                is InitialEvent.Navegar -> when (evento.destino) {
+                    DestinoInicial.SOCIO -> onNavigateToSocio()
+                    DestinoInicial.ADMIN -> onNavigateToAdmin()
+                    DestinoInicial.SECRETARIA -> onNavigateToSecretaria()
+                    DestinoInicial.JEFE -> onNavigateToJefe()
+                    DestinoInicial.SEGUIMIENTO -> onNavigateToSeguimiento()
+                }
+
+                is InitialEvent.MensajeRes ->
+                    Toast.makeText(context, evento.resId, Toast.LENGTH_LONG).show()
+
+                is InitialEvent.Mensaje ->
+                    Toast.makeText(context, evento.texto, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -178,77 +175,8 @@ fun InitialScreen(
                 modifier = Modifier,
                 painter = painterResource(id = R.drawable.google),
                 title = stringResource(R.string.welcome_google),
-                enabled = !cargando,
-                onClick = {
-                    if (!cargando) {
-                        cargando = true
-
-                        scope.launch {
-                            try {
-                                signInWithGoogle(
-                                    context = context,
-                                    auth = FirebaseAuth.getInstance(),
-                                    webClientId = webClientId,
-
-                                    onSocio = {
-                                        cargando = false
-                                        onNavigateToSocio()
-                                    },
-
-                                    onAdmin = {
-                                        cargando = false
-                                        onNavigateToAdmin()
-                                    },
-
-                                    onSecretaria = {
-                                        cargando = false
-                                        onNavigateToSecretaria()
-                                    },
-
-                                    onJefe = {
-                                        cargando = false
-                                        onNavigateToJefe()
-                                    },
-
-                                    onFinanzas = {
-                                        cargando = false
-                                        FirebaseAuth.getInstance().signOut()
-                                        Toast.makeText(context, "Panel de finanzas próximamente", Toast.LENGTH_LONG).show()
-                                    },
-                                    onMantenimiento = {
-                                        cargando = false
-                                        FirebaseAuth.getInstance().signOut()
-                                        Toast.makeText(context, "Panel de mantenimiento próximamente", Toast.LENGTH_LONG).show()
-                                    },
-
-                                    onSeguimiento = {
-                                        cargando = false
-                                        onNavigateToSeguimiento()
-                                    },
-
-                                    onError = { msg ->
-                                        cargando = false
-
-                                        Toast.makeText(
-                                            context,
-                                            msg,
-                                            Toast.LENGTH_LONG
-                                        ).show()
-                                    }
-                                )
-                            } catch (e: Exception) {
-                                cargando = false
-
-                                Toast.makeText(
-                                    context,
-                                    e.message
-                                        ?: "Error al iniciar sesión con Google",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
-                        }
-                    }
-                }
+                enabled = !state.cargando,
+                onClick = { viewModel.onGoogleSignIn(context, webClientId) }
             )
 
             // Botón de inicio de sesión tradicional
@@ -267,373 +195,5 @@ fun InitialScreen(
 
             Spacer(modifier = Modifier.weight(1.4f))
         }
-    }
-}
-
-// Fondo decorativo con olas animadas y un barco
-@Composable
-private fun FondoNautico() {
-    val dosPi = (2 * PI).toFloat()
-
-    val transition = rememberInfiniteTransition(label = "mar")
-
-    // Animación de las olas
-    val fase1 by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = dosPi,
-        animationSpec = infiniteRepeatable(
-            tween(7000, easing = LinearEasing),
-            RepeatMode.Restart
-        ),
-        label = "fase1"
-    )
-
-    val fase2 by transition.animateFloat(
-        initialValue = dosPi,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            tween(10000, easing = LinearEasing),
-            RepeatMode.Restart
-        ),
-        label = "fase2"
-    )
-
-    val fase3 by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = dosPi,
-        animationSpec = infiniteRepeatable(
-            tween(13000, easing = LinearEasing),
-            RepeatMode.Restart
-        ),
-        label = "fase3"
-    )
-
-    // Movimiento horizontal del barco
-    val barcoX by transition.animateFloat(
-        initialValue = -0.2f,
-        targetValue = 1.2f,
-        animationSpec = infiniteRepeatable(
-            tween(40000, easing = LinearEasing),
-            RepeatMode.Restart
-        ),
-        label = "barco"
-    )
-
-    Canvas(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        val w = size.width
-        val h = size.height
-
-        // Evitar divisiones entre cero
-        if (w <= 0f || h <= 0f) {
-            return@Canvas
-        }
-
-        // Resplandor dorado detrás del logo
-        val centro = Offset(w / 2f, h * 0.30f)
-
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    Gold500.copy(alpha = 0.20f),
-                    Color.Transparent
-                ),
-                center = centro,
-                radius = w * 0.85f
-            ),
-            radius = w * 0.85f,
-            center = centro
-        )
-
-        // Calcula la altura de una ola
-        fun yOla(
-            x: Float,
-            altura: Float,
-            amplitud: Float,
-            ciclos: Float,
-            fase: Float
-        ): Float {
-            return altura +
-                    amplitud * sin(
-                (x / w) * ciclos * dosPi + fase
-            )
-        }
-
-        // Dibuja una ola
-        fun ola(
-            altura: Float,
-            amplitud: Float,
-            ciclos: Float,
-            fase: Float,
-            color: Color
-        ) {
-            val path = Path().apply {
-                moveTo(0f, h)
-
-                var x = 0f
-
-                while (x <= w) {
-                    lineTo(
-                        x,
-                        yOla(
-                            x,
-                            altura,
-                            amplitud,
-                            ciclos,
-                            fase
-                        )
-                    )
-                    x += 6f
-                }
-
-                lineTo(
-                    w,
-                    yOla(
-                        w,
-                        altura,
-                        amplitud,
-                        ciclos,
-                        fase
-                    )
-                )
-
-                lineTo(w, h)
-                close()
-            }
-
-            drawPath(
-                path = path,
-                color = color
-            )
-        }
-
-        // Parámetros de las tres olas
-        val altura1 = h * 0.84f
-        val altura2 = h * 0.89f
-        val altura3 = h * 0.94f
-
-        val amp1 = h * 0.012f
-        val amp2 = h * 0.015f
-        val amp3 = h * 0.012f
-
-        // Ola del fondo
-        ola(
-            altura1,
-            amp1,
-            1.5f,
-            fase1,
-            Navy600.copy(alpha = 0.40f)
-        )
-
-        // Posición y orientación del barco
-        val bw = w * 0.18f
-        val xb = w * barcoX
-
-        val yb = yOla(
-            xb,
-            altura2,
-            amp2,
-            1.0f,
-            fase2
-        )
-
-        val pendiente =
-            amp2 *
-                    cos(
-                        (xb / w) * dosPi + fase2
-                    ) *
-                    (dosPi / w)
-
-        val grados =
-            atan(pendiente) * 180f / PI.toFloat() * 1.5f
-
-        // Dibujo del barco
-        rotate(
-            degrees = grados,
-            pivot = Offset(xb, yb)
-        ) {
-            fun pt(dx: Float, dy: Float): Offset {
-                return Offset(
-                    xb + dx * bw,
-                    yb + dy * bw
-                )
-            }
-
-            fun poligono(
-                color: Color,
-                puntos: List<Offset>
-            ) {
-                val path = Path().apply {
-                    if (puntos.isNotEmpty()) {
-                        moveTo(
-                            puntos[0].x,
-                            puntos[0].y
-                        )
-
-                        for (i in 1 until puntos.size) {
-                            lineTo(
-                                puntos[i].x,
-                                puntos[i].y
-                            )
-                        }
-
-                        close()
-                    }
-                }
-
-                drawPath(
-                    path = path,
-                    color = color
-                )
-            }
-
-            // Casco del barco
-            poligono(
-                Gold500,
-                listOf(
-                    pt(-0.50f, -0.05f),
-                    pt(0.55f, -0.05f),
-                    pt(0.34f, 0.11f),
-                    pt(-0.34f, 0.11f)
-                )
-            )
-
-            // Vela mayor
-            poligono(
-                Ink.copy(alpha = 0.92f),
-                listOf(
-                    pt(-0.03f, -0.80f),
-                    pt(-0.03f, -0.12f),
-                    pt(-0.40f, -0.12f)
-                )
-            )
-
-            // Vela de proa
-            poligono(
-                Ink.copy(alpha = 0.80f),
-                listOf(
-                    pt(0.03f, -0.70f),
-                    pt(0.03f, -0.12f),
-                    pt(0.32f, -0.12f)
-                )
-            )
-
-            // Mástil
-            drawLine(
-                color = Ink,
-                start = pt(0f, -0.84f),
-                end = pt(0f, -0.05f),
-                strokeWidth = bw * 0.025f
-            )
-        }
-
-        // Ola intermedia
-        ola(
-            altura2,
-            amp2,
-            1.0f,
-            fase2,
-            Navy700.copy(alpha = 0.50f)
-        )
-
-        // Ola delantera
-        ola(
-            altura3,
-            amp3,
-            2.0f,
-            fase3,
-            Navy900.copy(alpha = 0.60f)
-        )
-    }
-}
-
-// Botón personalizado con imagen
-@Composable
-fun CustomButton(
-    modifier: Modifier,
-    painter: Painter,
-    title: String,
-    onClick: (() -> Unit)? = null,
-    enabled: Boolean = true
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = MargenBoton)
-            .height(AlturaBoton)
-            .clip(CircleShape)
-            .then(
-                if (onClick != null) {
-                    Modifier.clickable(
-                        enabled = enabled,
-                        onClick = onClick
-                    )
-                } else {
-                    Modifier
-                }
-            )
-            .background(Navy700)
-            .border(
-                1.dp,
-                Navy600,
-                CircleShape
-            ),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Image(
-            painter = painter,
-            contentDescription = null,
-            modifier = Modifier
-                .padding(start = 16.dp)
-                .size(16.dp)
-        )
-
-        Text(
-            text = title,
-            color = Ink,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-// Botón personalizado con icono de huella
-@Composable
-fun CustomIconButton(
-    modifier: Modifier,
-    title: String
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = MargenBoton)
-            .height(AlturaBoton)
-            .clip(CircleShape)
-            .background(Navy700)
-            .border(
-                1.dp,
-                Navy600,
-                CircleShape
-            ),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Icon(
-            imageVector = Icons.Default.Fingerprint,
-            contentDescription = null,
-            tint = Gold400,
-            modifier = Modifier
-                .padding(start = 16.dp)
-                .size(18.dp)
-        )
-
-        Text(
-            text = title,
-            color = Ink,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
-            fontWeight = FontWeight.Bold
-        )
     }
 }
