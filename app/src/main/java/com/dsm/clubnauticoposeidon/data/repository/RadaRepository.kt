@@ -1,7 +1,5 @@
 package com.dsm.clubnauticoposeidon.data.repository
 
-
-
 import com.dsm.clubnauticoposeidon.model.Asignacion
 import com.dsm.clubnauticoposeidon.model.Embarcacion
 import com.dsm.clubnauticoposeidon.model.EstadoRada
@@ -35,7 +33,7 @@ class RadaRepository {
         awaitClose { listener.remove() }
     }
 
-    // Las embarcaciones tienen ID automático, por eso se busca por el campo "matricula"
+    // Las embarcaciones se buscan por matricula
     suspend fun obtenerEmbarcacion(matricula: String): Embarcacion? =
         embarcacionesRef
             .whereEqualTo("matricula", matricula.trim().uppercase())
@@ -45,8 +43,7 @@ class RadaRepository {
             .toObjects(Embarcacion::class.java)
             .firstOrNull()
 
-    // Guarda la asignación y marca la rada como ocupada en una sola transacción.
-    // Si otra persona ocupó la rada mientras tanto, lanza error y no guarda nada.
+    // Guarda la asignación y marca la rada como ocupada en una sola transacción
     suspend fun guardarAsignacion(asignacion: Asignacion) {
         val radaDoc = radasRef.document(asignacion.radaAsignada)
         val asignacionDoc = asignacionesRef.document()
@@ -58,33 +55,33 @@ class RadaRepository {
             }
             tx.set(asignacionDoc, asignacion)
             tx.update(radaDoc, "estado", EstadoRada.OCUPADA)
-
-            // Verde <-> Amarillo. Una rada ocupada no puede cambiarse por aquí.
-            suspend fun cambiarEstado(radaId: String, nuevoEstado: String) {
-                val radaDoc = radasRef.document(radaId)
-                db.runTransaction { tx ->
-                    val actual = tx.get(radaDoc).getString("estado")
-                    val permitido =
-                        (actual == EstadoRada.DISPONIBLE && nuevoEstado == EstadoRada.MANTENIMIENTO) ||
-                                (actual == EstadoRada.MANTENIMIENTO && nuevoEstado == EstadoRada.DISPONIBLE)
-                    if (!permitido) throw IllegalStateException("Ese cambio de estado no está permitido")
-                    tx.update(radaDoc, "estado", nuevoEstado)
-                }.await()
-            }
-
-            // Rojo: cierra la asignación activa y deja la rada disponible
-            suspend fun liberarRada(radaId: String) {
-                val activas = asignacionesRef
-                    .whereEqualTo("rada_asignada", radaId)
-                    .whereEqualTo("estado", "activa")
-                    .get()
-                    .await()
-
-                val batch = db.batch()
-                activas.documents.forEach { batch.update(it.reference, "estado", "finalizada") }
-                batch.update(radasRef.document(radaId), "estado", EstadoRada.DISPONIBLE)
-                batch.commit().await()
-            }
         }.await()
+    }
+
+    // Verde <-> Amarillo. Una rada ocupada no puede cambiarse por aquí.
+    suspend fun cambiarEstado(radaId: String, nuevoEstado: String) {
+        val radaDoc = radasRef.document(radaId)
+        db.runTransaction { tx ->
+            val actual = tx.get(radaDoc).getString("estado")
+            val permitido =
+                (actual == EstadoRada.DISPONIBLE && nuevoEstado == EstadoRada.MANTENIMIENTO) ||
+                        (actual == EstadoRada.MANTENIMIENTO && nuevoEstado == EstadoRada.DISPONIBLE)
+            if (!permitido) throw IllegalStateException("Ese cambio de estado no está permitido")
+            tx.update(radaDoc, "estado", nuevoEstado)
+        }.await()
+    }
+
+    // Rojo: cierra la asignación activa y deja la rada disponible
+    suspend fun liberarRada(radaId: String) {
+        val activas = asignacionesRef
+            .whereEqualTo("rada_asignada", radaId)
+            .whereEqualTo("estado", "activa")
+            .get()
+            .await()
+
+        val batch = db.batch()
+        activas.documents.forEach { batch.update(it.reference, "estado", "finalizada") }
+        batch.update(radasRef.document(radaId), "estado", EstadoRada.DISPONIBLE)
+        batch.commit().await()
     }
 }
