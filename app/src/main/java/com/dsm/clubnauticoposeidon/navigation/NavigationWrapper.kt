@@ -30,6 +30,11 @@ import com.dsm.clubnauticoposeidon.ui.screens.signup.SignUpScreen
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import com.google.firebase.auth.FirebaseAuth
+import com.dsm.clubnauticoposeidon.ui.screens.naves.MisNavesScreen
+
+
+
+
 
 @Composable
 fun NavigationWrapper(
@@ -212,6 +217,9 @@ fun NavigationWrapper(
             com.dsm.clubnauticoposeidon.ui.screens.Socios.AsistenciaScreen(
                 onBackClick = { navHostController.popBackStack() }
             )
+        }
+        composable("mis_naves") {
+            MisNavesScreen(onBackClick = { navHostController.popBackStack() })
         }
 
         // NAVIERO
