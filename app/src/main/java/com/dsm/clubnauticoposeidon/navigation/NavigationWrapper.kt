@@ -13,8 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.dsm.clubnauticoposeidon.ui.screens.clima.ClimaDetalleScreen
 import com.dsm.clubnauticoposeidon.ui.screens.historial.HistorialTransitoScreen
 import com.dsm.clubnauticoposeidon.ui.screens.home.HomeOperacionesScreen
@@ -240,6 +242,7 @@ fun NavigationWrapper(
             )
         }
 
+        // Solicitudes de radar: lista de pendientes, solo lectura
         composable("solicitudes_rada") {
             BandejaSolicitudesRadaScreen(onBackClick = { navHostController.popBackStack() })
         }
@@ -248,11 +251,26 @@ fun NavigationWrapper(
             HistorialTransitoScreen(onBackClick = { navHostController.popBackStack() })
         }
 
-        composable("asignar_rada") { backStackEntry ->
+        // Asignar nueva rada: lista de pendientes; al tocar una se abre el formulario
+        composable("asignar_rada") {
+            BandejaSolicitudesRadaScreen(
+                titulo = "Asignar Nueva Rada",
+                onBackClick = { navHostController.popBackStack() },
+                onSolicitudClick = { id -> navHostController.navigate("asignar_rada/$id") }
+            )
+        }
+
+        // Formulario de asignación para una solicitud concreta
+        composable(
+            route = "asignar_rada/{solicitudId}",
+            arguments = listOf(navArgument("solicitudId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val solicitudId = backStackEntry.arguments?.getString("solicitudId") ?: ""
             val radaDelMapa: String =
                 backStackEntry.savedStateHandle.get<String>("rada_seleccionada") ?: ""
 
             AsignarRadaScreen(
+                solicitudId = solicitudId,
                 radaSeleccionada = radaDelMapa,
                 onAbrirMapaClick = { navHostController.navigate("elegir_rada") },
                 onBackClick = { navHostController.popBackStack() }
