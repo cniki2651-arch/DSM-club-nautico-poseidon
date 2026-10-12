@@ -38,7 +38,7 @@ fun NavigationWrapper(
     // Evalúa si existe una sesión activa
     val startDest = if (auth.currentUser != null) "router" else "initial"
 
-    // Cierra sesión y vuelve al inicio (se reutiliza en todos los paneles)
+    // Cierra sesión y vuelve al inicio
     val cerrarSesion: () -> Unit = {
         auth.signOut()
         navHostController.navigate("initial") { popUpTo(0) }
@@ -46,7 +46,7 @@ fun NavigationWrapper(
 
     NavHost(navController = navHostController, startDestination = startDest) {
 
-        // ---------- ROUTER (decide el panel según el rol) ----------
+        //  ROUTER
         composable("router") {
             val context = LocalContext.current
 
@@ -73,7 +73,7 @@ fun NavigationWrapper(
                             popUpTo("router") { inclusive = true }
                         }
                     },
-                    // Finanzas y mantenimiento: aún sin panel (próxima semana)
+                    // Finanzas y mantenimiento
                     onFinanzas = {
                         auth.signOut()
                         navHostController.navigate("login") {
@@ -115,7 +115,7 @@ fun NavigationWrapper(
             }
         }
 
-        // ---------- INICIO, LOGIN, REGISTRO ----------
+        //  INICIO, LOGIN, REGISTRO
         composable("initial") {
             InitialScreen(
                 onLogin = { navHostController.navigate("login") },
@@ -145,8 +145,7 @@ fun NavigationWrapper(
                         popUpTo("initial") { inclusive = true }
                     }
                 }
-                // onNavigateToFinanzas y onNavigateToMantenimiento: se usan los valores
-                // por defecto; el aviso se muestra desde InitialScreen
+                // onNavigateToFinanzas y onNavigateToMantenimiento
             )
         }
 
@@ -178,7 +177,7 @@ fun NavigationWrapper(
             )
         }
 
-        // ---------- SOCIO ----------
+        //  SOCIO
         composable("home") {
             HomeSocioScreen(
                 onNavigateToProfile = { navHostController.navigate("profile") },
@@ -219,12 +218,12 @@ fun NavigationWrapper(
             )
         }
 
-        // ---------- NAVIERO (operaciones y radas) ----------
+        //  NAVIERO
         composable("home_operaciones") {
             HomeOperacionesScreen(
                 onLogout = cerrarSesion,
                 onNavigateToAsignarRada = { navHostController.navigate("asignar_rada") },
-                onNavigateToMapa = { navHostController.navigate("mapa_muelles") }
+                onNavigateToMapa = { navHostController.navigate("mapa_muelles") }   // modo gestión
             )
         }
 
@@ -234,17 +233,27 @@ fun NavigationWrapper(
 
             AsignarRadaScreen(
                 radaSeleccionada = radaDelMapa,
-                onAbrirMapaClick = { navHostController.navigate("mapa_muelles") },
+                onAbrirMapaClick = { navHostController.navigate("elegir_rada") },   // modo elegir
                 onBackClick = { navHostController.popBackStack() }
             )
         }
 
+        // Modo gestión: desde el panel del naviero
         composable("mapa_muelles") {
             MapaMuellesScreen(
-                onRadaSelected = { nombreRada ->
+                modoSeleccion = false,
+                onBackClick = { navHostController.popBackStack() }
+            )
+        }
+
+        // Modo elegir: desde Nueva Asignación
+        composable("elegir_rada") {
+            MapaMuellesScreen(
+                modoSeleccion = true,
+                onRadaSelected = { radaId ->
                     navHostController.previousBackStackEntry?.savedStateHandle?.set(
                         "rada_seleccionada",
-                        nombreRada
+                        radaId
                     )
                     navHostController.popBackStack()
                 },
@@ -252,7 +261,7 @@ fun NavigationWrapper(
             )
         }
 
-        // ---------- POSTULANTE ----------
+        //  POSTULANTE
         composable("seguimiento") {
             SeguimientoScreen(
                 onNavigateToHomeSocio = {
@@ -264,7 +273,7 @@ fun NavigationWrapper(
             )
         }
 
-        // ---------- SECRETARIA ----------
+        //  SECRETARIA
         composable("secretaria") {
             com.dsm.clubnauticoposeidon.ui.screens.secretaria.HomeSecretariaScreen(
                 onNavigateToSolicitudes = { navHostController.navigate("bandeja_solicitudes") },
@@ -277,7 +286,7 @@ fun NavigationWrapper(
             )
         }
 
-        // ---------- JEFE ----------
+        //  JEFE
         composable("jefe") {
             com.dsm.clubnauticoposeidon.ui.screens.jefatura.HomeJefaturaScreen(
                 onNavigateToAprobaciones = { navHostController.navigate("bandeja_aprobaciones") },

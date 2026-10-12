@@ -58,6 +58,33 @@ class RadaRepository {
             }
             tx.set(asignacionDoc, asignacion)
             tx.update(radaDoc, "estado", EstadoRada.OCUPADA)
+
+            // Verde <-> Amarillo. Una rada ocupada no puede cambiarse por aquí.
+            suspend fun cambiarEstado(radaId: String, nuevoEstado: String) {
+                val radaDoc = radasRef.document(radaId)
+                db.runTransaction { tx ->
+                    val actual = tx.get(radaDoc).getString("estado")
+                    val permitido =
+                        (actual == EstadoRada.DISPONIBLE && nuevoEstado == EstadoRada.MANTENIMIENTO) ||
+                                (actual == EstadoRada.MANTENIMIENTO && nuevoEstado == EstadoRada.DISPONIBLE)
+                    if (!permitido) throw IllegalStateException("Ese cambio de estado no está permitido")
+                    tx.update(radaDoc, "estado", nuevoEstado)
+                }.await()
+            }
+
+            // Rojo: cierra la asignación activa y deja la rada disponible
+            suspend fun liberarRada(radaId: String) {
+                val activas = asignacionesRef
+                    .whereEqualTo("rada_asignada", radaId)
+                    .whereEqualTo("estado", "activa")
+                    .get()
+                    .await()
+
+                val batch = db.batch()
+                activas.documents.forEach { batch.update(it.reference, "estado", "finalizada") }
+                batch.update(radasRef.document(radaId), "estado", EstadoRada.DISPONIBLE)
+                batch.commit().await()
+            }
         }.await()
     }
 }
