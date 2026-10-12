@@ -15,6 +15,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.dsm.clubnauticoposeidon.ui.screens.clima.ClimaDetalleScreen
 import com.dsm.clubnauticoposeidon.ui.screens.historial.HistorialTransitoScreen
 import com.dsm.clubnauticoposeidon.ui.screens.home.HomeOperacionesScreen
 import com.dsm.clubnauticoposeidon.ui.screens.home.HomeSocioScreen
@@ -181,8 +182,14 @@ fun NavigationWrapper(
                 onNavigateToProfile = { navHostController.navigate("profile") },
                 onNavigateToServicios = { navHostController.navigate("servicios") },
                 onNavigateToMisNaves = { navHostController.navigate("mis_naves") },
+                onNavigateToClima = { navHostController.navigate("clima_detalle") },
                 onLogout = cerrarSesion
             )
+        }
+
+        // CLIMA DETALLADO (HU05)
+        composable("clima_detalle") {
+            ClimaDetalleScreen(onBackClick = { navHostController.popBackStack() })
         }
 
         composable("mis_naves") {

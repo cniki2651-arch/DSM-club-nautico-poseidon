@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -57,7 +58,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dsm.clubnauticoposeidon.ui.screens.clima.ClimaViewModel
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
+import com.dsm.clubnauticoposeidon.ui.theme.Muted
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -67,13 +70,18 @@ import java.util.Locale
 @Composable
 fun HomeSocioScreen(
     viewModel: HomeViewModel = viewModel(),
+    climaViewModel: ClimaViewModel = viewModel(),
     onLogout: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToServicios: () -> Unit = {},
-    onNavigateToMisNaves: () -> Unit = {}
+    onNavigateToMisNaves: () -> Unit = {},
+    onNavigateToClima: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var menuExpanded by remember { mutableStateOf(false) }
+
+    val climaDetalle by climaViewModel.clima.collectAsState()
+    val climaCargando by climaViewModel.cargando.collectAsState()
 
     val nombreSocio by viewModel.nombreSocio.collectAsState()
 
@@ -146,18 +154,12 @@ fun HomeSocioScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Tarjeta de Clima y Mareas (HU05 Teaser)
+            // Tarjeta de Clima y Mareas (HU05 – navega al detalle)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .clickable {
-                        Toast.makeText(
-                            context,
-                            "Módulo de clima en el Sprint 2",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    },
+                    .clickable { onNavigateToClima() },
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White.copy(alpha = 0.12f)
                 ),
@@ -169,31 +171,57 @@ fun HomeSocioScreen(
                         .padding(20.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.WbSunny,
-                        contentDescription = "Clima",
-                        tint = Gold500,
-                        modifier = Modifier.size(48.dp)
-                    )
+                    if (climaCargando) {
+                        CircularProgressIndicator(
+                            color = Gold500,
+                            modifier = Modifier.size(48.dp),
+                            strokeWidth = 3.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.WbSunny,
+                            contentDescription = "Clima",
+                            tint = Gold500,
+                            modifier = Modifier.size(48.dp)
+                        )
+                    }
 
                     Spacer(modifier = Modifier.width(16.dp))
 
                     Column {
+                        val textoTemp = if (climaDetalle != null) {
+                            "${climaDetalle!!.temperatura.toInt()}°C Callao"
+                        } else {
+                            "-- °C Callao"
+                        }
                         Text(
-                            text = "22°C Callao",
+                            text = textoTemp,
                             color = Color.White,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(4.dp))
+
+                        val textoMar = if (climaDetalle != null) {
+                            val alturaOlas = climaDetalle!!.alturaOlas
+                            val viento = climaDetalle!!.velocidadViento
+                            val bandera = when {
+                                viento < 20.0 && (alturaOlas ?: 0.0) < 1.5 -> "Bandera Verde"
+                                viento < 30.0 && (alturaOlas ?: 0.0) < 2.5 -> "Bandera Amarilla"
+                                else -> "Bandera Roja"
+                            }
+                            "Oleaje: ${String.format("%.1f", alturaOlas ?: 0.0)} m | $bandera"
+                        } else {
+                            "Cargando datos del mar…"
+                        }
                         Text(
-                            text = "Marea: Baja | Bandera Verde",
+                            text = textoMar,
                             color = Color.LightGray,
                             fontSize = 14.sp
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Toca para ver detalles",
+                            text = "Toca para ver detalles ›",
                             color = Gold500,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold
