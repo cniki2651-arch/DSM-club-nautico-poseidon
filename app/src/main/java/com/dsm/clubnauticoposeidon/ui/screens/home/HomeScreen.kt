@@ -20,6 +20,8 @@ import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import com.google.firebase.auth.FirebaseAuth
 
+
+
 @Composable
 fun HomeScreen(
     auth: FirebaseAuth,
@@ -61,5 +63,6 @@ fun HomeScreen(
         ) {
             Text(text = "Cerrar sesión", color = Color.White)
         }
+
     }
 }

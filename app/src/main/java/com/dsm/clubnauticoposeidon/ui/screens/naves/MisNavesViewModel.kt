@@ -1,10 +1,11 @@
 package com.dsm.clubnauticoposeidon.ui.screens.naves
 
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dsm.clubnauticoposeidon.data.repository.EmbarcacionRepository
+import com.dsm.clubnauticoposeidon.data.repository.SolicitudRadaRepository
 import com.dsm.clubnauticoposeidon.model.Embarcacion
+import com.dsm.clubnauticoposeidon.model.SolicitudRada
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -13,15 +14,18 @@ import kotlinx.coroutines.launch
 
 data class MisNavesUiState(
     val naves: List<Embarcacion> = emptyList(),
+    val solicitudes: List<SolicitudRada> = emptyList(),
     val dni: String? = null,
     val cargando: Boolean = true,
     val guardando: Boolean = false,
     val mensaje: String? = null,
-    val registrada: Boolean = false
+    val registrada: Boolean = false,
+    val solicitudEnviada: Boolean = false
 )
 
 class MisNavesViewModel(
-    private val repo: EmbarcacionRepository = EmbarcacionRepository()
+    private val repo: EmbarcacionRepository = EmbarcacionRepository(),
+    private val solicitudRepo: SolicitudRadaRepository = SolicitudRadaRepository()
 ) : ViewModel() {
 
     private val _ui = MutableStateFlow(MisNavesUiState())
@@ -35,9 +39,19 @@ class MisNavesViewModel(
                 return@launch
             }
             _ui.update { it.copy(dni = dni) }
-            repo.observarNaves(dni)
-                .catch { e -> _ui.update { it.copy(cargando = false, mensaje = "Error: ${e.message}") } }
-                .collect { lista -> _ui.update { it.copy(naves = lista, cargando = false) } }
+
+            launch {
+                repo.observarNaves(dni)
+                    .catch { e -> _ui.update { it.copy(cargando = false, mensaje = "Error: ${e.message}") } }
+                    .collect { lista -> _ui.update { it.copy(naves = lista, cargando = false) } }
+            }
+            launch {
+                solicitudRepo.observarPorDni(dni)
+                    .catch { e -> _ui.update { it.copy(mensaje = "Error: ${e.message}") } }
+                    .collect { lista ->
+                        _ui.update { it.copy(solicitudes = lista.sortedByDescending { s -> s.fechaSolicitud }) }
+                    }
+            }
         }
     }
 
@@ -59,6 +73,19 @@ class MisNavesViewModel(
         }
     }
 
+    fun solicitarRada(nave: Embarcacion, fechaIngreso: String, fechaSalida: String) {
+        viewModelScope.launch {
+            _ui.update { it.copy(guardando = true) }
+            try {
+                solicitudRepo.crear(nave, fechaIngreso, fechaSalida)
+                _ui.update { it.copy(guardando = false, solicitudEnviada = true, mensaje = "Solicitud enviada al naviero") }
+            } catch (e: Exception) {
+                _ui.update { it.copy(guardando = false, mensaje = e.message ?: "No se pudo enviar") }
+            }
+        }
+    }
+
     fun mensajeMostrado() = _ui.update { it.copy(mensaje = null) }
     fun registroProcesado() = _ui.update { it.copy(registrada = false) }
+    fun solicitudProcesada() = _ui.update { it.copy(solicitudEnviada = false) }
 }

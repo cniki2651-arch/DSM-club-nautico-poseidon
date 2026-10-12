@@ -69,7 +69,8 @@ fun HomeSocioScreen(
     viewModel: HomeViewModel = viewModel(),
     onLogout: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    onNavigateToServicios: () -> Unit = {}
+    onNavigateToServicios: () -> Unit = {},
+    onNavigateToMisNaves: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var menuExpanded by remember { mutableStateOf(false) }
@@ -150,8 +151,12 @@ fun HomeSocioScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .clickable { 
-                        Toast.makeText(context, "Módulo de clima en el Sprint 2", Toast.LENGTH_SHORT).show() 
+                    .clickable {
+                        Toast.makeText(
+                            context,
+                            "Módulo de clima en el Sprint 2",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     },
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White.copy(alpha = 0.12f)
@@ -170,15 +175,29 @@ fun HomeSocioScreen(
                         tint = Gold500,
                         modifier = Modifier.size(48.dp)
                     )
-                    
+
                     Spacer(modifier = Modifier.width(16.dp))
-                    
+
                     Column {
-                        Text(text = "22°C Callao", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "22°C Callao",
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "Marea: Baja | Bandera Verde", color = Color.LightGray, fontSize = 14.sp)
+                        Text(
+                            text = "Marea: Baja | Bandera Verde",
+                            color = Color.LightGray,
+                            fontSize = 14.sp
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "Toca para ver detalles", color = Gold500, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            text = "Toca para ver detalles",
+                            color = Gold500,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
             }
@@ -219,7 +238,7 @@ fun HomeSocioScreen(
                 DashboardGridItem(
                     title = "Mis Naves",
                     icon = Icons.Default.DirectionsBoat,
-                    onClick = showToast,
+                    onClick = onNavigateToMisNaves,
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
@@ -230,9 +249,9 @@ fun HomeSocioScreen(
                     modifier = Modifier.weight(1f)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(modifier = Modifier.fillMaxWidth()) {
                 DashboardGridItem(
                     title = "Reservas",
@@ -249,7 +268,8 @@ fun HomeSocioScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
         }
     }
 }

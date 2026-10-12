@@ -1,6 +1,7 @@
 package com.dsm.clubnauticoposeidon.ui.screens.home
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +34,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -64,6 +66,7 @@ fun HomeOperacionesScreen(
     onNavigateToAsignarRada: () -> Unit = {},
     onNavigateToMapa: () -> Unit = {},
     onNavigateToHistorial: () -> Unit = {},
+    onNavigateToSolicitudes: () -> Unit = {},
     viewModel: HomeOperacionesViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -96,7 +99,6 @@ fun HomeOperacionesScreen(
                             )
                         }
 
-                        // Menú desplegable para cerrar sesión
                         DropdownMenu(
                             expanded = menuExpanded,
                             onDismissRequest = { menuExpanded = false },
@@ -179,6 +181,25 @@ fun HomeOperacionesScreen(
                     text = "Asignar Nueva Rada",
                     color = Navy900,
                     fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Bandeja de solicitudes enviadas por los socios
+            OutlinedButton(
+                onClick = onNavigateToSolicitudes,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                border = BorderStroke(1.dp, Gold500),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Gold500),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text(
+                    text = "Solicitudes de Rada",
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
             }

@@ -22,19 +22,16 @@ import com.dsm.clubnauticoposeidon.ui.screens.home.MapaMuellesScreen
 import com.dsm.clubnauticoposeidon.ui.screens.initial.InitialScreen
 import com.dsm.clubnauticoposeidon.ui.screens.login.LoginScreen
 import com.dsm.clubnauticoposeidon.ui.screens.login.validarAcceso
+import com.dsm.clubnauticoposeidon.ui.screens.naves.MisNavesScreen
 import com.dsm.clubnauticoposeidon.ui.screens.postulante.SeguimientoScreen
 import com.dsm.clubnauticoposeidon.ui.screens.profile.ProfileScreen
 import com.dsm.clubnauticoposeidon.ui.screens.radas.AsignarRadaScreen
 import com.dsm.clubnauticoposeidon.ui.screens.recovery.RecuperarPasswordScreen
 import com.dsm.clubnauticoposeidon.ui.screens.signup.SignUpScreen
+import com.dsm.clubnauticoposeidon.ui.screens.solicitudes.BandejaSolicitudesRadaScreen
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import com.google.firebase.auth.FirebaseAuth
-import com.dsm.clubnauticoposeidon.ui.screens.naves.MisNavesScreen
-
-
-
-
 
 @Composable
 fun NavigationWrapper(
@@ -183,9 +180,15 @@ fun NavigationWrapper(
             HomeSocioScreen(
                 onNavigateToProfile = { navHostController.navigate("profile") },
                 onNavigateToServicios = { navHostController.navigate("servicios") },
+                onNavigateToMisNaves = { navHostController.navigate("mis_naves") },
                 onLogout = cerrarSesion
             )
         }
+
+        composable("mis_naves") {
+            MisNavesScreen(onBackClick = { navHostController.popBackStack() })
+        }
+
         composable("profile") {
             ProfileScreen(onBackClick = { navHostController.popBackStack() })
         }
@@ -218,9 +221,6 @@ fun NavigationWrapper(
                 onBackClick = { navHostController.popBackStack() }
             )
         }
-        composable("mis_naves") {
-            MisNavesScreen(onBackClick = { navHostController.popBackStack() })
-        }
 
         // NAVIERO
         composable("home_operaciones") {
@@ -228,8 +228,13 @@ fun NavigationWrapper(
                 onLogout = cerrarSesion,
                 onNavigateToAsignarRada = { navHostController.navigate("asignar_rada") },
                 onNavigateToMapa = { navHostController.navigate("mapa_muelles") },
-                onNavigateToHistorial = { navHostController.navigate("historial_transito") }
+                onNavigateToHistorial = { navHostController.navigate("historial_transito") },
+                onNavigateToSolicitudes = { navHostController.navigate("solicitudes_rada") }
             )
+        }
+
+        composable("solicitudes_rada") {
+            BandejaSolicitudesRadaScreen(onBackClick = { navHostController.popBackStack() })
         }
 
         composable("historial_transito") {

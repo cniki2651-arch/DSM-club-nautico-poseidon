@@ -1,7 +1,5 @@
 package com.dsm.clubnauticoposeidon.ui.screens.naves
 
-
-
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +28,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -54,6 +53,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dsm.clubnauticoposeidon.model.Embarcacion
+import com.dsm.clubnauticoposeidon.model.EstadoSolicitud
+import com.dsm.clubnauticoposeidon.model.SolicitudRada
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 
@@ -68,6 +69,7 @@ fun MisNavesScreen(
     val context = LocalContext.current
     val ui by viewModel.ui.collectAsState()
     var mostrarFormulario by remember { mutableStateOf(false) }
+    var naveSolicitud by remember { mutableStateOf<Embarcacion?>(null) }
 
     LaunchedEffect(ui.mensaje) {
         ui.mensaje?.let {
@@ -81,12 +83,27 @@ fun MisNavesScreen(
             viewModel.registroProcesado()
         }
     }
+    LaunchedEffect(ui.solicitudEnviada) {
+        if (ui.solicitudEnviada) {
+            naveSolicitud = null
+            viewModel.solicitudProcesada()
+        }
+    }
 
     if (mostrarFormulario) {
         FormularioNave(
             guardando = ui.guardando,
             onCancelar = { mostrarFormulario = false },
             onGuardar = viewModel::registrar
+        )
+    }
+
+    naveSolicitud?.let { nave ->
+        SolicitarRadaDialog(
+            nave = nave,
+            enviando = ui.guardando,
+            onCancelar = { naveSolicitud = null },
+            onEnviar = { ingreso, salida -> viewModel.solicitarRada(nave, ingreso, salida) }
         )
     }
 
@@ -126,15 +143,30 @@ fun MisNavesScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            when {
-                ui.cargando -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            if (ui.cargando) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = Gold500)
                 }
-                ui.naves.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Aún no registraste embarcaciones", color = Color.LightGray)
-                }
-                else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(ui.naves, key = { it.id }) { TarjetaNave(it) }
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (ui.naves.isEmpty()) {
+                        item { Text("Aún no registraste embarcaciones", color = Color.LightGray) }
+                    }
+                    items(ui.naves, key = { "n_" + it.id }) { nave ->
+                        TarjetaNave(nave = nave, onSolicitar = { naveSolicitud = nave })
+                    }
+                    if (ui.solicitudes.isNotEmpty()) {
+                        item {
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Mis solicitudes de rada",
+                                color = Gold500,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        items(ui.solicitudes, key = { "s_" + it.id }) { TarjetaSolicitud(it) }
+                    }
                     item { Spacer(Modifier.height(24.dp)) }
                 }
             }
@@ -143,7 +175,7 @@ fun MisNavesScreen(
 }
 
 @Composable
-private fun TarjetaNave(nave: Embarcacion) {
+private fun TarjetaNave(nave: Embarcacion, onSolicitar: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -156,6 +188,41 @@ private fun TarjetaNave(nave: Embarcacion) {
             Text("Matrícula: ${nave.matricula}", color = Color.White, fontSize = 15.sp)
             Text("Tipo: ${nave.tipo}", color = Color.White, fontSize = 15.sp)
             Text("Eslora: ${nave.eslora}", color = Color.White, fontSize = 15.sp)
+            Spacer(Modifier.height(14.dp))
+            OutlinedButton(
+                onClick = onSolicitar,
+                modifier = Modifier.fillMaxWidth(),
+                border = BorderStroke(1.dp, Gold500),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Gold500)
+            ) { Text("Solicitar rada", fontWeight = FontWeight.SemiBold) }
+        }
+    }
+}
+
+@Composable
+private fun TarjetaSolicitud(s: SolicitudRada) {
+    val (color, texto) = when (s.estado) {
+        EstadoSolicitud.APROBADA -> Color(0xFF4CAF50) to "Aprobada"
+        EstadoSolicitud.RECHAZADA -> Color(0xFFE57373) to "Rechazada"
+        else -> Color(0xFFF9A825) to "Pendiente"
+    }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.08f)),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.6f))
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text(texto, color = color, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Spacer(Modifier.height(6.dp))
+            Text("${s.nombreNave} (${s.matricula})", color = Color.White, fontSize = 15.sp)
+            Text("Ingreso: ${s.fechaIngreso}   Salida: ${s.fechaSalida}", color = Color.LightGray, fontSize = 13.sp)
+            if (s.estado == EstadoSolicitud.APROBADA) {
+                Text("Rada asignada: ${s.radaAsignada}", color = Gold500, fontWeight = FontWeight.SemiBold)
+            }
+            if (s.estado == EstadoSolicitud.RECHAZADA && s.motivoRechazo.isNotBlank()) {
+                Text("Motivo: ${s.motivoRechazo}", color = Color(0xFFFF8A80), fontSize = 13.sp)
+            }
         }
     }
 }
