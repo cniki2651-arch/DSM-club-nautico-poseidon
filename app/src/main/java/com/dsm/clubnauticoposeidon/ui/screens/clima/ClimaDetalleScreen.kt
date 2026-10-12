@@ -1,15 +1,19 @@
 package com.dsm.clubnauticoposeidon.ui.screens.clima
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,17 +32,21 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Air
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Compress
+import androidx.compose.material.icons.filled.DirectionsBoat
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Thermostat
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Umbrella
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.Water
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.Waves
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.WbTwilight
-import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -60,6 +68,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -302,16 +311,6 @@ private fun ContenidoClima(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-
-        // ── Crédito ──
-        Text(
-            text = "Datos proporcionados por Open-Meteo.com",
-            color = Muted.copy(alpha = 0.6f),
-            fontSize = 11.sp,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
@@ -542,29 +541,33 @@ private fun SeccionViento(clima: ClimaDetalle) {
     SeccionTarjeta(titulo = "Viento") {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top
         ) {
             DatoClimaItem(
                 icon = Icons.Default.Air,
                 label = "Velocidad",
                 valor = "${String.format("%.1f", clima.velocidadViento)} km/h",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                iconTint = Color(0xFF81D4FA)
             )
-            DatoClimaItem(
-                icon = Icons.Default.Navigation,
+            DatoDireccionItem(
+                grados = clima.direccionViento,
                 label = "Dirección",
-                valor = "${obtenerDireccionCardinal(clima.direccionViento)} (${clima.direccionViento}°)",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                iconTint = Gold400,
+                subtexto = "Rumbo viento"
             )
             DatoClimaItem(
-                icon = Icons.Default.Air,
+                icon = Icons.Default.Bolt,
                 label = "Ráfagas",
                 valor = "${String.format("%.1f", clima.rafagasViento)} km/h",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                iconTint = Color(0xFFFFB74D)
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         // Barra visual de intensidad de viento
         val progresoViento = (clima.velocidadViento / 60.0).coerceIn(0.0, 1.0).toFloat()
@@ -618,96 +621,269 @@ private fun SeccionViento(clima: ClimaDetalle) {
 }
 
 // ────────────────────────────────────────────────────────────────
-// SECCIÓN: Estado del Mar
+// SECCIÓN: Estado del Mar (Diferenciado y con Gráficas Claras)
 // ────────────────────────────────────────────────────────────────
 
 @Composable
 private fun SeccionMar(clima: ClimaDetalle) {
     SeccionTarjeta(titulo = "Estado del Mar") {
         if (clima.alturaOlas != null) {
+            val altura = clima.alturaOlas
+            // Información interpretativa según la Escala Douglas
+            val infoEscala = when {
+                altura < 0.1 -> InfoEscalaMar("Mar en calma", "Grado 0", Color(0xFF4CAF50), "Superficie como un espejo, ideal para navegar")
+                altura < 0.5 -> InfoEscalaMar("Mar rizado", "Grado 1-2", Color(0xFF66BB6A), "Olas muy pequeñas y suaves sin rompientes")
+                altura < 1.25 -> InfoEscalaMar("Marejadilla", "Grado 3", Color(0xFF8BC34A), "Oleaje suave, óptimo para yates y veleros")
+                altura < 2.5 -> InfoEscalaMar("Marejada", "Grado 4", Color(0xFFF9A825), "Precaución: oleaje pronunciado en bahía")
+                altura < 4.0 -> InfoEscalaMar("Fuerte marejada", "Grado 5", Color(0xFFFF9800), "Riesgo: olas grandes y rompientes frecuentes")
+                altura < 6.0 -> InfoEscalaMar("Mar gruesa", "Grado 6", Color(0xFFE57373), "Peligroso: navegación restringida")
+                else -> InfoEscalaMar("Mar muy gruesa", "Grado 7+", Color(0xFFD32F2F), "Condición extrema: alerta marítima")
+            }
+
+            // ── 1. Banner Escala Douglas con Barra Visual de Nivel de Olas ──
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(infoEscala.color.copy(alpha = 0.12f))
+                    .border(BorderStroke(1.dp, infoEscala.color.copy(alpha = 0.35f)), RoundedCornerShape(14.dp))
+                    .padding(14.dp)
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .clip(CircleShape)
+                                    .background(infoEscala.color)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = infoEscala.nombre,
+                                color = infoEscala.color,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        // Badge de Grado Douglas
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(infoEscala.color.copy(alpha = 0.2f))
+                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "Douglas ${infoEscala.grado}",
+                                color = infoEscala.color,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = infoEscala.recomendacion,
+                        color = Ink.copy(alpha = 0.85f),
+                        fontSize = 12.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Barra visual de nivel de ola (0 a 3.5 m)
+                    val progresoOla = (altura / 3.5).coerceIn(0.0, 1.0).toFloat()
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("0.0 m", color = Muted, fontSize = 10.sp)
+                            Text(
+                                "${String.format("%.2f", altura)} m actual",
+                                color = infoEscala.color,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text("3.5 m+", color = Muted, fontSize = 10.sp)
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(Navy600.copy(alpha = 0.6f))
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(progresoOla)
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp))
+                                    .background(
+                                        Brush.horizontalGradient(
+                                            colors = listOf(infoEscala.color.copy(alpha = 0.5f), infoEscala.color)
+                                        )
+                                    )
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // ── 2. Métricas Principales Diferenciadas (Altura, Rumbo y Periodo) ──
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
             ) {
+                // A. Altura de Ola con ícono de agua
                 DatoClimaItem(
-                    icon = Icons.Default.Waves,
+                    icon = Icons.Default.Water,
                     label = "Altura Oleaje",
-                    valor = "${String.format("%.2f", clima.alturaOlas)} m",
-                    modifier = Modifier.weight(1f)
+                    valor = "${String.format("%.2f", altura)} m",
+                    modifier = Modifier.weight(1f),
+                    iconTint = Color(0xFF29B6F6),
+                    subtexto = "Significativa"
                 )
-                DatoClimaItem(
-                    icon = Icons.Default.Navigation,
+
+                // B. Dirección con flecha brújula rotando dinámicamente según grados reales
+                DatoDireccionItem(
+                    grados = clima.direccionOlas ?: 0,
                     label = "Dir. Oleaje",
-                    valor = "${obtenerDireccionCardinal(clima.direccionOlas ?: 0)} (${clima.direccionOlas ?: 0}°)",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    iconTint = Gold400,
+                    subtexto = "Rumbo del mar"
                 )
+
+                // C. Periodo de Olas con cronómetro / cadencia
+                val periodo = clima.periodoOlas ?: 0.0
+                val descPeriodo = if (periodo >= 9.0) "Oleaje tendido" else "Oleaje picado"
                 DatoClimaItem(
-                    icon = Icons.Default.Waves,
+                    icon = Icons.Default.Timer,
                     label = "Periodo",
-                    valor = "${String.format("%.1f", clima.periodoOlas ?: 0.0)} s",
-                    modifier = Modifier.weight(1f)
+                    valor = "${String.format("%.1f", periodo)} s",
+                    modifier = Modifier.weight(1f),
+                    iconTint = Color(0xFF26A69A),
+                    subtexto = descPeriodo
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                DatoClimaItem(
-                    icon = Icons.Default.Waves,
-                    label = "Olas de Viento",
-                    valor = "${String.format("%.2f", clima.alturaOlasViento ?: 0.0)} m",
-                    modifier = Modifier.weight(1f)
-                )
-                DatoClimaItem(
-                    icon = Icons.Default.Waves,
-                    label = "Marejada (Swell)",
-                    valor = "${String.format("%.2f", clima.alturaSwellOlas ?: 0.0)} m",
-                    modifier = Modifier.weight(1f)
-                )
-                DatoClimaItem(
-                    icon = Icons.Default.Waves,
-                    label = "Periodo Swell",
-                    valor = "${String.format("%.1f", clima.periodoSwellOlas ?: 0.0)} s",
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Descripción del estado del mar según escala Douglas
-            val estadoMar = when {
-                (clima.alturaOlas) < 0.1 -> "Calma (mar en calma)" to Color(0xFF4CAF50)
-                (clima.alturaOlas) < 0.5 -> "Rizada (mar rizado)" to Color(0xFF66BB6A)
-                (clima.alturaOlas) < 1.25 -> "Marejadilla" to Color(0xFF8BC34A)
-                (clima.alturaOlas) < 2.5 -> "Marejada" to Color(0xFFF9A825)
-                (clima.alturaOlas) < 4.0 -> "Fuerte marejada" to Color(0xFFFF9800)
-                (clima.alturaOlas) < 6.0 -> "Mar gruesa" to Color(0xFFE57373)
-                else -> "Mar muy gruesa" to Color(0xFFD32F2F)
-            }
+            // ── 3. Desglose Marítimo: Olas de Viento vs. Mar de Fondo (Swell) ──
+            Text(
+                text = "Componentes del Oleaje",
+                color = Muted,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text("Estado del mar:", color = Muted, fontSize = 13.sp)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .background(estadoMar.second)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = estadoMar.first,
-                        color = estadoMar.second,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                // Tarjeta: Olas de Viento (Viento local)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Navy800.copy(alpha = 0.7f))
+                        .border(BorderStroke(1.dp, Navy600.copy(alpha = 0.5f)), RoundedCornerShape(12.dp))
+                        .padding(12.dp)
+                ) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Air,
+                                contentDescription = null,
+                                tint = Color(0xFF80D8FF),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Olas de Viento",
+                                color = Ink,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "${String.format("%.2f", clima.alturaOlasViento ?: 0.0)} m",
+                            color = Color(0xFF80D8FF),
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Por brisa costera",
+                            color = Muted,
+                            fontSize = 10.sp,
+                            lineHeight = 12.sp
+                        )
+                    }
+                }
+
+                // Tarjeta: Mar de Fondo (Swell Oceánico)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Navy800.copy(alpha = 0.7f))
+                        .border(BorderStroke(1.dp, Navy600.copy(alpha = 0.5f)), RoundedCornerShape(12.dp))
+                        .padding(12.dp)
+                ) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.DirectionsBoat,
+                                contentDescription = null,
+                                tint = Color(0xFF82B1FF),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Mar de Fondo",
+                                color = Ink,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                text = "${String.format("%.2f", clima.alturaSwellOlas ?: 0.0)} m",
+                                color = Color(0xFF82B1FF),
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (clima.periodoSwellOlas != null) {
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "(${String.format("%.0f", clima.periodoSwellOlas)}s)",
+                                    color = Muted,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.padding(bottom = 2.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Oleaje mar adentro",
+                            color = Muted,
+                            fontSize = 10.sp,
+                            lineHeight = 12.sp
+                        )
+                    }
                 }
             }
         } else {
@@ -829,7 +1005,9 @@ private fun DatoClimaItem(
     icon: ImageVector,
     label: String,
     valor: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    iconTint: Color = Gold500,
+    subtexto: String? = null
 ) {
     Column(
         modifier = modifier,
@@ -838,7 +1016,7 @@ private fun DatoClimaItem(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = Gold500,
+            tint = iconTint,
             modifier = Modifier.size(28.dp)
         )
         Spacer(modifier = Modifier.height(4.dp))
@@ -855,8 +1033,86 @@ private fun DatoClimaItem(
             fontSize = 11.sp,
             textAlign = TextAlign.Center
         )
+        if (subtexto != null) {
+            Text(
+                text = subtexto,
+                color = Muted.copy(alpha = 0.7f),
+                fontSize = 10.sp,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
+
+/** Ítem para dirección cardinal con flecha brújula animada que rota según los grados reales */
+@Composable
+private fun DatoDireccionItem(
+    grados: Int,
+    label: String,
+    modifier: Modifier = Modifier,
+    iconTint: Color = Gold400,
+    subtexto: String? = null
+) {
+    val direccionCardinal = remember(grados) { obtenerDireccionCardinal(grados) }
+    val anguloAnimado by animateFloatAsState(
+        targetValue = grados.toFloat(),
+        animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
+        label = "rotacion_direccion"
+    )
+
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(Navy700.copy(alpha = 0.7f))
+                .border(BorderStroke(1.dp, iconTint.copy(alpha = 0.5f)), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Navigation,
+                contentDescription = "$label: $direccionCardinal ($grados°)",
+                tint = iconTint,
+                modifier = Modifier
+                    .size(20.dp)
+                    .rotate(anguloAnimado)
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = "$direccionCardinal • $grados°",
+            color = Ink,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = label,
+            color = Muted,
+            fontSize = 11.sp,
+            textAlign = TextAlign.Center
+        )
+        if (subtexto != null) {
+            Text(
+                text = subtexto,
+                color = Muted.copy(alpha = 0.7f),
+                fontSize = 10.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+/** Modelo auxiliar para la Escala Douglas */
+private data class InfoEscalaMar(
+    val nombre: String,
+    val grado: String,
+    val color: Color,
+    val recomendacion: String
+)
 
 // ────────────────────────────────────────────────────────────────
 // UTILIDADES
