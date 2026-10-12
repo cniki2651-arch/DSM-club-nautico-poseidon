@@ -63,6 +63,7 @@ fun HomeOperacionesScreen(
     onLogout: () -> Unit,
     onNavigateToAsignarRada: () -> Unit = {},
     onNavigateToMapa: () -> Unit = {},
+    onNavigateToHistorial: () -> Unit = {},
     viewModel: HomeOperacionesViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -209,9 +210,9 @@ fun HomeOperacionesScreen(
 
             Row(modifier = Modifier.fillMaxWidth()) {
                 NavieroGridItem(
-                    title = "Reportes de Daños",
-                    icon = Icons.Default.Build,
-                    onClick = showToast,
+                    title = "Historial de Tránsito",
+                    icon = Icons.Default.History,
+                    onClick = onNavigateToHistorial,
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
