@@ -7,7 +7,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-// 1. El Estado (SignUpState)
 sealed interface SignUpState {
     object Idle : SignUpState
     object Loading : SignUpState
@@ -15,7 +14,6 @@ sealed interface SignUpState {
     data class Error(val message: String) : SignUpState
 }
 
-// 2. El ViewModel (SignUpViewModel)
 class SignUpViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow<SignUpState>(SignUpState.Idle)
@@ -36,15 +34,10 @@ class SignUpViewModel : ViewModel() {
         fechaNacimiento: String,
         telefono: String,
         correo: String,
-        password: String,
-        tieneEmbarcacion: Boolean,
-        cantidadEmbarcaciones: Int,
-        matricula: String,
-        nombreEmbarcacion: String
+        password: String
     ) {
         _uiState.value = SignUpState.Loading
 
-        // Paso 1: crear la cuenta en Authentication
         auth.createUserWithEmailAndPassword(correo, password)
             .addOnCompleteListener { task ->
                 if (!task.isSuccessful) {
@@ -59,7 +52,6 @@ class SignUpViewModel : ViewModel() {
                     return@addOnCompleteListener
                 }
 
-                // Paso 2: validar DNI único (ya con sesión iniciada)
                 db.collection("usuarios").whereEqualTo("dni", dni).get()
                     .addOnSuccessListener { querySnapshot ->
                         if (!querySnapshot.isEmpty) {
@@ -68,7 +60,6 @@ class SignUpViewModel : ViewModel() {
                             return@addOnSuccessListener
                         }
 
-                        // Paso 3: guardar en Firestore
                         val userData = hashMapOf<String, Any>(
                             "nombre" to nombre,
                             "apellidos" to apellidos,
@@ -80,20 +71,11 @@ class SignUpViewModel : ViewModel() {
                             "rol" to "postulante",
                             "estado" to "pendiente",
                             "proveedor" to "password",
-                            "fechaRegistro" to System.currentTimeMillis(),
-                            "embarcacion_registrada" to (cantidadEmbarcaciones > 0),
-                            "cantidad_embarcaciones" to cantidadEmbarcaciones,
-                            "tieneEmbarcacion" to tieneEmbarcacion
+                            "fechaRegistro" to System.currentTimeMillis()
                         )
-
-                        if (tieneEmbarcacion) {
-                            userData["matricula"] = matricula.trim().uppercase()
-                            userData["nombreEmbarcacion"] = nombreEmbarcacion
-                        }
 
                         db.collection("usuarios").document(user.uid).set(userData)
                             .addOnSuccessListener {
-                                Log.d("FIRESTORE", "Postulante guardado exitosamente en BD")
                                 auth.signOut()
                                 _uiState.value = SignUpState.Success
                             }

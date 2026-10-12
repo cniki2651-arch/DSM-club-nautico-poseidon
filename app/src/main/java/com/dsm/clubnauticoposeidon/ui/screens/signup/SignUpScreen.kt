@@ -5,7 +5,6 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,8 +29,6 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -149,12 +146,6 @@ fun SignUpScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
-    // Switch para embarcación opcional
-    var tieneEmbarcacion by remember { mutableStateOf(false) }
-    var cantidadEmbarcaciones by remember { mutableStateOf("") }
-    var matricula by remember { mutableStateOf("") }
-    var nombreEmbarcacion by remember { mutableStateOf("") }
-
     // Controla el cuadro de "Enviado correctamente"
     var mostrarExito by rememberSaveable { mutableStateOf(false) }
 
@@ -179,12 +170,6 @@ fun SignUpScreen(
     val isEmailValid = Patterns.EMAIL_ADDRESS.matcher(email).matches()
     val isPasswordValid = password.length >= 8
 
-    val isEmbarcacionValid = if (tieneEmbarcacion) {
-        matricula.isNotBlank() && nombreEmbarcacion.isNotBlank() && cantidadEmbarcaciones.isNotBlank()
-    } else {
-        true
-    }
-
     val isFormValid = nombres.isNotBlank() &&
             apellidos.isNotBlank() &&
             (if (tipoDocumento == "DNI") numDocumento.length == 8 else numDocumento.isNotBlank()) &&
@@ -192,8 +177,7 @@ fun SignUpScreen(
             telefono.length == 9 &&
             isEmailValid &&
             isPasswordValid &&
-            passwordsMatch &&
-            isEmbarcacionValid
+            passwordsMatch
 
     val isCargando = uiState is SignUpState.Loading
 
@@ -466,73 +450,10 @@ fun SignUpScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Switch de Embarcación Opcional
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "¿Desea registrar embarcaciones en el club?",
-                    color = Color.White,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Switch(
-                    checked = tieneEmbarcacion,
-                    onCheckedChange = { tieneEmbarcacion = it },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Navy900,
-                        checkedTrackColor = Gold500,
-                        uncheckedThumbColor = Color.LightGray,
-                        uncheckedTrackColor = Color.DarkGray
-                    )
-                )
-            }
-
-            if (tieneEmbarcacion) {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TextField(
-                    value = cantidadEmbarcaciones,
-                    onValueChange = {
-                        cantidadEmbarcaciones = it.filter { char -> char.isDigit() }
-                    },
-                    placeholder = { Text("¿Cuántas embarcaciones posee?", color = Muted) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    colors = textFieldColors
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TextField(
-                    value = matricula,
-                    onValueChange = { matricula = it },
-                    placeholder = { Text("Matrícula principal", color = Muted) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = textFieldColors
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TextField(
-                    value = nombreEmbarcacion,
-                    onValueChange = { nombreEmbarcacion = it },
-                    placeholder = { Text("Nombre de la embarcación principal", color = Muted) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = textFieldColors
-                )
-            }
-
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = {
-                    val cantidad = if (tieneEmbarcacion) cantidadEmbarcaciones.toIntOrNull() ?: 0 else 0
                     viewModel.registrarUsuario(
                         nombre = nombres,
                         apellidos = apellidos,
@@ -541,11 +462,7 @@ fun SignUpScreen(
                         fechaNacimiento = fechaNacimiento,
                         telefono = telefono,
                         correo = email.trim().lowercase(),
-                        password = password,
-                        tieneEmbarcacion = tieneEmbarcacion,
-                        cantidadEmbarcaciones = cantidad,
-                        matricula = matricula,
-                        nombreEmbarcacion = nombreEmbarcacion
+                        password = password
                     )
                 },
                 enabled = isFormValid && !isCargando,

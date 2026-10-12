@@ -101,10 +101,7 @@ fun AsignarRadaScreen(
     LaunchedEffect(radaSeleccionada) {
         if (radaSeleccionada.isNotBlank()) radaElegida = radaSeleccionada
     }
-    LaunchedEffect(ui.sugerida) {
-        val sugerida = ui.sugerida
-        if (sugerida != null && radaElegida.isBlank()) radaElegida = sugerida.id
-    }
+
 
     LaunchedEffect(ui.mensaje) {
         ui.mensaje?.let {
