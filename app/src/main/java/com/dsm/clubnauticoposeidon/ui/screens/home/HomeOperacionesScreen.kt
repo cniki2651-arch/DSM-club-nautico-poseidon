@@ -38,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 
@@ -60,19 +62,21 @@ import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 fun HomeOperacionesScreen(
     onLogout: () -> Unit,
     onNavigateToAsignarRada: () -> Unit = {},
-    onNavigateToMapa: () -> Unit = {}
+    onNavigateToMapa: () -> Unit = {},
+    viewModel: HomeOperacionesViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val resumen by viewModel.resumen.collectAsState()
     var menuExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
-                        text = "Panel del Naviero", 
-                        color = Gold500, 
-                        fontSize = 24.sp, 
+                        text = "Panel del Naviero",
+                        color = Gold500,
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -90,7 +94,7 @@ fun HomeOperacionesScreen(
                                 modifier = Modifier.size(36.dp)
                             )
                         }
-                        
+
                         // Menú desplegable para cerrar sesión
                         DropdownMenu(
                             expanded = menuExpanded,
@@ -138,43 +142,30 @@ fun HomeOperacionesScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Estado del Muelle Principal", 
-                        color = Color.White, 
-                        fontSize = 18.sp, 
+                        text = "Estado del Muelle Principal",
+                        color = Color.White,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
-                    
+
                     Spacer(modifier = Modifier.height(20.dp))
-                    
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Radas Totales
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("50", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-                            Text("Totales", color = Color.LightGray, fontSize = 12.sp)
-                        }
-                        
-                        // Radas Ocupadas
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("42", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-                            Text("Ocupadas", color = Color.LightGray, fontSize = 12.sp)
-                        }
-                        
-                        // Radas Disponibles (Verde)
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("8", color = Color(0xFF4CAF50), fontSize = 28.sp, fontWeight = FontWeight.Bold)
-                            Text("Disponibles", color = Color(0xFF4CAF50), fontSize = 12.sp)
-                        }
+                        ContadorRadas(resumen.totales.toString(), "Totales", Color.White)
+                        ContadorRadas(resumen.ocupadas.toString(), "Ocupadas", Color(0xFFE57373))
+                        ContadorRadas(resumen.disponibles.toString(), "Disponibles", Color(0xFF4CAF50))
+                        ContadorRadas(resumen.mantenimiento.toString(), "Mant.", Color(0xFFF9A825))
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Botón de Acción Principal (HU04)
+            // Botón de Acción Principal
             Button(
                 onClick = onNavigateToAsignarRada,
                 modifier = Modifier
@@ -184,9 +175,9 @@ fun HomeOperacionesScreen(
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Text(
-                    text = "Asignar Nueva Rada", 
-                    color = Navy900, 
-                    fontSize = 18.sp, 
+                    text = "Asignar Nueva Rada",
+                    color = Navy900,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -213,9 +204,9 @@ fun HomeOperacionesScreen(
                     modifier = Modifier.weight(1f)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(modifier = Modifier.fillMaxWidth()) {
                 NavieroGridItem(
                     title = "Reportes de Daños",
@@ -238,6 +229,27 @@ fun HomeOperacionesScreen(
 }
 
 @Composable
+fun ContadorRadas(
+    cantidad: String,
+    label: String,
+    color: Color
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = cantidad,
+            color = color,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = label,
+            color = Color.LightGray,
+            fontSize = 12.sp
+        )
+    }
+}
+
+@Composable
 fun NavieroGridItem(
     title: String,
     icon: ImageVector,
@@ -246,7 +258,7 @@ fun NavieroGridItem(
 ) {
     Card(
         modifier = modifier
-            .aspectRatio(1f) // Cuadrado
+            .aspectRatio(1f)
             .clip(RoundedCornerShape(16.dp))
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
