@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dsm.clubnauticoposeidon.data.repository.RadaRepository
 import com.dsm.clubnauticoposeidon.data.repository.SolicitudRadaRepository
+import com.dsm.clubnauticoposeidon.model.EstadoRada
 import com.dsm.clubnauticoposeidon.model.Rada
 import com.dsm.clubnauticoposeidon.model.SolicitudRada
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +18,7 @@ data class BandejaRadasUiState(
     val radas: List<Rada> = emptyList(),
     val cargando: Boolean = true,
     val procesando: Boolean = false,
-    val completado: Boolean = false,   // true cuando se aprobó o rechazó con éxito
+    val completado: Boolean = false,
     val mensaje: String? = null
 )
 
@@ -43,6 +44,12 @@ class BandejaRadasViewModel(
                 .collect { lista -> _ui.update { it.copy(radas = lista.sortedBy { r -> r.codigo }) } }
         }
     }
+
+    // Rada sugerida
+    fun sugerirRada(eslora: Double): Rada? =
+        _ui.value.radas
+            .filter { it.estado == EstadoRada.DISPONIBLE && it.esloraMax >= eslora }
+            .minByOrNull { it.esloraMax - eslora }
 
     fun aprobar(solicitud: SolicitudRada, radaId: String) {
         viewModelScope.launch {

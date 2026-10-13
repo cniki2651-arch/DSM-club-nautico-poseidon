@@ -28,7 +28,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -49,6 +48,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dsm.clubnauticoposeidon.data.repository.ClimaRepository
+import com.dsm.clubnauticoposeidon.ui.screens.clima.ClimaViewModel
 import com.dsm.clubnauticoposeidon.ui.screens.solicitudes.BandejaRadasViewModel
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
@@ -61,11 +62,11 @@ fun AsignarRadaScreen(
     onAbrirMapaClick: () -> Unit,
     radaSeleccionada: String = "",
     viewModel: BandejaRadasViewModel = viewModel(),
-    radaViewModel: RadaViewModel = viewModel()
+    climaViewModel: ClimaViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val ui by viewModel.ui.collectAsState()
-    val clima by radaViewModel.ui.collectAsState()
+    val clima by climaViewModel.clima.collectAsState()
 
     val solicitud = ui.solicitudes.firstOrNull { it.id == solicitudId }
 
@@ -170,14 +171,14 @@ fun AsignarRadaScreen(
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
 
-
-                clima.clima?.let { c ->
-                    val seguro = clima.vientoSeguro == true
+                // Aviso del clima
+                clima?.let { c ->
+                    val seguro = c.velocidadViento < ClimaRepository.VIENTO_MAXIMO_KMH
                     Text(
                         text = if (seguro)
-                            "Clima favorable: viento ${c.wind_speed_10m} km/h"
+                            "Clima favorable: viento ${String.format("%.1f", c.velocidadViento)} km/h"
                         else
-                            "Viento fuerte (${c.wind_speed_10m} km/h): se recomienda precaución",
+                            "Viento fuerte (${String.format("%.1f", c.velocidadViento)} km/h): se recomienda precaución",
                         color = if (seguro) Color(0xFF7FD18B) else Color(0xFFFF8A80),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
@@ -226,6 +227,35 @@ fun AsignarRadaScreen(
                     modifier = Modifier.align(Alignment.Start)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
+
+                // Rada sugerida según la eslora de la nave
+                val sugerida = viewModel.sugerirRada(solicitud.eslora)
+                if (sugerida != null) {
+                    val codigoSugerida = sugerida.codigo.ifBlank { sugerida.id }
+                    OutlinedButton(
+                        onClick = { radaElegida = sugerida.id },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        border = BorderStroke(1.dp, Gold500),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Gold500)
+                    ) {
+                        Text(
+                            text = "Sugerida: $codigoSugerida (eslora máx. ${sugerida.esloraMax}) · Usar",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                } else if (ui.radas.isNotEmpty()) {
+                    Text(
+                        text = "No hay radas disponibles para esa eslora",
+                        color = Color(0xFFFF8A80),
+                        fontSize = 14.sp,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
                     onClick = onAbrirMapaClick,
