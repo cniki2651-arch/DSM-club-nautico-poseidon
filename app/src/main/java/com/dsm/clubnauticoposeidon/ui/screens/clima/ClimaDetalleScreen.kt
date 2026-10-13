@@ -97,6 +97,11 @@ import java.util.Locale
    HU05 · Pantalla de detalle de Clima y Marea para Navegación
    ────────────────────────────────────────────────────────────────── */
 
+/**
+ * Pantalla principal del módulo de Clima y Mareas (HU05).
+ * Muestra el estado meteorológico actual y marino del Callao en vivo,
+ * orientando al socio sobre las condiciones de navegación y seguridad para zarpar.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClimaDetalleScreen(
@@ -402,6 +407,10 @@ private fun HeroTemperatura(clima: ClimaDetalle, fecha: String) {
 // INDICADOR DE SEGURIDAD PARA ZARPE
 // ────────────────────────────────────────────────────────────────
 
+/**
+ * Evalúa las condiciones de viento y oleaje para clasificar el estado de zarpe
+ * mediante un semáforo náutico (Bandera Verde: óptimo, Amarilla: precaución, Roja: no recomendado).
+ */
 @Composable
 private fun IndicadorSeguridadZarpe(clima: ClimaDetalle) {
     val vientoSeguro = clima.velocidadViento < 30.0
@@ -621,7 +630,7 @@ private fun SeccionViento(clima: ClimaDetalle) {
 }
 
 // ────────────────────────────────────────────────────────────────
-// SECCIÓN: Estado del Mar (Diferenciado y con Gráficas Claras)
+// SECCIÓN: Estado del Mar
 // ────────────────────────────────────────────────────────────────
 
 @Composable
@@ -629,18 +638,18 @@ private fun SeccionMar(clima: ClimaDetalle) {
     SeccionTarjeta(titulo = "Estado del Mar") {
         if (clima.alturaOlas != null) {
             val altura = clima.alturaOlas
-            // Información interpretativa según la Escala Douglas
+            // Información interpretativa del estado del mar
             val infoEscala = when {
-                altura < 0.1 -> InfoEscalaMar("Mar en calma", "Grado 0", Color(0xFF4CAF50), "Superficie como un espejo, ideal para navegar")
-                altura < 0.5 -> InfoEscalaMar("Mar rizado", "Grado 1-2", Color(0xFF66BB6A), "Olas muy pequeñas y suaves sin rompientes")
-                altura < 1.25 -> InfoEscalaMar("Marejadilla", "Grado 3", Color(0xFF8BC34A), "Oleaje suave, óptimo para yates y veleros")
-                altura < 2.5 -> InfoEscalaMar("Marejada", "Grado 4", Color(0xFFF9A825), "Precaución: oleaje pronunciado en bahía")
-                altura < 4.0 -> InfoEscalaMar("Fuerte marejada", "Grado 5", Color(0xFFFF9800), "Riesgo: olas grandes y rompientes frecuentes")
-                altura < 6.0 -> InfoEscalaMar("Mar gruesa", "Grado 6", Color(0xFFE57373), "Peligroso: navegación restringida")
-                else -> InfoEscalaMar("Mar muy gruesa", "Grado 7+", Color(0xFFD32F2F), "Condición extrema: alerta marítima")
+                altura < 0.1 -> InfoEscalaMar("Mar en calma", Color(0xFF4CAF50), "Superficie como un espejo, ideal para navegar")
+                altura < 0.5 -> InfoEscalaMar("Mar rizado", Color(0xFF66BB6A), "Olas muy pequeñas y suaves sin rompientes")
+                altura < 1.25 -> InfoEscalaMar("Marejadilla", Color(0xFF8BC34A), "Oleaje suave, óptimo para yates y veleros")
+                altura < 2.5 -> InfoEscalaMar("Marejada", Color(0xFFF9A825), "Precaución: oleaje pronunciado en bahía")
+                altura < 4.0 -> InfoEscalaMar("Fuerte marejada", Color(0xFFFF9800), "Riesgo: olas grandes y rompientes frecuentes")
+                altura < 6.0 -> InfoEscalaMar("Mar gruesa", Color(0xFFE57373), "Peligroso: navegación restringida")
+                else -> InfoEscalaMar("Mar muy gruesa", Color(0xFFD32F2F), "Condición extrema: alerta marítima")
             }
 
-            // ── 1. Banner Escala Douglas con Barra Visual de Nivel de Olas ──
+            // ── 1. Banner con Estado del Mar y Barra Visual de Nivel de Olas ──
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -652,38 +661,21 @@ private fun SeccionMar(clima: ClimaDetalle) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(10.dp)
-                                    .clip(CircleShape)
-                                    .background(infoEscala.color)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = infoEscala.nombre,
-                                color = infoEscala.color,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        // Badge de Grado Douglas
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(infoEscala.color.copy(alpha = 0.2f))
-                                .padding(horizontal = 8.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = "Douglas ${infoEscala.grado}",
-                                color = infoEscala.color,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(infoEscala.color)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = infoEscala.nombre,
+                            color = infoEscala.color,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(6.dp))
@@ -738,7 +730,7 @@ private fun SeccionMar(clima: ClimaDetalle) {
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // ── 2. Métricas Principales Diferenciadas (Altura, Rumbo y Periodo) ──
+            // ── 2. Métricas Principales (Altura, Rumbo y Periodo) ──
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -774,117 +766,6 @@ private fun SeccionMar(clima: ClimaDetalle) {
                     iconTint = Color(0xFF26A69A),
                     subtexto = descPeriodo
                 )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ── 3. Desglose Marítimo: Olas de Viento vs. Mar de Fondo (Swell) ──
-            Text(
-                text = "Componentes del Oleaje",
-                color = Muted,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Tarjeta: Olas de Viento (Viento local)
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Navy800.copy(alpha = 0.7f))
-                        .border(BorderStroke(1.dp, Navy600.copy(alpha = 0.5f)), RoundedCornerShape(12.dp))
-                        .padding(12.dp)
-                ) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Air,
-                                contentDescription = null,
-                                tint = Color(0xFF80D8FF),
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Olas de Viento",
-                                color = Ink,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "${String.format("%.2f", clima.alturaOlasViento ?: 0.0)} m",
-                            color = Color(0xFF80D8FF),
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Por brisa costera",
-                            color = Muted,
-                            fontSize = 10.sp,
-                            lineHeight = 12.sp
-                        )
-                    }
-                }
-
-                // Tarjeta: Mar de Fondo (Swell Oceánico)
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Navy800.copy(alpha = 0.7f))
-                        .border(BorderStroke(1.dp, Navy600.copy(alpha = 0.5f)), RoundedCornerShape(12.dp))
-                        .padding(12.dp)
-                ) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.DirectionsBoat,
-                                contentDescription = null,
-                                tint = Color(0xFF82B1FF),
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Mar de Fondo",
-                                color = Ink,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            Text(
-                                text = "${String.format("%.2f", clima.alturaSwellOlas ?: 0.0)} m",
-                                color = Color(0xFF82B1FF),
-                                fontSize = 17.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            if (clima.periodoSwellOlas != null) {
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "(${String.format("%.0f", clima.periodoSwellOlas)}s)",
-                                    color = Muted,
-                                    fontSize = 11.sp,
-                                    modifier = Modifier.padding(bottom = 2.dp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Oleaje mar adentro",
-                            color = Muted,
-                            fontSize = 10.sp,
-                            lineHeight = 12.sp
-                        )
-                    }
-                }
             }
         } else {
             Text(
@@ -1044,7 +925,10 @@ private fun DatoClimaItem(
     }
 }
 
-/** Ítem para dirección cardinal con flecha brújula animada que rota según los grados reales */
+/**
+ * Representa una dirección cardinal y angular mediante una brújula circular.
+ * Anima la rotación de la flecha de navegación según los grados exactos recibidos de la API.
+ */
 @Composable
 private fun DatoDireccionItem(
     grados: Int,
@@ -1106,10 +990,9 @@ private fun DatoDireccionItem(
     }
 }
 
-/** Modelo auxiliar para la Escala Douglas */
+/** Modelo auxiliar para la descripción del estado del mar */
 private data class InfoEscalaMar(
     val nombre: String,
-    val grado: String,
     val color: Color,
     val recomendacion: String
 )
