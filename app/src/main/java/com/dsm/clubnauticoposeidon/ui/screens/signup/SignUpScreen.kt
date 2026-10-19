@@ -37,7 +37,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -117,6 +116,15 @@ fun isValidDate(date: String): Boolean {
     }
 }
 
+/**
+ * Solo letras/espacios, sin espacio inicial, sin doble espacio.
+ */
+fun formatName(input: String): String {
+    val filtered = input.filter { it.isLetter() || it.isWhitespace() }
+    val noLeadingSpace = if (filtered.startsWith(" ")) filtered.trimStart() else filtered
+    return noLeadingSpace.replace(Regex("\\s+"), " ")
+}
+
 // 3. La Vista (SignUpScreen)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,23 +136,23 @@ fun SignUpScreen(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
 
-    var nombres by remember { mutableStateOf("") }
-    var apellidos by remember { mutableStateOf("") }
+    var nombres by rememberSaveable { mutableStateOf("") }
+    var apellidos by rememberSaveable { mutableStateOf("") }
 
     val documentTypes = listOf("DNI", "Pasaporte", "CE")
-    var expanded by remember { mutableStateOf(false) }
-    var tipoDocumento by remember { mutableStateOf(documentTypes[0]) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    var tipoDocumento by rememberSaveable { mutableStateOf(documentTypes[0]) }
 
-    var numDocumento by remember { mutableStateOf("") }
-    var fechaNacimiento by remember { mutableStateOf("") }
-    var telefono by remember { mutableStateOf("") }
+    var numDocumento by rememberSaveable { mutableStateOf("") }
+    var fechaNacimiento by rememberSaveable { mutableStateOf("") }
+    var telefono by rememberSaveable { mutableStateOf("") }
 
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
-    var confirmPassword by remember { mutableStateOf("") }
-    var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var confirmPassword by rememberSaveable { mutableStateOf("") }
+    var confirmPasswordVisible by rememberSaveable { mutableStateOf(false) }
 
     // Controla el cuadro de "Enviado correctamente"
     var mostrarExito by rememberSaveable { mutableStateOf(false) }
@@ -233,13 +241,6 @@ fun SignUpScreen(
                 focusedIndicatorColor = Gold500,
                 unfocusedIndicatorColor = Muted
             )
-
-            // Solo letras/espacios, sin espacio inicial, sin doble espacio
-            fun formatName(input: String): String {
-                val filtered = input.filter { it.isLetter() || it.isWhitespace() }
-                val noLeadingSpace = if (filtered.startsWith(" ")) filtered.trimStart() else filtered
-                return noLeadingSpace.replace(Regex("\\s+"), " ")
-            }
 
             // Nombres
             TextField(
@@ -461,7 +462,7 @@ fun SignUpScreen(
                         dni = numDocumento,
                         fechaNacimiento = fechaNacimiento,
                         telefono = telefono,
-                        correo = email.trim().lowercase(),
+                        correo = email.lowercase(),
                         password = password
                     )
                 },
