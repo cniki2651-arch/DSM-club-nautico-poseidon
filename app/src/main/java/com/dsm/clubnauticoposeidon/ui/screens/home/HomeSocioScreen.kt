@@ -2,7 +2,9 @@ package com.dsm.clubnauticoposeidon.ui.screens.home
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -51,7 +54,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -59,8 +64,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dsm.clubnauticoposeidon.ui.screens.clima.ClimaViewModel
+import com.dsm.clubnauticoposeidon.ui.screens.profile.FotoPerfilViewModel
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
-import com.dsm.clubnauticoposeidon.ui.theme.Muted
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -71,6 +76,7 @@ import java.util.Locale
 fun HomeSocioScreen(
     viewModel: HomeViewModel = viewModel(),
     climaViewModel: ClimaViewModel = viewModel(),
+    fotoViewModel: FotoPerfilViewModel = viewModel(),
     onLogout: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToServicios: () -> Unit = {},
@@ -82,6 +88,7 @@ fun HomeSocioScreen(
 
     val climaDetalle by climaViewModel.clima.collectAsState()
     val climaCargando by climaViewModel.cargando.collectAsState()
+    val fotoUi by fotoViewModel.ui.collectAsState()
 
     val nombreSocio by viewModel.nombreSocio.collectAsState()
 
@@ -95,7 +102,7 @@ fun HomeSocioScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Column {
                         Text("Hola, $nombreSocio", color = Gold500, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                         Text(currentDate, color = Color.LightGray, fontSize = 14.sp)
@@ -109,13 +116,26 @@ fun HomeSocioScreen(
                 actions = {
                     Box {
                         IconButton(onClick = { menuExpanded = true }) {
-                            Icon(
-                                imageVector = Icons.Default.AccountCircle,
-                                contentDescription = "Perfil del Socio",
-                                modifier = Modifier.size(36.dp)
-                            )
+                            val foto = fotoUi.foto
+                            if (foto != null) {
+                                Image(
+                                    bitmap = foto.asImageBitmap(),
+                                    contentDescription = "Perfil del Socio",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .border(2.dp, Gold500, CircleShape)
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.AccountCircle,
+                                    contentDescription = "Perfil del Socio",
+                                    modifier = Modifier.size(36.dp)
+                                )
+                            }
                         }
-                        
+
                         // Menú desplegable para opciones de perfil y cierre de sesión
                         DropdownMenu(
                             expanded = menuExpanded,
@@ -296,8 +316,7 @@ fun HomeSocioScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
