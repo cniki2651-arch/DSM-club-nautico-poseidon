@@ -1,8 +1,14 @@
 package com.dsm.clubnauticoposeidon.ui.screens.profile
 
 import android.graphics.Bitmap
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,10 +19,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -26,6 +35,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,9 +43,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -52,13 +64,30 @@ import com.google.zxing.MultiFormatWriter
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = viewModel(),
+    fotoViewModel: FotoPerfilViewModel = viewModel(),
     onBackClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     var showQR by remember { mutableStateOf(false) }
 
     val perfil by viewModel.perfil.collectAsState()
     val cargando by viewModel.cargando.collectAsState()
     val error by viewModel.error.collectAsState()
+    val fotoUi by fotoViewModel.ui.collectAsState()
+
+    // Selector de fotos del sistema (no requiere permisos)
+    val selectorFoto = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) fotoViewModel.guardar(context.contentResolver, uri)
+    }
+
+    LaunchedEffect(fotoUi.mensaje) {
+        fotoUi.mensaje?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            fotoViewModel.mensajeMostrado()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -86,8 +115,62 @@ fun ProfileScreen(
             color = Gold500,
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 24.dp)
+            modifier = Modifier.padding(bottom = 8.dp)
         )
+
+        // Foto de perfil editable
+        Box(
+            modifier = Modifier
+                .padding(bottom = 24.dp)
+                .size(130.dp)
+                .clickable(enabled = !fotoUi.guardando) {
+                    selectorFoto.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            val foto = fotoUi.foto
+            if (foto != null) {
+                Image(
+                    bitmap = foto.asImageBitmap(),
+                    contentDescription = "Foto de perfil",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .border(3.dp, Gold500, CircleShape)
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.AccountCircle,
+                    contentDescription = "Sin foto",
+                    tint = Gold500,
+                    modifier = Modifier.size(120.dp)
+                )
+            }
+
+            if (fotoUi.guardando) {
+                CircularProgressIndicator(color = Gold500, modifier = Modifier.size(40.dp))
+            }
+
+            // Botón de editar en la esquina inferior derecha
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(Gold500),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CameraAlt,
+                    contentDescription = "Cambiar foto",
+                    tint = Navy900,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
 
         when {
             cargando -> {
