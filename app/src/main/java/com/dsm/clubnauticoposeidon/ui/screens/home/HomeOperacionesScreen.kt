@@ -54,7 +54,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -76,6 +75,7 @@ fun HomeOperacionesScreen(
     onNavigateToMapa: () -> Unit = {},
     onNavigateToHistorial: () -> Unit = {},
     onNavigateToSolicitudes: () -> Unit = {},
+    onNavigateToAutorizarZarpes: () -> Unit = {},
     viewModel: HomeOperacionesViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -132,7 +132,7 @@ fun HomeOperacionesScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Área de Servicios Navieros",
+                            text = "Panel del Naviero",
                             color = Gold500,
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold
@@ -284,6 +284,10 @@ fun HomeOperacionesScreen(
                 }
 
                 // 5. Cuadrícula de Opciones Principales (Grid de 2 columnas)
+                // Tarjeta 1: Mapa de Muelles (Arriba Izquierda)
+                // Tarjeta 2: Autorizar Zarpes (Arriba Derecha - DESTACADA HU06)
+                // Tarjeta 3: Reportes de Daños (Abajo Izquierda)
+                // Tarjeta 4: Historial de Tránsito (Abajo Derecha)
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -292,18 +296,7 @@ fun HomeOperacionesScreen(
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
-                    // Tarjeta 1 (DESTACADA - HU06): Autorizar Zarpes
-                    item {
-                        MenuCardNaviero(
-                            titulo = "Autorizar Zarpes",
-                            descripcion = "Evalúa solicitudes de salida y tripulación especializada",
-                            icono = Icons.Default.DirectionsBoat,
-                            destacado = true,
-                            onClick = showToast
-                        )
-                    }
-
-                    // Tarjeta 2: Mapa de Muelles
+                    // Tarjeta 1 (Arriba Izquierda): Mapa de Muelles
                     item {
                         MenuCardNaviero(
                             titulo = "Mapa de Muelles",
@@ -314,7 +307,18 @@ fun HomeOperacionesScreen(
                         )
                     }
 
-                    // Tarjeta 3: Reportes de Daños
+                    // Tarjeta 2 (Arriba Derecha - DESTACADA HU06): Autorizar Zarpes
+                    item {
+                        MenuCardNaviero(
+                            titulo = "Autorizar Zarpes",
+                            descripcion = "Evalúa solicitudes de salida y valida la tripulación especializada",
+                            icono = Icons.Default.DirectionsBoat,
+                            destacado = true,
+                            onClick = onNavigateToAutorizarZarpes
+                        )
+                    }
+
+                    // Tarjeta 3 (Abajo Izquierda): Reportes de Daños
                     item {
                         MenuCardNaviero(
                             titulo = "Reportes de Daños",
@@ -325,7 +329,7 @@ fun HomeOperacionesScreen(
                         )
                     }
 
-                    // Tarjeta 4: Historial de Tránsito
+                    // Tarjeta 4 (Abajo Derecha): Historial de Tránsito
                     item {
                         MenuCardNaviero(
                             titulo = "Historial de Tránsito",

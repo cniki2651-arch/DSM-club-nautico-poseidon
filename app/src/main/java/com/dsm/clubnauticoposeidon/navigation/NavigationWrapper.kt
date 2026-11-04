@@ -259,7 +259,8 @@ fun NavigationWrapper(
                 onNavigateToAsignarRada = { navHostController.navigate("asignar_rada") },
                 onNavigateToMapa = { navHostController.navigate("mapa_muelles") },
                 onNavigateToHistorial = { navHostController.navigate("historial_transito") },
-                onNavigateToSolicitudes = { navHostController.navigate("solicitudes_rada") }
+                onNavigateToSolicitudes = { navHostController.navigate("solicitudes_rada") },
+                onNavigateToAutorizarZarpes = { navHostController.navigate("solicitudes_rada") }
             )
         }
 
