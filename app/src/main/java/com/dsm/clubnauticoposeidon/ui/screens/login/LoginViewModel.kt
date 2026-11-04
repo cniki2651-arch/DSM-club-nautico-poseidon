@@ -9,12 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-sealed interface LoginState {
-    object Idle : LoginState
-    object Loading : LoginState
-    data class Success(val destino: Destino) : LoginState
-    data class Error(val message: String) : LoginState
-}
+
 
 class LoginViewModel : ViewModel() {
 

@@ -53,12 +53,7 @@ import androidx.compose.ui.unit.sp
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 
-// Modelo de datos
-data class OpcionAsistencia(
-    val titulo: String,
-    val descripcion: String,
-    val icono: ImageVector
-)
+
 
 // Mock Data
 val opcionesAsistencia = listOf(

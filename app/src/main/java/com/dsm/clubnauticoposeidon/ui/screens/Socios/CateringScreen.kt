@@ -46,14 +46,7 @@ import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import com.google.firebase.firestore.FirebaseFirestore
 
-// 1. Modelo de Datos adaptado para Firestore
-data class PlatoItem(
-    val nombre: String = "",
-    val precio: Double = 0.0,
-    val descripcion: String = "",
-    val categoria: String = "",
-    val modulo: String = ""
-)
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

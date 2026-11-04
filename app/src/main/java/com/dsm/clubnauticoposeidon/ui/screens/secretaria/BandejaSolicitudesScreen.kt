@@ -22,16 +22,9 @@ import androidx.compose.ui.unit.sp
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import com.google.firebase.firestore.FirebaseFirestore
+import com.dsm.clubnauticoposeidon.ui.screens.secretaria.PostulanteModel
 
-// Modelo para mapear los datos de Firestore
-data class PostulanteModel(
-    val id: String = "",
-    val nombre: String = "",
-    val apellidos: String = "",
-    val dni: String = "",
-    val correo: String = "",
-    val embarcacion_registrada: Boolean = false
-)
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

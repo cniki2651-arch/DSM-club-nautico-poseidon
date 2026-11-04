@@ -12,16 +12,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class MisNavesUiState(
-    val naves: List<Embarcacion> = emptyList(),
-    val solicitudes: List<SolicitudRada> = emptyList(),
-    val dni: String? = null,
-    val cargando: Boolean = true,
-    val guardando: Boolean = false,
-    val mensaje: String? = null,
-    val registrada: Boolean = false,
-    val solicitudEnviada: Boolean = false
-)
+
 
 class MisNavesViewModel(
     private val repo: EmbarcacionRepository = EmbarcacionRepository(),

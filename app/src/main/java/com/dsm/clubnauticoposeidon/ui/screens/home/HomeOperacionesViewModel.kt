@@ -12,13 +12,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class ResumenRadas(
-    val totales: Int = 0,
-    val ocupadas: Int = 0,
-    val disponibles: Int = 0,
-    val mantenimiento: Int = 0,
-    val cargando: Boolean = true
-)
+
 
 class HomeOperacionesViewModel(
     private val repo: RadaRepository = RadaRepository()

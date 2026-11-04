@@ -12,11 +12,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class MapaUiState(
-    val radas: List<Rada> = emptyList(),
-    val cargando: Boolean = true,
-    val mensaje: String? = null
-)
+
 
 class MapaMuellesViewModel(
     private val repo: RadaRepository = RadaRepository()

@@ -52,14 +52,7 @@ import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import com.google.firebase.firestore.FirebaseFirestore
 
-// 1. Modelo de Datos adaptado a Firestore (tipos numéricos y String limpios)
-data class SuministroItemModel(
-    val nombre: String = "",
-    val descripcion: String = "",
-    val precio: Double = 0.0,
-    val categoria: String = "",
-    val modulo: String = ""
-)
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

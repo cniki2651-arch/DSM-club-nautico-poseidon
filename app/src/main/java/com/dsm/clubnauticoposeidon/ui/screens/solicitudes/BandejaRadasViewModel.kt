@@ -13,14 +13,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class BandejaRadasUiState(
-    val solicitudes: List<SolicitudRada> = emptyList(),
-    val radas: List<Rada> = emptyList(),
-    val cargando: Boolean = true,
-    val procesando: Boolean = false,
-    val completado: Boolean = false,
-    val mensaje: String? = null
-)
+
 
 class BandejaRadasViewModel(
     private val solicitudRepo: SolicitudRadaRepository = SolicitudRadaRepository(),

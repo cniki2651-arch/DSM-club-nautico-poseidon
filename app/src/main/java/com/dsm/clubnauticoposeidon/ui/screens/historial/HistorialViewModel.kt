@@ -11,15 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class HistorialUiState(
-    val items: List<HistorialItem> = emptyList(),
-    val filtro: String = "todas",   // todas | activa | finalizada
-    val cargando: Boolean = true,
-    val error: String? = null
-) {
-    val visibles: List<HistorialItem>
-        get() = if (filtro == "todas") items else items.filter { it.estado == filtro }
-}
+
 
 class HistorialViewModel(
     private val repo: RadaRepository = RadaRepository()

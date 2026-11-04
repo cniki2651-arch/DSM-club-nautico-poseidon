@@ -8,15 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-// 1. Modelo de Datos
-data class Postulante(
-    val id: String = "",
-    val nombre: String = "",
-    val apellidos: String = "",
-    val dni: String = "",
-    val correo: String = "",
-    val embarcacion_registrada: Boolean = false
-)
+
 
 // 2. ViewModel
 class BandejaSecretariaViewModel : ViewModel() {

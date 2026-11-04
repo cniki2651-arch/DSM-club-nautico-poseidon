@@ -19,26 +19,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-// Estado que la pantalla dibuja
-data class InitialUiState(
-    val cargando: Boolean = false
-)
 
-
-enum class DestinoInicial {
-    SOCIO,
-    ADMIN,
-    SECRETARIA,
-    JEFE,
-    SEGUIMIENTO
-}
-
-// Eventos de una sola vez (navegar o mostrar un mensaje)
-sealed interface InitialEvent {
-    data class Navegar(val destino: DestinoInicial) : InitialEvent
-    data class MensajeRes(@StringRes val resId: Int) : InitialEvent
-    data class Mensaje(val texto: String) : InitialEvent
-}
 
 class InitialViewModel : ViewModel() {
 

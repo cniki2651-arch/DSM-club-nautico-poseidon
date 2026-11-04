@@ -21,11 +21,7 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 
-data class FotoUiState(
-    val foto: Bitmap? = null,
-    val guardando: Boolean = false,
-    val mensaje: String? = null
-)
+
 
 class FotoPerfilViewModel : ViewModel() {
 
