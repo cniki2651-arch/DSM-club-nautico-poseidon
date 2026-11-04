@@ -61,10 +61,13 @@ class ZarpeViewModel : ViewModel() {
         embarcacionId: String,
         embarcacionNombre: String,
         destino: String,
-        fechaHoraSalida: String,
-        fechaHoraRegreso: String,
+        fechaPartida: String,
+        horaPartida: String,
+        fechaRetorno: String,
+        horaRetorno: String,
         cantidadTripulantes: Int,
-        observacionesTripulacion: String
+        observacionesTripulacion: String,
+        tripulacionEspecializada: List<String>
     ) {
         val uid = auth.currentUser?.uid
         if (uid == null) {
@@ -91,6 +94,9 @@ class ZarpeViewModel : ViewModel() {
                 val dni = userDoc.getString("dni") ?: ""
                 val zarpeRef = db.collection("zarpes").document()
 
+                val fechaHoraSalida = "$fechaPartida - $horaPartida"
+                val fechaHoraRegreso = "$fechaRetorno - $horaRetorno"
+
                 val nuevoZarpe = SolicitudZarpe(
                     id = zarpeRef.id,
                     embarcacionId = embarcacionId,
@@ -98,10 +104,15 @@ class ZarpeViewModel : ViewModel() {
                     socioId = uid,
                     dni = dni,
                     destino = destino,
+                    fechaPartida = fechaPartida,
+                    horaPartida = horaPartida,
+                    fechaRetorno = fechaRetorno,
+                    horaRetorno = horaRetorno,
                     fechaHoraSalida = fechaHoraSalida,
                     fechaHoraRegreso = fechaHoraRegreso,
                     cantidadTripulantes = cantidadTripulantes,
                     observacionesTripulacion = observacionesTripulacion,
+                    tripulacionEspecializada = tripulacionEspecializada,
                     fechaSolicitud = System.currentTimeMillis(),
                     estado = "pendiente_aprobacion"
                 )

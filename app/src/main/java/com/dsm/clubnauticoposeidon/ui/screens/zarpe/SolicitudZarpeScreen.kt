@@ -1,14 +1,20 @@
 package com.dsm.clubnauticoposeidon.ui.screens.zarpe
 
 import android.Manifest
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
+import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,23 +30,31 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Anchor
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Radar
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -70,8 +84,25 @@ import com.dsm.clubnauticoposeidon.ui.theme.Ink
 import com.dsm.clubnauticoposeidon.ui.theme.Muted
 import com.dsm.clubnauticoposeidon.ui.theme.Navy800
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
+import java.util.Calendar
+import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+// Mock Data de Tripulación Especializada
+data class TripulanteEspecializado(
+    val id: String,
+    val nombre: String,
+    val cargo: String
+)
+
+val tripulantesDisponibles = listOf(
+    TripulanteEspecializado("1", "Cap. Carlos Mendoza", "Capitán / Patrón"),
+    TripulanteEspecializado("2", "Ing. Roberto Silva", "Ingeniero de Máquinas"),
+    TripulanteEspecializado("3", "Mar. Luis Gómez", "Marinero de Cubierta"),
+    TripulanteEspecializado("4", "Tech. Ana Rivas", "Operador de Radio / Telecom"),
+    TripulanteEspecializado("5", "Cap. Miguel Grau", "Patrón de Yate")
+)
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SolicitudZarpeScreen(
     embarcacionId: String,
@@ -82,13 +113,35 @@ fun SolicitudZarpeScreen(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
 
+    // 1. Campos independientes del formulario de Declaración Náutica
     var destino by remember { mutableStateOf("") }
-    var fechaHoraSalida by remember { mutableStateOf("") }
-    var fechaHoraRegreso by remember { mutableStateOf("") }
+    var fechaPartida by remember { mutableStateOf("") }
+    var horaPartida by remember { mutableStateOf("") }
+    var fechaRetorno by remember { mutableStateOf("") }
+    var horaRetorno by remember { mutableStateOf("") }
+
     var cantidadTripulantesTexto by remember { mutableStateOf("1") }
     var observacionesTripulacion by remember { mutableStateOf("") }
 
+    // 2. Estado para la selección múltiple de Tripulación Especializada
+    var busquedaTripulante by remember { mutableStateOf("") }
+    var menuBusquedaExpandido by remember { mutableStateOf(false) }
+    var tripulantesSeleccionados by remember { mutableStateOf<List<TripulanteEspecializado>>(emptyList()) }
+
     var zarpeAprobadoPendienteGPS by remember { mutableStateOf<SolicitudZarpe?>(null) }
+
+    // Filtrar candidatos disponibles evitando duplicados
+    val tripulantesFiltrados = remember(busquedaTripulante, tripulantesSeleccionados) {
+        if (busquedaTripulante.isBlank()) {
+            emptyList()
+        } else {
+            tripulantesDisponibles.filter { t ->
+                !tripulantesSeleccionados.contains(t) &&
+                        (t.nombre.contains(busquedaTripulante, ignoreCase = true) ||
+                                t.cargo.contains(busquedaTripulante, ignoreCase = true))
+            }
+        }
+    }
 
     // Launcher de Permisos GPS (ACCESS_FINE_LOCATION & ACCESS_COARSE_LOCATION)
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -211,33 +264,127 @@ fun SolicitudZarpeScreen(
                             modifier = Modifier.fillMaxWidth()
                         )
 
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // b) Fila 1: Fecha de Partida y Hora de Partida
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                        mostrarDatePicker(context) { fechaPartida = it }
+                                    }
+                            ) {
+                                OutlinedTextField(
+                                    value = fechaPartida,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    enabled = false,
+                                    label = { Text("Fecha Partida", color = Muted) },
+                                    placeholder = { Text("DD/MM/AAAA", color = Muted.copy(alpha = 0.6f)) },
+                                    trailingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null, tint = Gold500) },
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        disabledBorderColor = if (fechaPartida.isNotBlank()) Gold500 else Muted,
+                                        disabledTextColor = Ink,
+                                        disabledLabelColor = Muted,
+                                        disabledTrailingIconColor = Gold500
+                                    ),
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                        mostrarTimePicker(context) { horaPartida = it }
+                                    }
+                            ) {
+                                OutlinedTextField(
+                                    value = horaPartida,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    enabled = false,
+                                    label = { Text("Hora Partida", color = Muted) },
+                                    placeholder = { Text("HH:MM AM", color = Muted.copy(alpha = 0.6f)) },
+                                    trailingIcon = { Icon(Icons.Default.Schedule, contentDescription = null, tint = Gold500) },
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        disabledBorderColor = if (horaPartida.isNotBlank()) Gold500 else Muted,
+                                        disabledTextColor = Ink,
+                                        disabledLabelColor = Muted,
+                                        disabledTrailingIconColor = Gold500
+                                    ),
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // b) Fecha y hora salida
-                        OutlinedTextField(
-                            value = fechaHoraSalida,
-                            onValueChange = { fechaHoraSalida = it },
-                            label = { Text("Fecha y Hora Estimada de Salida", color = Muted) },
-                            placeholder = { Text("Ej: 04/11/2026 - 08:00 AM", color = Muted.copy(alpha = 0.6f)) },
-                            colors = textFieldColors,
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        // c) Fila 2: Fecha de Retorno y Hora de Retorno
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                        mostrarDatePicker(context) { fechaRetorno = it }
+                                    }
+                            ) {
+                                OutlinedTextField(
+                                    value = fechaRetorno,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    enabled = false,
+                                    label = { Text("Fecha Retorno", color = Muted) },
+                                    placeholder = { Text("DD/MM/AAAA", color = Muted.copy(alpha = 0.6f)) },
+                                    trailingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null, tint = Gold500) },
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        disabledBorderColor = if (fechaRetorno.isNotBlank()) Gold500 else Muted,
+                                        disabledTextColor = Ink,
+                                        disabledLabelColor = Muted,
+                                        disabledTrailingIconColor = Gold500
+                                    ),
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                        mostrarTimePicker(context) { horaRetorno = it }
+                                    }
+                            ) {
+                                OutlinedTextField(
+                                    value = horaRetorno,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    enabled = false,
+                                    label = { Text("Hora Retorno", color = Muted) },
+                                    placeholder = { Text("HH:MM PM", color = Muted.copy(alpha = 0.6f)) },
+                                    trailingIcon = { Icon(Icons.Default.Schedule, contentDescription = null, tint = Gold500) },
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        disabledBorderColor = if (horaRetorno.isNotBlank()) Gold500 else Muted,
+                                        disabledTextColor = Ink,
+                                        disabledLabelColor = Muted,
+                                        disabledTrailingIconColor = Gold500
+                                    ),
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
 
-                        // c) Fecha y hora regreso
-                        OutlinedTextField(
-                            value = fechaHoraRegreso,
-                            onValueChange = { fechaHoraRegreso = it },
-                            label = { Text("Fecha y Hora Estimada de Regreso", color = Muted) },
-                            placeholder = { Text("Ej: 04/11/2026 - 18:00 PM", color = Muted.copy(alpha = 0.6f)) },
-                            colors = textFieldColors,
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         // d) Cantidad tripulantes
                         OutlinedTextField(
@@ -250,14 +397,110 @@ fun SolicitudZarpeScreen(
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                        // e) Observaciones tripulación (Opcional)
+                        // e) Búsqueda y Selección Múltiple de Tripulación Especializada
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            OutlinedTextField(
+                                value = busquedaTripulante,
+                                onValueChange = {
+                                    busquedaTripulante = it
+                                    menuBusquedaExpandido = it.isNotBlank()
+                                },
+                                label = { Text("Buscar Tripulación Especializada", color = Muted) },
+                                placeholder = { Text("Ej: Capitán, Mar. Luis Gómez", color = Muted.copy(alpha = 0.6f)) },
+                                trailingIcon = {
+                                    Icon(Icons.Default.Search, contentDescription = null, tint = Gold500)
+                                },
+                                colors = textFieldColors,
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            DropdownMenu(
+                                expanded = menuBusquedaExpandido && tripulantesFiltrados.isNotEmpty(),
+                                onDismissRequest = { menuBusquedaExpandido = false },
+                                modifier = Modifier
+                                    .fillMaxWidth(0.9f)
+                                    .background(Navy800)
+                            ) {
+                                tripulantesFiltrados.forEach { tripulante ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Column {
+                                                Text(tripulante.nombre, color = Ink, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                                Text(tripulante.cargo, color = Gold500, fontSize = 12.sp)
+                                            }
+                                        },
+                                        onClick = {
+                                            if (!tripulantesSeleccionados.contains(tripulante)) {
+                                                tripulantesSeleccionados = tripulantesSeleccionados + tripulante
+                                            }
+                                            busquedaTripulante = ""
+                                            menuBusquedaExpandido = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        // FlowRow de Tripulantes Seleccionados con InputChips
+                        if (tripulantesSeleccionados.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                tripulantesSeleccionados.forEach { t ->
+                                    InputChip(
+                                        selected = true,
+                                        onClick = {},
+                                        label = {
+                                            Text(
+                                                text = "${t.nombre} (${t.cargo})",
+                                                color = Ink,
+                                                fontSize = 12.sp
+                                            )
+                                        },
+                                        trailingIcon = {
+                                            IconButton(
+                                                onClick = {
+                                                    tripulantesSeleccionados = tripulantesSeleccionados - t
+                                                },
+                                                modifier = Modifier.size(18.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Close,
+                                                    contentDescription = "Remover",
+                                                    tint = Gold500,
+                                                    modifier = Modifier.size(14.dp)
+                                                )
+                                            }
+                                        },
+                                        colors = InputChipDefaults.inputChipColors(
+                                            containerColor = Gold500.copy(alpha = 0.2f),
+                                            labelColor = Ink
+                                        ),
+                                        border = InputChipDefaults.inputChipBorder(
+                                            borderColor = Gold500,
+                                            borderWidth = 1.dp,
+                                            enabled = true,
+                                            selected = true
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // f) Observaciones generales
                         OutlinedTextField(
                             value = observacionesTripulacion,
                             onValueChange = { observacionesTripulacion = it },
-                            label = { Text("Nombres / Observaciones de Tripulación (Opcional)", color = Muted) },
-                            placeholder = { Text("Ej: Juan Pérez (Capitán), Pedro Soto", color = Muted.copy(alpha = 0.6f)) },
+                            label = { Text("Observaciones Adicionales (Opcional)", color = Muted) },
+                            placeholder = { Text("Notas de carga, equipo especial, etc.", color = Muted.copy(alpha = 0.6f)) },
                             colors = textFieldColors,
                             modifier = Modifier.fillMaxWidth(),
                             minLines = 2
@@ -271,19 +514,25 @@ fun SolicitudZarpeScreen(
                                 val cant = cantidadTripulantesTexto.toIntOrNull() ?: 0
                                 if (destino.isBlank()) {
                                     Toast.makeText(context, "Ingresa el destino antes de enviar", Toast.LENGTH_SHORT).show()
-                                } else if (fechaHoraSalida.isBlank() || fechaHoraRegreso.isBlank()) {
-                                    Toast.makeText(context, "Completa las fechas estimadas de salida y regreso", Toast.LENGTH_SHORT).show()
+                                } else if (fechaPartida.isBlank() || horaPartida.isBlank()) {
+                                    Toast.makeText(context, "Selecciona la fecha y hora de partida", Toast.LENGTH_SHORT).show()
+                                } else if (fechaRetorno.isBlank() || horaRetorno.isBlank()) {
+                                    Toast.makeText(context, "Selecciona la fecha y hora de retorno", Toast.LENGTH_SHORT).show()
                                 } else if (cant <= 0) {
                                     Toast.makeText(context, "Ingresa al menos 1 tripulante", Toast.LENGTH_SHORT).show()
                                 } else {
+                                    val tripulacionFormateada = tripulantesSeleccionados.map { "${it.nombre} (${it.cargo})" }
                                     viewModel.solicitarZarpe(
                                         embarcacionId = embarcacionId,
                                         embarcacionNombre = embarcacionNombre,
                                         destino = destino,
-                                        fechaHoraSalida = fechaHoraSalida,
-                                        fechaHoraRegreso = fechaHoraRegreso,
+                                        fechaPartida = fechaPartida,
+                                        horaPartida = horaPartida,
+                                        fechaRetorno = fechaRetorno,
+                                        horaRetorno = horaRetorno,
                                         cantidadTripulantes = cant,
-                                        observacionesTripulacion = observacionesTripulacion
+                                        observacionesTripulacion = observacionesTripulacion,
+                                        tripulacionEspecializada = tripulacionFormateada
                                     )
                                 }
                             },
@@ -294,7 +543,7 @@ fun SolicitudZarpeScreen(
                             shape = RoundedCornerShape(50)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Send,
+                                imageVector = Icons.AutoMirrored.Filled.Send,
                                 contentDescription = null,
                                 tint = Navy900,
                                 modifier = Modifier.size(20.dp)
@@ -372,9 +621,13 @@ fun SolicitudZarpeScreen(
                                         .padding(12.dp)
                                 ) {
                                     Text("Destino: ${state.zarpe.destino}", color = Ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                                    Text("Salida: ${state.zarpe.fechaHoraSalida}", color = Muted, fontSize = 12.sp)
-                                    Text("Regreso: ${state.zarpe.fechaHoraRegreso}", color = Muted, fontSize = 12.sp)
+                                    Text("Partida: ${state.zarpe.fechaPartida} - ${state.zarpe.horaPartida}", color = Muted, fontSize = 12.sp)
+                                    Text("Retorno: ${state.zarpe.fechaRetorno} - ${state.zarpe.horaRetorno}", color = Muted, fontSize = 12.sp)
                                     Text("Tripulantes: ${state.zarpe.cantidadTripulantes}", color = Muted, fontSize = 12.sp)
+                                    if (state.zarpe.tripulacionEspecializada.isNotEmpty()) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text("Tripulación: ${state.zarpe.tripulacionEspecializada.joinToString(", ")}", color = Gold500, fontSize = 11.sp)
+                                    }
                                 }
                             }
                         }
@@ -668,4 +921,39 @@ fun SolicitudZarpeScreen(
             }
         }
     }
+}
+
+// Helpers para DatePickerDialog y TimePickerDialog
+private fun mostrarDatePicker(context: Context, onDateSelected: (String) -> Unit) {
+    val calendar = Calendar.getInstance()
+    DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            val formattedDate = String.format(Locale.US, "%02d/%02d/%04d", dayOfMonth, month + 1, year)
+            onDateSelected(formattedDate)
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    ).show()
+}
+
+private fun mostrarTimePicker(context: Context, onTimeSelected: (String) -> Unit) {
+    val calendar = Calendar.getInstance()
+    TimePickerDialog(
+        context,
+        { _, hourOfDay, minute ->
+            val amPm = if (hourOfDay < 12) "AM" else "PM"
+            val hour12 = when {
+                hourOfDay == 0 -> 12
+                hourOfDay > 12 -> hourOfDay - 12
+                else -> hourOfDay
+            }
+            val formattedTime = String.format(Locale.US, "%02d:%02d %s", hour12, minute, amPm)
+            onTimeSelected(formattedTime)
+        },
+        calendar.get(Calendar.HOUR_OF_DAY),
+        calendar.get(Calendar.MINUTE),
+        false
+    ).show()
 }
