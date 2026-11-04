@@ -260,7 +260,13 @@ fun NavigationWrapper(
                 onNavigateToMapa = { navHostController.navigate("mapa_muelles") },
                 onNavigateToHistorial = { navHostController.navigate("historial_transito") },
                 onNavigateToSolicitudes = { navHostController.navigate("solicitudes_rada") },
-                onNavigateToAutorizarZarpes = { navHostController.navigate("solicitudes_rada") }
+                onNavigateToAutorizarZarpes = { navHostController.navigate("bandeja_zarpes") }
+            )
+        }
+
+        composable("bandeja_zarpes") {
+            com.dsm.clubnauticoposeidon.ui.screens.naviero.BandejaZarpesScreen(
+                onBackClick = { navHostController.popBackStack() }
             )
         }
 
