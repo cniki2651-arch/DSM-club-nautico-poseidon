@@ -72,7 +72,8 @@ class BandejaAprobacionesViewModel : ViewModel() {
                 .update(
                     mapOf(
                         "estado" to "aprobado",
-                        "rol" to "socio"
+                        "rol" to "socio",
+                        "estado_deuda" to "al_dia"
                     )
                 )
                 .addOnSuccessListener {

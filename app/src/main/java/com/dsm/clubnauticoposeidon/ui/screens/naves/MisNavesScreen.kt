@@ -5,17 +5,21 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Anchor
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -64,6 +68,7 @@ private val TiposNave = listOf("lancha", "velero", "yate_mediano", "yate_grande"
 @Composable
 fun MisNavesScreen(
     onBackClick: () -> Unit,
+    onSolicitarZarpe: (naveId: String, nombreNave: String) -> Unit = { _, _ -> },
     viewModel: MisNavesViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -153,7 +158,11 @@ fun MisNavesScreen(
                         item { Text("Aún no registraste embarcaciones", color = Color.LightGray) }
                     }
                     items(ui.naves, key = { "n_" + it.id }) { nave ->
-                        TarjetaNave(nave = nave, onSolicitar = { naveSolicitud = nave })
+                        TarjetaNave(
+                            nave = nave,
+                            onSolicitarRada = { naveSolicitud = nave },
+                            onSolicitarZarpe = { onSolicitarZarpe(nave.id, nave.nombreNave) }
+                        )
                     }
                     if (ui.solicitudes.isNotEmpty()) {
                         item {
@@ -175,7 +184,11 @@ fun MisNavesScreen(
 }
 
 @Composable
-private fun TarjetaNave(nave: Embarcacion, onSolicitar: () -> Unit) {
+private fun TarjetaNave(
+    nave: Embarcacion,
+    onSolicitarRada: () -> Unit,
+    onSolicitarZarpe: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -189,12 +202,36 @@ private fun TarjetaNave(nave: Embarcacion, onSolicitar: () -> Unit) {
             Text("Tipo: ${nave.tipo}", color = Color.White, fontSize = 15.sp)
             Text("Eslora: ${nave.eslora}", color = Color.White, fontSize = 15.sp)
             Spacer(Modifier.height(14.dp))
-            OutlinedButton(
-                onClick = onSolicitar,
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                border = BorderStroke(1.dp, Gold500),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Gold500)
-            ) { Text("Solicitar rada", fontWeight = FontWeight.SemiBold) }
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onSolicitarRada,
+                    modifier = Modifier.weight(1f),
+                    border = BorderStroke(1.dp, Gold500),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Gold500),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Solicitar rada", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                }
+
+                Button(
+                    onClick = onSolicitarZarpe,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = Gold500),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Anchor,
+                        contentDescription = null,
+                        tint = Navy900,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text("Solicitar Zarpe", color = Navy900, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+            }
         }
     }
 }
