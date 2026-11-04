@@ -302,7 +302,7 @@ fun HomeOperacionesScreen(
                             titulo = "Mapa de Muelles",
                             descripcion = "Monitorea la ocupación de radas en tiempo real",
                             icono = Icons.Default.Map,
-                            destacado = false,
+                            destacado = true,
                             onClick = onNavigateToMapa
                         )
                     }
