@@ -195,7 +195,28 @@ fun NavigationWrapper(
         }
 
         composable("mis_naves") {
-            MisNavesScreen(onBackClick = { navHostController.popBackStack() })
+            MisNavesScreen(
+                onBackClick = { navHostController.popBackStack() },
+                onSolicitarZarpe = { id, nombre ->
+                    navHostController.navigate("solicitud_zarpe/$id/$nombre")
+                }
+            )
+        }
+
+        composable(
+            route = "solicitud_zarpe/{embarcacionId}/{embarcacionNombre}",
+            arguments = listOf(
+                navArgument("embarcacionId") { type = NavType.StringType },
+                navArgument("embarcacionNombre") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("embarcacionId") ?: ""
+            val nombre = backStackEntry.arguments?.getString("embarcacionNombre") ?: ""
+            com.dsm.clubnauticoposeidon.ui.screens.zarpe.SolicitudZarpeScreen(
+                embarcacionId = id,
+                embarcacionNombre = nombre,
+                onBackClick = { navHostController.popBackStack() }
+            )
         }
 
         composable("profile") {

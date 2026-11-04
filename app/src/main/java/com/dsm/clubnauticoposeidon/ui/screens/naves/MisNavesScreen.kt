@@ -204,21 +204,31 @@ private fun TarjetaNave(
             Spacer(Modifier.height(14.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(
                     onClick = onSolicitarRada,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
                     border = BorderStroke(1.dp, Gold500),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Gold500),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Solicitar rada", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = "Solicitar rada",
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
 
                 Button(
                     onClick = onSolicitarZarpe,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Gold500),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -226,10 +236,16 @@ private fun TarjetaNave(
                         imageVector = Icons.Default.Anchor,
                         contentDescription = null,
                         tint = Navy900,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp)
                     )
-                    Spacer(Modifier.width(6.dp))
-                    Text("Solicitar Zarpe", color = Navy900, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "Solicitar Zarpe",
+                        color = Navy900,
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
