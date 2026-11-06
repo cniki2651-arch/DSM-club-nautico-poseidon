@@ -14,16 +14,16 @@ class PlatoRepository {
 
     fun observarPlatos(modulo: String): Flow<List<Plato>> = callbackFlow {
         val escucha = ref
-                .whereEqualTo("modulo", modulo)
-                .addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                close(error)
-                return@addSnapshotListener
-            }
-            val platos = snapshot?.toObjects(Plato::class.java).orEmpty()
+            .whereEqualTo("modulo", modulo)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                val platos = snapshot?.toObjects(Plato::class.java).orEmpty()
                     .filter { it.disponible }
-            trySend(platos)
-        }
+                trySend(platos)
+            }
         awaitClose { escucha.remove() }
     }
 }
