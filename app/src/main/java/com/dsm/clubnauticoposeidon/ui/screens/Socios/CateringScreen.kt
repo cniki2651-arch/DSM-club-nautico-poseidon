@@ -28,8 +28,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -49,9 +47,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dsm.clubnauticoposeidon.data.repository.ConsumoRepository
 import com.dsm.clubnauticoposeidon.model.ItemCarrito
+import com.dsm.clubnauticoposeidon.ui.components.SelectorEmbarcacion
+import com.dsm.clubnauticoposeidon.ui.components.rememberEstadoEmbarcacion
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
-import com.dsm.clubnauticoposeidon.ui.theme.Ink
-import com.dsm.clubnauticoposeidon.ui.theme.Muted
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -72,8 +70,11 @@ fun CateringScreen(
 
     // Pedido que el socio va armando
     val carrito = remember { mutableStateListOf<ItemCarrito>() }
-    var ubicacionRada by remember { mutableStateOf("") }
     var guardando by remember { mutableStateOf(false) }
+
+    // Embarcación donde se entrega: solo se elige de las registradas y se recuerda al retroceder
+    val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+    val estadoEmbarcacion = rememberEstadoEmbarcacion(uid)
 
     // 2. Descarga dinámica desde Firebase al abrir la pantalla
     LaunchedEffect(Unit) {
@@ -205,24 +206,11 @@ fun CateringScreen(
 
                 item { Spacer(modifier = Modifier.height(8.dp)) }
 
-                // Dónde entregar el pedido
+                // Dónde entregar el pedido: lista para elegir la embarcación (no se escribe)
                 item {
-                    TextField(
-                        value = ubicacionRada,
-                        onValueChange = { ubicacionRada = it },
-                        placeholder = { Text("Rada o embarcación (ej. R-01)", color = Muted) },
-                        singleLine = true,
-                        enabled = !guardando,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = TextFieldDefaults.colors(
-                            focusedTextColor = Ink,
-                            unfocusedTextColor = Ink,
-                            cursorColor = Ink,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedContainerColor = Color.Transparent,
-                            focusedIndicatorColor = Gold500,
-                            unfocusedIndicatorColor = Muted
-                        )
+                    SelectorEmbarcacion(
+                        estado = estadoEmbarcacion,
+                        enabled = !guardando
                     )
                 }
 
@@ -230,11 +218,12 @@ fun CateringScreen(
                     Button(
                         onClick = {
                             val usuario = FirebaseAuth.getInstance().currentUser
+                            val nave = estadoEmbarcacion.seleccionada
                             when {
                                 carrito.isEmpty() ->
                                     Toast.makeText(context, "Agrega al menos un plato", Toast.LENGTH_SHORT).show()
-                                ubicacionRada.isBlank() ->
-                                    Toast.makeText(context, "Indica tu rada o embarcación", Toast.LENGTH_SHORT).show()
+                                nave == null ->
+                                    Toast.makeText(context, "Elige tu embarcación", Toast.LENGTH_SHORT).show()
                                 usuario == null ->
                                     Toast.makeText(context, "Inicia sesión para hacer un pedido", Toast.LENGTH_SHORT).show()
                                 else -> scope.launch {
@@ -245,7 +234,8 @@ fun CateringScreen(
                                             socioUid = usuario.uid,
                                             correo = usuario.email.orEmpty(),
                                             modulo = "catering",
-                                            ubicacionRada = ubicacionRada.trim(),
+                                            ubicacionRada = estadoEmbarcacion.ubicacionEntrega
+                                                ?: "${nave.matricula} · ${nave.nombreNave}",
                                             items = carrito.toList()
                                         )
                                         Toast.makeText(
