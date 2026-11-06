@@ -96,6 +96,9 @@ dependencies {
     // Dashboards
     implementation(libs.mpandroidchart)
 
+    implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+
     // Tests
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
