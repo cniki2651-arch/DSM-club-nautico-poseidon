@@ -21,8 +21,7 @@ object ImagenesMenu {
                 .also { cargador = it }
         }
 
-    // Descarga de una vez las fotos de TODAS las categorías,
-    // así se ven sin internet aunque el socio no haya entrado a cada categoría
+
     fun precargar(context: Context, urls: List<String>) {
         val loader = loader(context)
         urls.filter { it.isNotBlank() }.distinct().forEach { url ->
