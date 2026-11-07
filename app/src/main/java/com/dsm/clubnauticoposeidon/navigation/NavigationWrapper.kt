@@ -82,14 +82,19 @@ fun NavigationWrapper(
                         navHostController.navigate("login") {
                             popUpTo("router") { inclusive = true }
                         }
-                        Toast.makeText(context, "Panel de finanzas próximamente", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, "Panel de finanzas próximamente", Toast.LENGTH_LONG)
+                            .show()
                     },
                     onMantenimiento = {
                         auth.signOut()
                         navHostController.navigate("login") {
                             popUpTo("router") { inclusive = true }
                         }
-                        Toast.makeText(context, "Panel de mantenimiento próximamente", Toast.LENGTH_LONG).show()
+                        Toast.makeText(
+                            context,
+                            "Panel de mantenimiento próximamente",
+                            Toast.LENGTH_LONG
+                        ).show()
                     },
                     onSeguimiento = {
                         navHostController.navigate("seguimiento") {
@@ -185,9 +190,11 @@ fun NavigationWrapper(
                 onNavigateToServicios = { navHostController.navigate("servicios") },
                 onNavigateToMisNaves = { navHostController.navigate("mis_naves") },
                 onNavigateToClima = { navHostController.navigate("clima_detalle") },
+                onNavigateToHistorial = { navHostController.navigate("historial_consumos") },
                 onLogout = cerrarSesion
             )
         }
+
 
         // CLIMA DETALLADO (HU05)
         composable("clima_detalle") {
@@ -250,6 +257,12 @@ fun NavigationWrapper(
             com.dsm.clubnauticoposeidon.ui.screens.Socios.AsistenciaScreen(
                 onBackClick = { navHostController.popBackStack() }
             )
+        }
+        composable("historial_consumos") {
+                com.dsm.clubnauticoposeidon.ui.screens.Socios.HistorialConsumosScreen(
+                    onBackClick = { navHostController.popBackStack() }
+                )
+
         }
 
         // NAVIERO

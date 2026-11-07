@@ -1,4 +1,4 @@
-package com.dsm.clubnauticoposeidon.ui.components
+package com.dsm.clubnauticoposeidon.utils
 
 import android.content.Context
 

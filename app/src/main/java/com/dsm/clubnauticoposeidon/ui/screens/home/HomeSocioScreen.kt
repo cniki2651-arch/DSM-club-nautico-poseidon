@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Anchor
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DirectionsBoat
 import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.RoomService
 import androidx.compose.material.icons.filled.WbSunny
@@ -87,7 +88,8 @@ fun HomeSocioScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToServicios: () -> Unit = {},
     onNavigateToMisNaves: () -> Unit = {},
-    onNavigateToClima: () -> Unit = {}
+    onNavigateToClima: () -> Unit = {},
+    onNavigateToHistorial: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var menuExpanded by remember { mutableStateOf(false) }
@@ -349,7 +351,17 @@ fun HomeSocioScreen(
                         )
                     }
 
-                    // Tarjeta 3: Reservas
+                    // Tarjeta 3: Mis Consumos (historial de pedidos)
+                    item {
+                        MenuCardSocio(
+                            titulo = "Mis Consumos",
+                            descripcion = "Revisa tus pedidos y gastos",
+                            icono = Icons.Default.History,
+                            onClick = onNavigateToHistorial
+                        )
+                    }
+
+                    // Tarjeta 4: Reservas
                     item {
                         MenuCardSocio(
                             titulo = "Reservas",
@@ -359,7 +371,7 @@ fun HomeSocioScreen(
                         )
                     }
 
-                    // Tarjeta 4: Reportar Daño
+                    // Tarjeta 5: Reportar Daño
                     item {
                         MenuCardSocio(
                             titulo = "Reportar Daño",

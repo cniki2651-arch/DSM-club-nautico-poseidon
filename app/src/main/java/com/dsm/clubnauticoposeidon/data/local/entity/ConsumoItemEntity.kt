@@ -28,7 +28,7 @@ import androidx.room.PrimaryKey
 data class ConsumoItemEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "consumo_id") val consumoId: String,
-    @ColumnInfo(name = "servicio_id") val servicioId: String? = null, // vínculo opcional con el catálogo
+    @ColumnInfo(name = "servicio_id") val servicioId: String? = null,
     val nombre: String,
     val cantidad: Int = 1,
     @ColumnInfo(name = "precio_unitario") val precioUnitario: Double

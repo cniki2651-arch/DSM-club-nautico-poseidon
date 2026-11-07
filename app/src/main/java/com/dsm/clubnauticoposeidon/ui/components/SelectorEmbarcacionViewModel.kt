@@ -7,6 +7,7 @@ import com.dsm.clubnauticoposeidon.data.local.entity.EmbarcacionEntity
 import com.dsm.clubnauticoposeidon.data.repository.EmbarcacionLocalRepository
 import com.dsm.clubnauticoposeidon.model.Asignacion
 import com.dsm.clubnauticoposeidon.model.Rada
+import com.dsm.clubnauticoposeidon.utils.PreferenciasSocio
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
