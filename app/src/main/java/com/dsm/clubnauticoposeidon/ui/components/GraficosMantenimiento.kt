@@ -34,7 +34,9 @@ data class DatoGrafico(val etiqueta: String, val valor: Int, val color: Color)
 private val FormatoEntero = object : ValueFormatter() {
     override fun getFormattedValue(value: Float) = value.toInt().toString()
 }
-
+// Fondo y borde de las tarjetas: navy un poco más claro y azulado
+private val FondoTarjeta = lerp(Navy800, Color(0xFF90D5FF), 0.14f)
+private val BordeTarjeta = lerp(Navy800, Color(0xFF90D5FF), 0.30f)
 /** Tarjeta contenedora con el mismo estilo de tus tarjetas del panel */
 @Composable
 fun TarjetaGrafico(
@@ -48,7 +50,7 @@ fun TarjetaGrafico(
         modifier = modifier
             .fillMaxWidth()
             .clip(forma)
-            .background(Navy800)
+            .background(FondoTarjeta)
             .border(1.dp, Color.White.copy(alpha = 0.08f), forma)
             .padding(20.dp)
     ) {
