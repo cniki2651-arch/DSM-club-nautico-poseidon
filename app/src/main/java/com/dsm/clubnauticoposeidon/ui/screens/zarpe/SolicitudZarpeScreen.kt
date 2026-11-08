@@ -386,7 +386,11 @@ fun SolicitudZarpeScreen(
                                 )
                             },
                             supportingText = {
-                                Text("Requerido por Capitanía para el control de abordaje.", color = Muted, fontSize = 11.sp)
+                                Text(
+                                    "Ingresa a todos los pasajeros e invitados (incluyéndote si no vas como tripulación especializada). Requerido por Capitanía.",
+                                    color = Muted,
+                                    fontSize = 11.sp
+                                )
                             },
                             colors = textFieldColors,
                             modifier = Modifier.fillMaxWidth(),
