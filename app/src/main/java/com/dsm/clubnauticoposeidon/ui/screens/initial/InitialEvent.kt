@@ -7,7 +7,8 @@ enum class DestinoInicial {
     ADMIN,
     SECRETARIA,
     JEFE,
-    SEGUIMIENTO
+    SEGUIMIENTO,
+    MANTENIMIENTO
 }
 
 // Eventos de una sola vez (navegar o mostrar un mensaje)
