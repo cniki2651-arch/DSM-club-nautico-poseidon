@@ -89,11 +89,12 @@ fun HomeMantenimientoScreen(
     val asistencia = pedidos.count { it.modulo == "asistencia" }
 
     val datosGrafico = listOf(
-        DatoGrafico("Catering", catering, Gold500),
-        DatoGrafico("Limpieza", limpieza, Color(0xFF5B9BF0)),
-        DatoGrafico("Suministros", suministros, Color(0xFF3CC8B4)),
-        DatoGrafico("Asistencia", asistencia, Color(0xFFE57373))
+        DatoGrafico("Catering", catering, Color(0xFF90D5FF)),    // azul claro
+        DatoGrafico("Limpieza", limpieza, Color(0xFF5DB2F2)),    // azul medio
+        DatoGrafico("Suministros", suministros, Color(0xFFC4EAFF)), // azul muy claro
+        DatoGrafico("Asistencia", asistencia, Color(0xFF3A86D6)) // azul más profundo
     )
+
 
     Box(
         modifier = Modifier
