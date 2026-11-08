@@ -27,6 +27,7 @@ import com.github.mikephil.charting.data.*
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.ValueFormatter
 import android.graphics.Color as AndroidColor
+import androidx.compose.ui.graphics.lerp
 
 data class DatoGrafico(val etiqueta: String, val valor: Int, val color: Color)
 
