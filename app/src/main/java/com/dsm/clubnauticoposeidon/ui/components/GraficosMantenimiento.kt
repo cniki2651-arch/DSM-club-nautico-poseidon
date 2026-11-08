@@ -51,7 +51,7 @@ fun TarjetaGrafico(
             .fillMaxWidth()
             .clip(forma)
             .background(FondoTarjeta)
-            .border(1.dp, Color.White.copy(alpha = 0.08f), forma)
+            .border(1.dp, BordeTarjeta, forma)
             .padding(20.dp)
     ) {
         Text(titulo, color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
