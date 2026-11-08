@@ -50,6 +50,8 @@ dependencies {
     implementation("com.google.zxing:core:3.5.4")
     testImplementation(libs.junit)
 
+
+
     // ViewModel y estado con ciclo de vida
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)

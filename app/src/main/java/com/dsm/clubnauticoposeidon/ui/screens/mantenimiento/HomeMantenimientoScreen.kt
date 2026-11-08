@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -47,6 +50,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dsm.clubnauticoposeidon.ui.components.BarrasPedidos
+import com.dsm.clubnauticoposeidon.ui.components.DatoGrafico
+import com.dsm.clubnauticoposeidon.ui.components.DonaPedidos
+import com.dsm.clubnauticoposeidon.ui.components.TarjetaGrafico
 import com.dsm.clubnauticoposeidon.ui.screens.home.ContadorRadas
 import com.dsm.clubnauticoposeidon.ui.screens.home.MenuCardNaviero
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
@@ -81,6 +88,13 @@ fun HomeMantenimientoScreen(
     val suministros = pedidos.count { it.modulo == "suministros" }
     val asistencia = pedidos.count { it.modulo == "asistencia" }
 
+    val datosGrafico = listOf(
+        DatoGrafico("Catering", catering, Gold500),
+        DatoGrafico("Limpieza", limpieza, Color(0xFF5B9BF0)),
+        DatoGrafico("Suministros", suministros, Color(0xFF3CC8B4)),
+        DatoGrafico("Asistencia", asistencia, Color(0xFFE57373))
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -104,7 +118,7 @@ fun HomeMantenimientoScreen(
                     .padding(paddingValues)
                     .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
-                // Cabecera
+                // Cabecera (fija)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -153,82 +167,89 @@ fun HomeMantenimientoScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                Text(
-                    text = "Bienvenido, Encargado",
-                    color = Ink,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(text = currentDate, color = Muted, fontSize = 14.sp)
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "Atención de Servicios",
-                    color = Ink,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Box(
-                    modifier = Modifier
-                        .width(50.dp)
-                        .height(3.dp)
-                        .background(Gold500, shape = RoundedCornerShape(2.dp))
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Resumen de pendientes por módulo
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Navy800),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, Navy700)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(18.dp)
-                    ) {
-                        Text(
-                            text = "Pedidos por atender: ${pedidos.size}",
-                            color = Ink,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            ContadorRadas(catering.toString(), "Catering", Gold500)
-                            ContadorRadas(limpieza.toString(), "Limpieza", Ink)
-                            ContadorRadas(suministros.toString(), "Sumin.", Muted)
-                            // La asistencia se resalta en rojo cuando hay algo pendiente
-                            ContadorRadas(
-                                asistencia.toString(),
-                                "Asistencia",
-                                if (asistencia > 0) Color(0xFFE57373) else Muted
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
                 val showToast = {
                     Toast.makeText(context, "Módulo en desarrollo", Toast.LENGTH_SHORT).show()
                 }
+                val anchoCompleto: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxLineSpan) }
 
+                // Todo el contenido se desplaza dentro del grid
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(bottom = 8.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
+                    // Saludo y título
+                    item(span = anchoCompleto) {
+                        Column {
+                            Text(
+                                text = "Bienvenido, Encargado",
+                                color = Ink,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(text = currentDate, color = Muted, fontSize = 14.sp)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "Atención de Servicios",
+                                color = Ink,
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .width(50.dp)
+                                    .height(3.dp)
+                                    .background(Gold500, shape = RoundedCornerShape(2.dp))
+                            )
+                        }
+                    }
+
+                    // Resumen de pendientes por módulo
+                    item(span = anchoCompleto) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Navy800),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, Navy700)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(18.dp)
+                            ) {
+                                Text(
+                                    text = "Pedidos por atender: ${pedidos.size}",
+                                    color = Ink,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    ContadorRadas(catering.toString(), "Catering", Gold500)
+                                    ContadorRadas(limpieza.toString(), "Limpieza", Ink)
+                                    ContadorRadas(suministros.toString(), "Sumin.", Muted)
+                                    // La asistencia se resalta en rojo cuando hay algo pendiente
+                                    ContadorRadas(
+                                        asistencia.toString(),
+                                        "Asistencia",
+                                        if (asistencia > 0) Color(0xFFE57373) else Muted
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Tarjetas de navegación (2 columnas)
                     item {
                         MenuCardNaviero(
                             titulo = "Pedidos por atender",
@@ -247,9 +268,21 @@ fun HomeMantenimientoScreen(
                             onClick = showToast
                         )
                     }
+
+                    // Dashboards
+                    item(span = anchoCompleto) {
+                        TarjetaGrafico("Pedidos por categoría", "Pendientes de atender") {
+                            BarrasPedidos(datosGrafico)
+                        }
+                    }
+                    item(span = anchoCompleto) {
+                        TarjetaGrafico("Distribución de pedidos", "Proporción por categoría") {
+                            DonaPedidos(datosGrafico)
+                        }
+                    }
                 }
 
-                // Pie de página
+                // Pie de página (fijo)
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
