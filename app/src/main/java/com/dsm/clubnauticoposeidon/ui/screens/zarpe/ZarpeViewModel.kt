@@ -6,6 +6,7 @@ import android.location.LocationManager
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dsm.clubnauticoposeidon.ui.screens.naviero.Tripulante
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,12 +22,35 @@ class ZarpeViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<ZarpeState>(ZarpeState.Idle)
     val uiState: StateFlow<ZarpeState> = _uiState
 
+    private val _tripulantesAutorizados = MutableStateFlow<List<Tripulante>>(emptyList())
+    val tripulantesAutorizados: StateFlow<List<Tripulante>> = _tripulantesAutorizados
+
     init {
         verificarZarpeExistente()
+        escucharTripulantesAutorizados()
     }
 
     fun resetState() {
         _uiState.value = ZarpeState.Idle
+    }
+
+    private fun escucharTripulantesAutorizados() {
+        db.collection("tripulantes")
+            .whereEqualTo("estado", "autorizado")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) return@addSnapshotListener
+                val lista = snapshot.documents.map { doc ->
+                    Tripulante(
+                        id = doc.id,
+                        nombreCompleto = doc.getString("nombreCompleto") ?: "",
+                        dni = doc.getString("dni") ?: "",
+                        numeroLicencia = doc.getString("numeroLicencia") ?: "",
+                        cargo = doc.getString("cargo") ?: "",
+                        estado = doc.getString("estado") ?: "autorizado"
+                    )
+                }
+                _tripulantesAutorizados.value = lista
+            }
     }
 
     private fun verificarZarpeExistente() {

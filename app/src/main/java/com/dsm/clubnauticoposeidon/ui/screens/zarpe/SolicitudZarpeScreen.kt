@@ -79,6 +79,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dsm.clubnauticoposeidon.ui.screens.naviero.Tripulante
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Ink
 import com.dsm.clubnauticoposeidon.ui.theme.Muted
@@ -86,21 +87,6 @@ import com.dsm.clubnauticoposeidon.ui.theme.Navy800
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import java.util.Calendar
 import java.util.Locale
-
-// Mock Data de Tripulación Especializada
-data class TripulanteEspecializado(
-    val id: String,
-    val nombre: String,
-    val cargo: String
-)
-
-val tripulantesDisponibles = listOf(
-    TripulanteEspecializado("1", "Cap. Carlos Mendoza", "Capitán / Patrón"),
-    TripulanteEspecializado("2", "Ing. Roberto Silva", "Ingeniero de Máquinas"),
-    TripulanteEspecializado("3", "Mar. Luis Gómez", "Marinero de Cubierta"),
-    TripulanteEspecializado("4", "Tech. Ana Rivas", "Operador de Radio / Telecom"),
-    TripulanteEspecializado("5", "Cap. Miguel Grau", "Patrón de Yate")
-)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -112,6 +98,9 @@ fun SolicitudZarpeScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+
+    // Cargar tripulantes autorizados en tiempo real desde Firestore
+    val tripulantesDisponibles by viewModel.tripulantesAutorizados.collectAsState()
 
     // 1. Campos independientes del formulario de Declaración Náutica
     var destino by remember { mutableStateOf("") }
@@ -126,18 +115,18 @@ fun SolicitudZarpeScreen(
     // 2. Estado para la selección múltiple de Tripulación Especializada
     var busquedaTripulante by remember { mutableStateOf("") }
     var menuBusquedaExpandido by remember { mutableStateOf(false) }
-    var tripulantesSeleccionados by remember { mutableStateOf<List<TripulanteEspecializado>>(emptyList()) }
+    var tripulantesSeleccionados by remember { mutableStateOf<List<Tripulante>>(emptyList()) }
 
     var zarpeAprobadoPendienteGPS by remember { mutableStateOf<SolicitudZarpe?>(null) }
 
     // Filtrar candidatos disponibles evitando duplicados
-    val tripulantesFiltrados = remember(busquedaTripulante, tripulantesSeleccionados) {
+    val tripulantesFiltrados = remember(busquedaTripulante, tripulantesSeleccionados, tripulantesDisponibles) {
         if (busquedaTripulante.isBlank()) {
             emptyList()
         } else {
             tripulantesDisponibles.filter { t ->
                 !tripulantesSeleccionados.contains(t) &&
-                        (t.nombre.contains(busquedaTripulante, ignoreCase = true) ||
+                        (t.nombreCompleto.contains(busquedaTripulante, ignoreCase = true) ||
                                 t.cargo.contains(busquedaTripulante, ignoreCase = true))
             }
         }
@@ -399,7 +388,7 @@ fun SolicitudZarpeScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // e) Búsqueda y Selección Múltiple de Tripulación Especializada
+                        // e) Búsqueda y Selección Múltiple de Tripulación Especializada (Conectado a Firestore)
                         Box(modifier = Modifier.fillMaxWidth()) {
                             OutlinedTextField(
                                 value = busquedaTripulante,
@@ -408,7 +397,7 @@ fun SolicitudZarpeScreen(
                                     menuBusquedaExpandido = it.isNotBlank()
                                 },
                                 label = { Text("Buscar Tripulación Especializada", color = Muted) },
-                                placeholder = { Text("Ej: Capitán, Mar. Luis Gómez", color = Muted.copy(alpha = 0.6f)) },
+                                placeholder = { Text("Ej: Capitán, Miguel Grau", color = Muted.copy(alpha = 0.6f)) },
                                 trailingIcon = {
                                     Icon(Icons.Default.Search, contentDescription = null, tint = Gold500)
                                 },
@@ -428,7 +417,7 @@ fun SolicitudZarpeScreen(
                                     DropdownMenuItem(
                                         text = {
                                             Column {
-                                                Text(tripulante.nombre, color = Ink, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                                Text(tripulante.nombreCompleto, color = Ink, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                                 Text(tripulante.cargo, color = Gold500, fontSize = 12.sp)
                                             }
                                         },
@@ -458,7 +447,7 @@ fun SolicitudZarpeScreen(
                                         onClick = {},
                                         label = {
                                             Text(
-                                                text = "${t.nombre} (${t.cargo})",
+                                                text = "${t.nombreCompleto} (${t.cargo})",
                                                 color = Ink,
                                                 fontSize = 12.sp
                                             )
@@ -521,7 +510,7 @@ fun SolicitudZarpeScreen(
                                 } else if (cant <= 0) {
                                     Toast.makeText(context, "Ingresa al menos 1 tripulante", Toast.LENGTH_SHORT).show()
                                 } else {
-                                    val tripulacionFormateada = tripulantesSeleccionados.map { "${it.nombre} (${it.cargo})" }
+                                    val tripulacionFormateada = tripulantesSeleccionados.map { "${it.nombreCompleto} (${it.cargo})" }
                                     viewModel.solicitarZarpe(
                                         embarcacionId = embarcacionId,
                                         embarcacionNombre = embarcacionNombre,
