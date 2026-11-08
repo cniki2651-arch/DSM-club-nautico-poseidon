@@ -9,21 +9,25 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Anchor
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DirectionsBoat
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -34,6 +38,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -47,20 +52,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dsm.clubnauticoposeidon.model.EstadoRada
 import com.dsm.clubnauticoposeidon.model.Rada
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
+import com.dsm.clubnauticoposeidon.ui.theme.Ink
+import com.dsm.clubnauticoposeidon.ui.theme.Muted
+import com.dsm.clubnauticoposeidon.ui.theme.Navy700
+import com.dsm.clubnauticoposeidon.ui.theme.Navy800
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
-
-private val ColorDisponible = Color(0xFF1B5E20)
-private val ColorOcupada = Color(0xFFB71C1C)
-private val ColorMantenimiento = Color(0xFFF9A825)
 
 /**
  * modoSeleccion = true  -> viene de "Nueva Asignación": solo se elige una rada disponible.
@@ -101,25 +108,25 @@ fun MapaMuellesScreen(
                         EstadoRada.MANTENIMIENTO -> "Estado: en mantenimiento"
                         else -> "Estado: ocupada"
                     },
-                    color = Color.White
+                    color = Ink
                 )
             },
             confirmButton = {
                 when (rada.estado) {
                     EstadoRada.DISPONIBLE -> Button(
                         onClick = { viewModel.marcarMantenimiento(rada.id); radaGestionada = null },
-                        colors = ButtonDefaults.buttonColors(containerColor = ColorMantenimiento)
-                    ) { Text("Pasar a mantenimiento", color = Navy900) }
+                        colors = ButtonDefaults.buttonColors(containerColor = Gold500)
+                    ) { Text("Pasar a mantenimiento", color = Navy900, fontWeight = FontWeight.Bold) }
 
                     EstadoRada.MANTENIMIENTO -> Button(
                         onClick = { viewModel.marcarDisponible(rada.id); radaGestionada = null },
-                        colors = ButtonDefaults.buttonColors(containerColor = ColorDisponible)
-                    ) { Text("Marcar disponible", color = Color.White) }
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4EBA6F))
+                    ) { Text("Marcar disponible", color = Color.White, fontWeight = FontWeight.Bold) }
 
                     else -> Button(
                         onClick = { confirmarLiberar = rada; radaGestionada = null },
-                        colors = ButtonDefaults.buttonColors(containerColor = ColorOcupada)
-                    ) { Text("Liberar rada", color = Color.White) }
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935))
+                    ) { Text("Liberar rada", color = Color.White, fontWeight = FontWeight.Bold) }
                 }
             },
             dismissButton = {
@@ -137,7 +144,7 @@ fun MapaMuellesScreen(
             text = {
                 Text(
                     "Se cerrará la asignación activa de la rada ${rada.codigo.ifBlank { rada.id }} y quedará disponible.",
-                    color = Color.White
+                    color = Ink
                 )
             },
             confirmButton = {
@@ -152,100 +159,194 @@ fun MapaMuellesScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = if (modoSeleccion) "Elegir Rada" else "Mapa de Muelles",
-                        color = Gold500,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver atrás",
-                            tint = Color.White
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Navy900)
-            )
-        },
-        containerColor = Navy900
-    ) { paddingValues ->
-        Column(
+    // 1. Contenedor Principal con Marca de Agua
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Navy900)
+    ) {
+        // Marca de agua: Silueta/Ilustración superior derecha
+        Icon(
+            imageVector = Icons.Default.DirectionsBoat,
+            contentDescription = null,
+            tint = Ink.copy(alpha = 0.06f),
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.height(16.dp))
+                .size(240.dp)
+                .align(Alignment.TopEnd)
+                .offset(x = 50.dp, y = (-20).dp)
+        )
 
-            if (ui.cargando) {
-                Box(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) { CircularProgressIndicator(color = Gold500) }
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.weight(1f)
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Anchor,
+                                contentDescription = null,
+                                tint = Gold500,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (modoSeleccion) "Elegir Rada" else "Mapa de Muelles",
+                                color = Ink,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Volver atrás",
+                                tint = Gold500
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = {
+                            Toast.makeText(context, "Sincronizando muelles...", Toast.LENGTH_SHORT).show()
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Recargar",
+                                tint = Gold500
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                )
+            }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // 2. Subcabecera: Leyendas de Estado
+                Surface(
+                    color = Navy800,
+                    shape = RoundedCornerShape(20.dp),
+                    border = BorderStroke(1.dp, Navy700),
+                    modifier = Modifier.padding(vertical = 8.dp)
                 ) {
-                    items(ui.radas, key = { it.id }) { rada ->
-                        RadaItem(
-                            codigo = rada.codigo.ifBlank { rada.id },
-                            estado = rada.estado,
-                            onClick = {
-                                if (modoSeleccion) {
-                                    if (rada.estado == EstadoRada.DISPONIBLE) {
-                                        onRadaSelected(rada.id)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        // Disponible (Verde)
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF4EBA6F))
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Disponible", color = Ink, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text("|", color = Muted, fontSize = 11.sp)
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        // Ocupada (Rojo)
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFE53935))
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Ocupada", color = Ink, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text("|", color = Muted, fontSize = 11.sp)
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        // Mantenimiento (Dorado)
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(Gold500)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Mantenimiento", color = Ink, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 3. Cuadrícula de Radas (Grid 3 columnas)
+                if (ui.cargando) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) { CircularProgressIndicator(color = Gold500) }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(3),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        items(ui.radas, key = { it.id }) { rada ->
+                            RadaItem(
+                                codigo = rada.codigo.ifBlank { rada.id },
+                                estado = rada.estado,
+                                onClick = {
+                                    if (modoSeleccion) {
+                                        if (rada.estado == EstadoRada.DISPONIBLE) {
+                                            onRadaSelected(rada.id)
+                                        } else {
+                                            Toast.makeText(context, "Rada no disponible", Toast.LENGTH_SHORT).show()
+                                        }
                                     } else {
-                                        Toast.makeText(context, "Rada no disponible", Toast.LENGTH_SHORT).show()
+                                        radaGestionada = rada
                                     }
-                                } else {
-                                    radaGestionada = rada
                                 }
-                            }
+                            )
+                        }
+                    }
+                }
+
+                // 4. Pie de Página (Banner Informativo)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Navy800),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, Gold500.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = Gold500,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "Selecciona una rada para auditar el estado del amarre.",
+                            color = Muted,
+                            fontSize = 11.sp,
+                            lineHeight = 15.sp
                         )
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 32.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Leyenda(ColorDisponible, "Disponible")
-                Spacer(modifier = Modifier.width(20.dp))
-                Leyenda(ColorOcupada, "Ocupada")
-                Spacer(modifier = Modifier.width(20.dp))
-                Leyenda(ColorMantenimiento, "Mantenimiento")
-            }
         }
-    }
-}
-
-@Composable
-private fun Leyenda(color: Color, texto: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            modifier = Modifier
-                .size(16.dp)
-                .background(color, RoundedCornerShape(4.dp))
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text = texto, color = Color.White, fontSize = 13.sp)
     }
 }
 
@@ -255,46 +356,90 @@ fun RadaItem(
     estado: String,
     onClick: () -> Unit
 ) {
-    val bgColor = when (estado) {
-        EstadoRada.OCUPADA -> ColorOcupada
-        EstadoRada.MANTENIMIENTO -> ColorMantenimiento
-        else -> ColorDisponible
-    }
-    val borderColor = when (estado) {
-        EstadoRada.OCUPADA -> Color(0xFFE57373)
-        EstadoRada.MANTENIMIENTO -> Color(0xFFFFE082)
-        else -> Color(0xFF4CAF50)
+    val (bgColor, borderColor, badgeBgColor, badgeTextColor, labelTexto, icono) = when (estado) {
+        EstadoRada.OCUPADA -> TupleEstilosRada(
+            bgColor = Color(0xFF2A0A0A),
+            borderColor = Color(0xFFE53935),
+            badgeBgColor = Color(0xFF420F0F),
+            badgeTextColor = Color(0xFFE53935),
+            labelTexto = "Ocupada",
+            icono = Icons.Default.DirectionsBoat
+        )
+        EstadoRada.MANTENIMIENTO -> TupleEstilosRada(
+            bgColor = Color(0xFF251704),
+            borderColor = Gold500,
+            badgeBgColor = Color(0xFF3D270B),
+            badgeTextColor = Gold500,
+            labelTexto = "Mantenimiento",
+            icono = Icons.Default.Build
+        )
+        else -> TupleEstilosRada(
+            bgColor = Color(0xFF082115),
+            borderColor = Color(0xFF4EBA6F),
+            badgeBgColor = Color(0xFF133822),
+            badgeTextColor = Color(0xFF4EBA6F),
+            labelTexto = "Disponible",
+            icono = Icons.Default.DirectionsBoat
+        )
     }
 
     Card(
         modifier = Modifier
-            .aspectRatio(1f)
+            .fillMaxWidth()
+            .height(105.dp)
+            .clip(RoundedCornerShape(16.dp))
             .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = bgColor),
-        border = BorderStroke(2.dp, borderColor)
+        border = BorderStroke(1.5.dp, borderColor)
     ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            when (estado) {
-                EstadoRada.OCUPADA -> Icon(
-                    imageVector = Icons.Default.DirectionsBoat,
-                    contentDescription = "Barco ocupando rada",
-                    tint = Color.White,
-                    modifier = Modifier.size(36.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = icono,
+                    contentDescription = null,
+                    tint = Ink,
+                    modifier = Modifier.size(20.dp)
                 )
-                EstadoRada.MANTENIMIENTO -> Icon(
-                    imageVector = Icons.Default.Build,
-                    contentDescription = "Rada en mantenimiento",
-                    tint = Color.White,
-                    modifier = Modifier.size(32.dp)
-                )
-                else -> Text(
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
                     text = codigo,
-                    color = Color.White,
+                    color = Ink,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+                    fontSize = 16.sp
+                )
+            }
+
+            Surface(
+                color = badgeBgColor,
+                shape = RoundedCornerShape(6.dp)
+            ) {
+                Text(
+                    text = labelTexto,
+                    color = badgeTextColor,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                 )
             }
         }
     }
 }
+
+private data class TupleEstilosRada(
+    val bgColor: Color,
+    val borderColor: Color,
+    val badgeBgColor: Color,
+    val badgeTextColor: Color,
+    val labelTexto: String,
+    val icono: androidx.compose.ui.graphics.vector.ImageVector
+)
