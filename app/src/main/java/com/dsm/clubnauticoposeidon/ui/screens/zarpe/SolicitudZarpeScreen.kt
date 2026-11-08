@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -74,7 +73,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -102,14 +100,13 @@ fun SolicitudZarpeScreen(
     // Cargar tripulantes autorizados en tiempo real desde Firestore
     val tripulantesDisponibles by viewModel.tripulantesAutorizados.collectAsState()
 
-    // 1. Campos independientes del formulario de Declaración Náutica
+    // 1. Campos del formulario de Declaración Náutica
     var destino by remember { mutableStateOf("") }
     var fechaPartida by remember { mutableStateOf("") }
     var horaPartida by remember { mutableStateOf("") }
     var fechaRetorno by remember { mutableStateOf("") }
     var horaRetorno by remember { mutableStateOf("") }
 
-    var cantidadTripulantesTexto by remember { mutableStateOf("1") }
     var manifiestoPasajeros by remember { mutableStateOf("") }
     var observacionesTripulacion by remember { mutableStateOf("") }
 
@@ -376,20 +373,7 @@ fun SolicitudZarpeScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // d) Cantidad tripulantes / personas
-                        OutlinedTextField(
-                            value = cantidadTripulantesTexto,
-                            onValueChange = { cantidadTripulantesTexto = it.filter { c -> c.isDigit() } },
-                            label = { Text("Número de Tripulantes / Pasajeros", color = Muted) },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            colors = textFieldColors,
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Manifiesto Obligatorio de Pasajeros / Personas a Bordo (Capitanía)
+                        // d) Manifiesto Obligatorio de Pasajeros / Personas a Bordo (Capitanía)
                         OutlinedTextField(
                             value = manifiestoPasajeros,
                             onValueChange = { manifiestoPasajeros = it },
@@ -524,15 +508,18 @@ fun SolicitudZarpeScreen(
                         // Botón Enviar Solicitud a Capitanía
                         Button(
                             onClick = {
-                                val cant = cantidadTripulantesTexto.toIntOrNull() ?: 0
+                                // Cálculo automático de la cantidad total de personas a bordo:
+                                // Suma de tripulantes especializados + líneas del manifiesto de pasajeros
+                                val pasajesLineas = manifiestoPasajeros.lines().filter { it.isNotBlank() }.size
+                                val totalPersonas = tripulantesSeleccionados.size + pasajesLineas
+                                val cant = if (totalPersonas > 0) totalPersonas else 1
+
                                 if (destino.isBlank()) {
                                     Toast.makeText(context, "Ingresa el destino antes de enviar", Toast.LENGTH_SHORT).show()
                                 } else if (fechaPartida.isBlank() || horaPartida.isBlank()) {
                                     Toast.makeText(context, "Selecciona la fecha y hora de partida", Toast.LENGTH_SHORT).show()
                                 } else if (fechaRetorno.isBlank() || horaRetorno.isBlank()) {
                                     Toast.makeText(context, "Selecciona la fecha y hora de retorno", Toast.LENGTH_SHORT).show()
-                                } else if (cant <= 0) {
-                                    Toast.makeText(context, "Ingresa al menos 1 tripulante", Toast.LENGTH_SHORT).show()
                                 } else {
                                     val tripulacionFormateada = tripulantesSeleccionados.map { "${it.nombreCompleto} (${it.cargo})" }
                                     viewModel.solicitarZarpe(
@@ -637,7 +624,7 @@ fun SolicitudZarpeScreen(
                                     Text("Destino: ${state.zarpe.destino}", color = Ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                                     Text("Partida: ${state.zarpe.fechaPartida} - ${state.zarpe.horaPartida}", color = Muted, fontSize = 12.sp)
                                     Text("Retorno: ${state.zarpe.fechaRetorno} - ${state.zarpe.horaRetorno}", color = Muted, fontSize = 12.sp)
-                                    Text("Tripulantes: ${state.zarpe.cantidadTripulantes}", color = Muted, fontSize = 12.sp)
+                                    Text("Personas a bordo: ${state.zarpe.cantidadTripulantes}", color = Muted, fontSize = 12.sp)
                                     if (state.zarpe.manifiestoPasajeros.isNotBlank()) {
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text("Manifiesto: ${state.zarpe.manifiestoPasajeros}", color = Ink, fontSize = 12.sp)
