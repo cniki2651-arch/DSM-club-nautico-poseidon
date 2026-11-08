@@ -86,15 +86,11 @@ fun NavigationWrapper(
                             .show()
                     },
                     onMantenimiento = {
-                        auth.signOut()
-                        navHostController.navigate("login") {
-                            popUpTo("router") { inclusive = true }
-                        }
-                        Toast.makeText(
-                            context,
-                            "Panel de mantenimiento próximamente",
-                            Toast.LENGTH_LONG
-                        ).show()
+
+                            navHostController.navigate("home_mantenimiento") {
+                                popUpTo("router") { inclusive = true }
+                            }
+
                     },
                     onSeguimiento = {
                         navHostController.navigate("seguimiento") {
