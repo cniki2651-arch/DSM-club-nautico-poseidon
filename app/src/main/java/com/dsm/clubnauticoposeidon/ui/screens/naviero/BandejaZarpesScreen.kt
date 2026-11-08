@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Anchor
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Schedule
@@ -59,7 +60,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -137,13 +137,13 @@ fun BandejaZarpesScreen(
                 }
             ) {
                 val solicitudesCount = (uiState as? BandejaZarpesState.Exito)?.solicitudesPendientes?.size ?: 0
-                
+
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Solicitudes de Zarpe", color = if (selectedTab == 0) Gold500 else Muted, fontWeight = FontWeight.Bold)
+                            Text("Operaciones de Zarpe", color = if (selectedTab == 0) Gold500 else Muted, fontWeight = FontWeight.Bold)
                             if (solicitudesCount > 0) {
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Badge(containerColor = Color(0xFFE57373), contentColor = Color.White) {
@@ -181,7 +181,7 @@ fun BandejaZarpesScreen(
 
                     is BandejaZarpesState.Exito -> {
                         if (selectedTab == 0) {
-                            // TAB 1: Solicitudes de Zarpe
+                            // TAB 1: Solicitudes y Operaciones de Zarpe
                             if (state.solicitudesPendientes.isEmpty()) {
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -217,6 +217,13 @@ fun BandejaZarpesScreen(
                                                     zarpeId = solicitud.id,
                                                     motivo = motivo,
                                                     onSuccess = { Toast.makeText(context, "Solicitud rechazada", Toast.LENGTH_SHORT).show() },
+                                                    onError = { err -> Toast.makeText(context, err, Toast.LENGTH_SHORT).show() }
+                                                )
+                                            },
+                                            onFinalizarArribo = {
+                                                viewModel.finalizarZarpe(
+                                                    zarpeId = solicitud.id,
+                                                    onSuccess = { Toast.makeText(context, "Arribo registrado. Nave en muelle.", Toast.LENGTH_SHORT).show() },
                                                     onError = { err -> Toast.makeText(context, err, Toast.LENGTH_SHORT).show() }
                                                 )
                                             }
@@ -303,29 +310,92 @@ fun BandejaZarpesScreen(
 fun SolicitudZarpeCard(
     solicitud: SolicitudZarpe,
     onAprobar: () -> Unit,
-    onRechazar: (String) -> Unit
+    onRechazar: (String) -> Unit,
+    onFinalizarArribo: () -> Unit
 ) {
     val context = LocalContext.current
     var mostrarDialogoRechazo by remember { mutableStateOf(false) }
     var motivoRechazoText by remember { mutableStateOf("") }
 
+    val colorBordeCard = when (solicitud.estado) {
+        "activo", "en_mar" -> Color(0xFF4CAF50)
+        "aprobado" -> Color(0xFF4EBA6F)
+        else -> Color(0xFFFFB74D)
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Navy800),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, Gold500.copy(alpha = 0.5f))
+        border = BorderStroke(1.dp, colorBordeCard.copy(alpha = 0.6f))
     ) {
         Column(
             modifier = Modifier.padding(18.dp)
         ) {
-            Text(
-                text = solicitud.embarcacionNombre.ifBlank { "Embarcación sin nombre" },
-                color = Gold500,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
+            // Badge Superior según estado dinámico
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = solicitud.embarcacionNombre.ifBlank { "Embarcación sin nombre" },
+                    color = Gold500,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+
+                when (solicitud.estado) {
+                    "activo", "en_mar" -> {
+                        Surface(
+                            color = Color(0xFF1B4332),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "🟢 TRANSMITIENDO GPS EN VIVO",
+                                color = Color(0xFF4EBA6F),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                    "aprobado" -> {
+                        Surface(
+                            color = Color(0xFF1B4332),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "ZARPE AUTORIZADO",
+                                color = Color(0xFF4EBA6F),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                    else -> {
+                        Surface(
+                            color = Navy800,
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, Gold500.copy(alpha = 0.6f))
+                        ) {
+                            Text(
+                                text = "PENDIENTE DE REVISIÓN",
+                                color = Gold500,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Map, contentDescription = null, tint = Muted, modifier = Modifier.size(16.dp))
@@ -395,7 +465,7 @@ fun SolicitudZarpeCard(
             }
 
             if (solicitud.tripulacionEspecializada.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = "Especializada: ${solicitud.tripulacionEspecializada.joinToString(", ")}",
                     color = Gold500,
@@ -413,30 +483,90 @@ fun SolicitudZarpeCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // Fila de Botones de Acción
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = { mostrarDialogoRechazo = true },
-                    modifier = Modifier.weight(1f),
-                    border = BorderStroke(1.dp, Color(0xFFE57373)),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFE57373)),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Rechazar", fontWeight = FontWeight.Bold)
+            // CONTROLES DYNAMICOS SEGÚN ESTADO (Bottom Row)
+            when (solicitud.estado) {
+                "pendiente_aprobacion" -> {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { mostrarDialogoRechazo = true },
+                            modifier = Modifier.weight(1f),
+                            border = BorderStroke(1.dp, Color(0xFFFF5252)),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFF5252)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Rechazar", color = Color(0xFFFF5252), fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = onAprobar,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = Gold500),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("APROBAR ZARPE", color = Navy900, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
 
-                Button(
-                    onClick = onAprobar,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Gold500),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("APROBAR ZARPE", color = Navy900, fontWeight = FontWeight.Bold)
+                "aprobado" -> {
+                    Surface(
+                        color = Navy900,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = Color(0xFF4EBA6F),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Zarpe autorizado por Capitanía. Esperando que el socio inicie la navegación en su aplicación.",
+                                color = Ink,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
+
+                "activo", "en_mar" -> {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        // Telemetría GPS en tiempo real
+                        Surface(
+                            color = Navy900,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text("Coordenadas Satelitales:", color = Gold500, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text("Lat: ${solicitud.latitud} | Lng: ${solicitud.longitud}", color = Ink, fontSize = 13.sp)
+                            }
+                        }
+
+                        Button(
+                            onClick = onFinalizarArribo,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Gold500),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("REGISTRAR ARRIBO A PUERTO", color = Navy900, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
         }

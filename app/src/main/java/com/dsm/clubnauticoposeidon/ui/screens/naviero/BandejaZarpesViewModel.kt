@@ -25,9 +25,9 @@ class BandejaZarpesViewModel : ViewModel() {
     }
 
     private fun escucharSolicitudesYTripulacion() {
-        // Escuchar solicitudes de zarpe pendientes
+        // Escuchar zarpes activos (pendientes, aprobados o en navegación GPS)
         db.collection("zarpes")
-            .whereEqualTo("estado", "pendiente_aprobacion")
+            .whereIn("estado", listOf("pendiente_aprobacion", "aprobado", "activo", "en_mar"))
             .addSnapshotListener { snapshotZarpes, errorZarpes ->
                 if (errorZarpes != null) {
                     Log.e("BandejaZarpesVM", "Error al escuchar zarpes", errorZarpes)
@@ -101,6 +101,23 @@ class BandejaZarpesViewModel : ViewModel() {
                 onSuccess()
             } catch (e: Exception) {
                 onError(e.message ?: "Error al rechazar zarpe")
+            }
+        }
+    }
+
+    fun finalizarZarpe(zarpeId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                db.collection("zarpes").document(zarpeId)
+                    .update(
+                        mapOf(
+                            "estado" to "finalizado",
+                            "fechaRetornoReal" to System.currentTimeMillis()
+                        )
+                    ).await()
+                onSuccess()
+            } catch (e: Exception) {
+                onError(e.message ?: "Error al registrar arribo a puerto")
             }
         }
     }
