@@ -82,6 +82,7 @@ fun InitialScreen(
                     DestinoInicial.SECRETARIA -> onNavigateToSecretaria()
                     DestinoInicial.JEFE -> onNavigateToJefe()
                     DestinoInicial.SEGUIMIENTO -> onNavigateToSeguimiento()
+                    DestinoInicial.MANTENIMIENTO -> onNavigateToMantenimiento()
                 }
 
                 is InitialEvent.MensajeRes ->

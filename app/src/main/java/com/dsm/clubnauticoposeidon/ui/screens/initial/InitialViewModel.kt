@@ -48,15 +48,12 @@ class InitialViewModel : ViewModel() {
                     onSecretaria = { terminar(InitialEvent.Navegar(DestinoInicial.SECRETARIA)) },
                     onJefe = { terminar(InitialEvent.Navegar(DestinoInicial.JEFE)) },
                     onSeguimiento = { terminar(InitialEvent.Navegar(DestinoInicial.SEGUIMIENTO)) },
-
+                    onMantenimiento = { terminar(InitialEvent.Navegar(DestinoInicial.MANTENIMIENTO)) },
                     onFinanzas = {
                         auth.signOut()
                         terminar(InitialEvent.MensajeRes(R.string.panel_finanzas))
                     },
-                    onMantenimiento = {
-                        auth.signOut()
-                        terminar(InitialEvent.MensajeRes(R.string.panel_mantenimiento))
-                    },
+
 
                     onError = { msg -> terminar(InitialEvent.Mensaje(msg)) }
                 )

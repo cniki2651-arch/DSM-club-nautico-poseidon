@@ -148,7 +148,12 @@ fun NavigationWrapper(
                     navHostController.navigate("seguimiento") {
                         popUpTo("initial") { inclusive = true }
                     }
-                }
+                },
+                onNavigateToMantenimiento = {
+                    navHostController.navigate("home_mantenimiento") {
+                        popUpTo("initial") { inclusive = true }
+                    }
+                },
             )
         }
 
@@ -369,6 +374,18 @@ fun NavigationWrapper(
         }
         composable("bandeja_aprobaciones") {
             com.dsm.clubnauticoposeidon.ui.screens.jefatura.BandejaAprobacionesScreen(
+                onBackClick = { navHostController.popBackStack() }
+            )
+        }
+        // MANTENIMIENTO
+        composable("home_mantenimiento") {
+            com.dsm.clubnauticoposeidon.ui.screens.mantenimiento.HomeMantenimientoScreen(
+                onNavigateToPedidos = { navHostController.navigate("bandeja_pedidos") },
+                onLogout = cerrarSesion
+            )
+        }
+        composable("bandeja_pedidos") {
+            com.dsm.clubnauticoposeidon.ui.screens.mantenimiento.BandejaPedidosScreen(
                 onBackClick = { navHostController.popBackStack() }
             )
         }
