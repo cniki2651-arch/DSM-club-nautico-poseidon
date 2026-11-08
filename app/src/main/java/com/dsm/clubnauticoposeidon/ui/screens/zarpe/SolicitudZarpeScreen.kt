@@ -110,6 +110,7 @@ fun SolicitudZarpeScreen(
     var horaRetorno by remember { mutableStateOf("") }
 
     var cantidadTripulantesTexto by remember { mutableStateOf("1") }
+    var manifiestoPasajeros by remember { mutableStateOf("") }
     var observacionesTripulacion by remember { mutableStateOf("") }
 
     // 2. Estado para la selección múltiple de Tripulación Especializada
@@ -232,7 +233,7 @@ fun SolicitudZarpeScreen(
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    text = "Declaración Náutica: Capitanía revisará tu plan de navegación antes del zarpe. Al aprobarse, transmitirás tu posición GPS.",
+                                    text = "Declaración Náutica: Capitanía revisará tu plan de navegación y el manifiesto de pasajeros antes del zarpe.",
                                     color = Ink,
                                     fontSize = 13.sp,
                                     lineHeight = 18.sp
@@ -375,7 +376,7 @@ fun SolicitudZarpeScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // d) Cantidad tripulantes
+                        // d) Cantidad tripulantes / personas
                         OutlinedTextField(
                             value = cantidadTripulantesTexto,
                             onValueChange = { cantidadTripulantesTexto = it.filter { c -> c.isDigit() } },
@@ -384,6 +385,29 @@ fun SolicitudZarpeScreen(
                             colors = textFieldColors,
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Manifiesto Obligatorio de Pasajeros / Personas a Bordo (Capitanía)
+                        OutlinedTextField(
+                            value = manifiestoPasajeros,
+                            onValueChange = { manifiestoPasajeros = it },
+                            label = { Text("Manifiesto de Pasajeros (DNI / CE / Pasaporte y Nombres)", color = Muted) },
+                            placeholder = {
+                                Text(
+                                    "Ejemplo:\n- DNI 70123456 - Juan Pérez Ruiz\n- CE 001234567 - María Thorne\n- PAS 9876543 - Carlos Smith",
+                                    color = Muted.copy(alpha = 0.6f),
+                                    fontSize = 12.sp
+                                )
+                            },
+                            supportingText = {
+                                Text("Requerido por Capitanía para el control de abordaje.", color = Muted, fontSize = 11.sp)
+                            },
+                            colors = textFieldColors,
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 3,
+                            maxLines = 5
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -520,6 +544,7 @@ fun SolicitudZarpeScreen(
                                         fechaRetorno = fechaRetorno,
                                         horaRetorno = horaRetorno,
                                         cantidadTripulantes = cant,
+                                        manifiestoPasajeros = manifiestoPasajeros,
                                         observacionesTripulacion = observacionesTripulacion,
                                         tripulacionEspecializada = tripulacionFormateada
                                     )
@@ -613,9 +638,13 @@ fun SolicitudZarpeScreen(
                                     Text("Partida: ${state.zarpe.fechaPartida} - ${state.zarpe.horaPartida}", color = Muted, fontSize = 12.sp)
                                     Text("Retorno: ${state.zarpe.fechaRetorno} - ${state.zarpe.horaRetorno}", color = Muted, fontSize = 12.sp)
                                     Text("Tripulantes: ${state.zarpe.cantidadTripulantes}", color = Muted, fontSize = 12.sp)
+                                    if (state.zarpe.manifiestoPasajeros.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text("Manifiesto: ${state.zarpe.manifiestoPasajeros}", color = Ink, fontSize = 12.sp)
+                                    }
                                     if (state.zarpe.tripulacionEspecializada.isNotEmpty()) {
                                         Spacer(modifier = Modifier.height(4.dp))
-                                        Text("Tripulación: ${state.zarpe.tripulacionEspecializada.joinToString(", ")}", color = Gold500, fontSize = 11.sp)
+                                        Text("Especializada: ${state.zarpe.tripulacionEspecializada.joinToString(", ")}", color = Gold500, fontSize = 11.sp)
                                     }
                                 }
                             }

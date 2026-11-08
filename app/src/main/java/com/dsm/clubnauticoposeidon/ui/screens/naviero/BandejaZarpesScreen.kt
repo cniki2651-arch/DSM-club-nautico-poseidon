@@ -370,6 +370,30 @@ fun SolicitudZarpeCard(
                 )
             }
 
+            if (solicitud.manifiestoPasajeros.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Navy900, RoundedCornerShape(8.dp))
+                        .padding(10.dp)
+                ) {
+                    Text(
+                        text = "Manifiesto de Pasajeros (Capitanía):",
+                        color = Gold500,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = solicitud.manifiestoPasajeros,
+                        color = Ink,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp
+                    )
+                }
+            }
+
             if (solicitud.tripulacionEspecializada.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(

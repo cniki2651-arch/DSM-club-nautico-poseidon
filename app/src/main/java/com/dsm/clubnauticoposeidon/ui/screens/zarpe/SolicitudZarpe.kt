@@ -14,6 +14,7 @@ data class SolicitudZarpe(
     val fechaHoraSalida: String = "",
     val fechaHoraRegreso: String = "",
     val cantidadTripulantes: Int = 1,
+    val manifiestoPasajeros: String = "",
     val observacionesTripulacion: String = "",
     val tripulacionEspecializada: List<String> = emptyList(),
     val fechaSolicitud: Long = System.currentTimeMillis(),

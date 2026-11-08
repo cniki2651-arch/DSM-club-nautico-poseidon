@@ -90,6 +90,7 @@ class ZarpeViewModel : ViewModel() {
         fechaRetorno: String,
         horaRetorno: String,
         cantidadTripulantes: Int,
+        manifiestoPasajeros: String,
         observacionesTripulacion: String,
         tripulacionEspecializada: List<String>
     ) {
@@ -135,6 +136,7 @@ class ZarpeViewModel : ViewModel() {
                     fechaHoraSalida = fechaHoraSalida,
                     fechaHoraRegreso = fechaHoraRegreso,
                     cantidadTripulantes = cantidadTripulantes,
+                    manifiestoPasajeros = manifiestoPasajeros,
                     observacionesTripulacion = observacionesTripulacion,
                     tripulacionEspecializada = tripulacionEspecializada,
                     fechaSolicitud = System.currentTimeMillis(),
