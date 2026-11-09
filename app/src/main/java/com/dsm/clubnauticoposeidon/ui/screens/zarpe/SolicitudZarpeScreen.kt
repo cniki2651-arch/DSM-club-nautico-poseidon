@@ -63,6 +63,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -98,6 +99,10 @@ fun SolicitudZarpeScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(embarcacionId) {
+        viewModel.verificarZarpeParaEmbarcacion(embarcacionId)
+    }
 
     // Cargar tripulantes autorizados en tiempo real desde Firestore
     val tripulantesDisponibles by viewModel.tripulantesAutorizados.collectAsState()

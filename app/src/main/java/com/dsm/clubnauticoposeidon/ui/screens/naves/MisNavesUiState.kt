@@ -6,6 +6,7 @@ import com.dsm.clubnauticoposeidon.model.SolicitudRada
 data class MisNavesUiState(
     val naves: List<Embarcacion> = emptyList(),
     val solicitudes: List<SolicitudRada> = emptyList(),
+    val zarpesActivosMap: Map<String, Pair<String, String>> = emptyMap(), // embarcacionId -> Pair(zarpeId, estado)
     val dni: String? = null,
     val cargando: Boolean = true,
     val guardando: Boolean = false,

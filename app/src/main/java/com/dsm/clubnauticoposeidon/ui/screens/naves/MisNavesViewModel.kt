@@ -6,19 +6,19 @@ import com.dsm.clubnauticoposeidon.data.repository.EmbarcacionRepository
 import com.dsm.clubnauticoposeidon.data.repository.SolicitudRadaRepository
 import com.dsm.clubnauticoposeidon.model.Embarcacion
 import com.dsm.clubnauticoposeidon.model.SolicitudRada
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-
-
 class MisNavesViewModel(
     private val repo: EmbarcacionRepository = EmbarcacionRepository(),
     private val solicitudRepo: SolicitudRadaRepository = SolicitudRadaRepository()
 ) : ViewModel() {
 
+    private val db = FirebaseFirestore.getInstance()
     private val _ui = MutableStateFlow(MisNavesUiState())
     val ui: StateFlow<MisNavesUiState> = _ui
 
@@ -41,6 +41,20 @@ class MisNavesViewModel(
                     .catch { e -> _ui.update { it.copy(mensaje = "Error: ${e.message}") } }
                     .collect { lista ->
                         _ui.update { it.copy(solicitudes = lista.sortedByDescending { s -> s.fechaSolicitud }) }
+                    }
+            }
+            launch {
+                db.collection("zarpes")
+                    .whereIn("estado", listOf("pendiente_aprobacion", "aprobado", "en_mar", "activo"))
+                    .addSnapshotListener { snapshot, error ->
+                        if (error != null || snapshot == null) return@addSnapshotListener
+                        val map = mutableMapOf<String, Pair<String, String>>()
+                        for (doc in snapshot.documents) {
+                            val embId = doc.getString("embarcacionId") ?: continue
+                            val estado = doc.getString("estado") ?: ""
+                            map[embId] = Pair(doc.id, estado)
+                        }
+                        _ui.update { it.copy(zarpesActivosMap = map) }
                     }
             }
         }

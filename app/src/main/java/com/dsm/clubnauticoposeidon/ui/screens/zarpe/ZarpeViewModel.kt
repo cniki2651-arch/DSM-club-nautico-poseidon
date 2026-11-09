@@ -19,14 +19,13 @@ class ZarpeViewModel : ViewModel() {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
-    private val _uiState = MutableStateFlow<ZarpeState>(ZarpeState.Idle)
+    private val _uiState = MutableStateFlow<ZarpeState>(ZarpeState.Cargando)
     val uiState: StateFlow<ZarpeState> = _uiState
 
     private val _tripulantesAutorizados = MutableStateFlow<List<Tripulante>>(emptyList())
     val tripulantesAutorizados: StateFlow<List<Tripulante>> = _tripulantesAutorizados
 
     init {
-        verificarZarpeExistente()
         escucharTripulantesAutorizados()
     }
 
@@ -53,13 +52,16 @@ class ZarpeViewModel : ViewModel() {
             }
     }
 
-    private fun verificarZarpeExistente() {
-        val uid = auth.currentUser?.uid ?: return
+    fun verificarZarpeParaEmbarcacion(embarcacionId: String) {
+        if (embarcacionId.isBlank()) {
+            _uiState.value = ZarpeState.Idle
+            return
+        }
         viewModelScope.launch {
             try {
                 val query = db.collection("zarpes")
-                    .whereEqualTo("socioId", uid)
-                    .whereIn("estado", listOf("pendiente_aprobacion", "aprobado", "activo", "en_mar"))
+                    .whereEqualTo("embarcacionId", embarcacionId)
+                    .whereIn("estado", listOf("pendiente_aprobacion", "aprobado", "en_mar", "activo"))
                     .limit(1)
                     .get()
                     .await()
@@ -74,11 +76,17 @@ class ZarpeViewModel : ViewModel() {
                             "activo", "en_mar" -> _uiState.value = ZarpeState.ZarpeActivo(zarpe.id, zarpe.destino, lat, lng)
                             "aprobado" -> _uiState.value = ZarpeState.AprobadoListoParaZarpar(zarpe)
                             "pendiente_aprobacion" -> _uiState.value = ZarpeState.PendienteAprobacion(zarpe)
+                            else -> _uiState.value = ZarpeState.Idle
                         }
+                    } else {
+                        _uiState.value = ZarpeState.Idle
                     }
+                } else {
+                    _uiState.value = ZarpeState.Idle
                 }
             } catch (e: Exception) {
-                Log.e("ZarpeVM", "Error al verificar zarpes existentes", e)
+                Log.e("ZarpeVM", "Error al verificar zarpe para embarcacion $embarcacionId", e)
+                _uiState.value = ZarpeState.Idle
             }
         }
     }
@@ -177,7 +185,7 @@ class ZarpeViewModel : ViewModel() {
                 db.collection("zarpes").document(zarpeId)
                     .update(
                         mapOf(
-                            "estado" to "activo",
+                            "estado" to "en_mar",
                             "latitud" to lat,
                             "longitud" to lng,
                             "ultimaActualizacion" to System.currentTimeMillis()

@@ -158,8 +158,10 @@ fun MisNavesScreen(
                         item { Text("Aún no registraste embarcaciones", color = Color.LightGray) }
                     }
                     items(ui.naves, key = { "n_" + it.id }) { nave ->
+                        val zarpeRef = ui.zarpesActivosMap[nave.id]
                         TarjetaNave(
                             nave = nave,
+                            zarpeRef = zarpeRef,
                             onSolicitarRada = { naveSolicitud = nave },
                             onSolicitarZarpe = { onSolicitarZarpe(nave.id, nave.nombreNave) }
                         )
@@ -186,9 +188,21 @@ fun MisNavesScreen(
 @Composable
 private fun TarjetaNave(
     nave: Embarcacion,
+    zarpeRef: Pair<String, String>?, // Pair(zarpeId, estado)
     onSolicitarRada: () -> Unit,
     onSolicitarZarpe: () -> Unit
 ) {
+    val estadoZarpe = zarpeRef?.second
+
+    val (textoBotonZarpe, colorBotonZarpe, textColorZarpe) = when (estadoZarpe) {
+        "en_mar", "activo" -> Triple("📡 VER ZARPE EN VIVO", Gold500, Navy900)
+        "aprobado" -> Triple("🚀 INICIAR NAVEGACIÓN", Gold500, Navy900)
+        "pendiente_aprobacion" -> Triple("⏳ ZARPE EN REVISIÓN", Color(0xFFFFB74D), Navy900)
+        else -> Triple("⚓ Solicitar Zarpe", Gold500, Navy900)
+    }
+
+    val radaHabilitada = estadoZarpe != "en_mar" && estadoZarpe != "activo"
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -209,11 +223,14 @@ private fun TarjetaNave(
             ) {
                 OutlinedButton(
                     onClick = onSolicitarRada,
+                    enabled = radaHabilitada,
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp),
-                    border = BorderStroke(1.dp, Gold500),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Gold500),
+                    border = BorderStroke(1.dp, if (radaHabilitada) Gold500 else Gold500.copy(alpha = 0.3f)),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = if (radaHabilitada) Gold500 else Gold500.copy(alpha = 0.3f)
+                    ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
@@ -229,19 +246,12 @@ private fun TarjetaNave(
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Gold500),
+                    colors = ButtonDefaults.buttonColors(containerColor = colorBotonZarpe),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Anchor,
-                        contentDescription = null,
-                        tint = Navy900,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
                     Text(
-                        text = "Solicitar Zarpe",
-                        color = Navy900,
+                        text = textoBotonZarpe,
+                        color = textColorZarpe,
                         fontSize = 12.sp,
                         maxLines = 1,
                         fontWeight = FontWeight.Bold
