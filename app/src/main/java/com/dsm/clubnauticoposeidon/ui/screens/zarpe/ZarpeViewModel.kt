@@ -59,7 +59,7 @@ class ZarpeViewModel : ViewModel() {
             try {
                 val query = db.collection("zarpes")
                     .whereEqualTo("socioId", uid)
-                    .whereIn("estado", listOf("pendiente_aprobacion", "aprobado", "activo"))
+                    .whereIn("estado", listOf("pendiente_aprobacion", "aprobado", "activo", "en_mar"))
                     .limit(1)
                     .get()
                     .await()
@@ -68,8 +68,10 @@ class ZarpeViewModel : ViewModel() {
                 if (doc != null) {
                     val zarpe = doc.toObject(SolicitudZarpe::class.java)
                     if (zarpe != null) {
+                        val lat = doc.getDouble("latitud") ?: 0.0
+                        val lng = doc.getDouble("longitud") ?: 0.0
                         when (zarpe.estado) {
-                            "activo" -> _uiState.value = ZarpeState.ZarpeActivo(zarpe.id, zarpe.destino)
+                            "activo", "en_mar" -> _uiState.value = ZarpeState.ZarpeActivo(zarpe.id, zarpe.destino, lat, lng)
                             "aprobado" -> _uiState.value = ZarpeState.AprobadoListoParaZarpar(zarpe)
                             "pendiente_aprobacion" -> _uiState.value = ZarpeState.PendienteAprobacion(zarpe)
                         }
@@ -184,7 +186,7 @@ class ZarpeViewModel : ViewModel() {
 
                 val doc = db.collection("zarpes").document(zarpeId).get().await()
                 val destino = doc.getString("destino") ?: "Mar Abierto"
-                _uiState.value = ZarpeState.ZarpeActivo(zarpeId, destino)
+                _uiState.value = ZarpeState.ZarpeActivo(zarpeId, destino, lat, lng)
 
             } catch (e: Exception) {
                 Log.e("ZarpeVM", "Error al iniciar transmisión GPS", e)

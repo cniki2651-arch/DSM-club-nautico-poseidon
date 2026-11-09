@@ -58,6 +58,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -373,7 +374,7 @@ fun SolicitudZarpeScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // d) Manifiesto Obligatorio de Pasajeros / Personas a Bordo (Capitanía)
+                        // Manifiesto Obligatorio de Pasajeros / Personas a Bordo (Capitanía)
                         OutlinedTextField(
                             value = manifiestoPasajeros,
                             onValueChange = { manifiestoPasajeros = it },
@@ -512,8 +513,6 @@ fun SolicitudZarpeScreen(
                         // Botón Enviar Solicitud a Capitanía
                         Button(
                             onClick = {
-                                // Cálculo automático de la cantidad total de personas a bordo:
-                                // Suma de tripulantes especializados + líneas del manifiesto de pasajeros
                                 val pasajesLineas = manifiestoPasajeros.lines().filter { it.isNotBlank() }.size
                                 val totalPersonas = tripulantesSeleccionados.size + pasajesLineas
                                 val cant = if (totalPersonas > 0) totalPersonas else 1
@@ -837,7 +836,34 @@ fun SolicitudZarpeScreen(
                                     textAlign = TextAlign.Center
                                 )
 
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Surface(
+                                    color = Navy900,
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(12.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = "Coordenadas Satelitales:",
+                                            color = Gold500,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = "Lat: ${String.format(Locale.US, "%.4f", state.latitud)} | Lng: ${String.format(Locale.US, "%.4f", state.longitud)}",
+                                            color = Ink,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
 
                                 Text(
                                     text = "En navegación hacia:",
@@ -859,23 +885,25 @@ fun SolicitudZarpeScreen(
                         Button(
                             onClick = {
                                 viewModel.finalizarZarpe(state.zarpeId)
+                                Toast.makeText(context, "Arribo a puerto registrado con éxito", Toast.LENGTH_SHORT).show()
+                                onBackClick()
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373)),
+                            colors = ButtonDefaults.buttonColors(containerColor = Gold500),
                             shape = RoundedCornerShape(50)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Anchor,
                                 contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
+                                tint = Navy900,
+                                modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "RETORNO A PUERTO (FINALIZAR ZARPE)",
-                                color = Color.White,
+                                color = Navy900,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             )
