@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Anchor
+import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DirectionsBoat
 import androidx.compose.material.icons.filled.Event
@@ -46,6 +47,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -129,16 +131,54 @@ fun HomeSocioScreen(
         Scaffold(
             containerColor = Color.Transparent,
             floatingActionButton = {
-                FloatingActionButton(
-                    onClick = onNavigateToAsistente,
-                    containerColor = Gold500,
-                    contentColor = Navy900
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(bottom = 16.dp, end = 4.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Anchor,
-                        contentDescription = "Asistente Náutico IA",
-                        modifier = Modifier.size(24.dp)
-                    )
+                    // Tooltip de texto
+                    Surface(
+                        color = Navy800,
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, Gold500.copy(alpha = 0.5f)),
+                        shadowElevation = 4.dp
+                    ) {
+                        Text(
+                            text = "Chat con el Club",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                        )
+                    }
+
+                    // Botón Circular Principal con Indicador de Notificación
+                    Box(
+                        modifier = Modifier
+                            .size(60.dp)
+                            .clip(CircleShape)
+                            .background(Navy900)
+                            .border(2.dp, Gold500, CircleShape)
+                            .clickable { onNavigateToAsistente() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SmartToy,
+                            contentDescription = "Asistente Náutico IA",
+                            tint = Gold500,
+                            modifier = Modifier.size(28.dp)
+                        )
+
+                        // Indicador de Notificación (Punto rojo superior derecho)
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .align(Alignment.TopEnd)
+                                .offset(x = (-6).dp, y = 6.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFFF5252))
+                        )
+                    }
                 }
             }
         ) { paddingValues ->
