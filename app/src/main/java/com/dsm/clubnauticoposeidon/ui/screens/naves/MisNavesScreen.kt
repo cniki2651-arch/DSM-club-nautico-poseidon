@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +21,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Anchor
+import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material.icons.filled.Radar
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -53,6 +57,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -185,6 +190,13 @@ fun MisNavesScreen(
     }
 }
 
+private data class Quad(
+    val texto: String,
+    val colorBg: Color,
+    val colorText: Color,
+    val icono: androidx.compose.ui.graphics.vector.ImageVector
+)
+
 @Composable
 private fun TarjetaNave(
     nave: Embarcacion,
@@ -194,11 +206,11 @@ private fun TarjetaNave(
 ) {
     val estadoZarpe = zarpeRef?.second
 
-    val (textoBotonZarpe, colorBotonZarpe, textColorZarpe) = when (estadoZarpe) {
-        "en_mar", "activo" -> Triple("📡 VER ZARPE EN VIVO", Gold500, Navy900)
-        "aprobado" -> Triple("🚀 INICIAR NAVEGACIÓN", Gold500, Navy900)
-        "pendiente_aprobacion" -> Triple("⏳ ZARPE EN REVISIÓN", Color(0xFFFFB74D), Navy900)
-        else -> Triple("⚓ Solicitar Zarpe", Gold500, Navy900)
+    val (textoBotonZarpe, colorBotonZarpe, textColorZarpe, iconoZarpe) = when (estadoZarpe) {
+        "en_mar", "activo" -> Quad("Ver Zarpe en Vivo", Gold500, Navy900, Icons.Default.Radar)
+        "aprobado" -> Quad("Iniciar Navegación", Gold500, Navy900, Icons.Default.Navigation)
+        "pendiente_aprobacion" -> Quad("Zarpe en Revisión", Color(0xFFFFB74D), Navy900, Icons.Default.Schedule)
+        else -> Quad("Solicitar Zarpe", Gold500, Navy900, Icons.Default.Navigation)
     }
 
     val radaHabilitada = estadoZarpe != "en_mar" && estadoZarpe != "activo"
@@ -224,6 +236,7 @@ private fun TarjetaNave(
                 OutlinedButton(
                     onClick = onSolicitarRada,
                     enabled = radaHabilitada,
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp),
@@ -233,27 +246,44 @@ private fun TarjetaNave(
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
+                    Icon(
+                        imageVector = Icons.Default.Anchor,
+                        contentDescription = null,
+                        tint = if (radaHabilitada) Gold500 else Gold500.copy(alpha = 0.3f),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
                     Text(
-                        text = "Solicitar rada",
-                        fontSize = 12.sp,
+                        text = "Solicitar Rada",
+                        fontSize = 11.sp,
                         maxLines = 1,
-                        fontWeight = FontWeight.SemiBold
+                        overflow = TextOverflow.Ellipsis,
+                        fontWeight = FontWeight.Bold
                     )
                 }
 
                 Button(
                     onClick = onSolicitarZarpe,
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = colorBotonZarpe),
                     shape = RoundedCornerShape(12.dp)
                 ) {
+                    Icon(
+                        imageVector = iconoZarpe,
+                        contentDescription = null,
+                        tint = textColorZarpe,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
                     Text(
                         text = textoBotonZarpe,
                         color = textColorZarpe,
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         fontWeight = FontWeight.Bold
                     )
                 }
