@@ -129,11 +129,11 @@ fun HomeSocioScreen(
         )
 
         Scaffold(
+            modifier = Modifier.fillMaxSize(),
             containerColor = Color.Transparent,
             floatingActionButton = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                Column(
+                    horizontalAlignment = Alignment.End,
                     modifier = Modifier.padding(bottom = 16.dp, end = 4.dp)
                 ) {
                     // Tooltip de texto
@@ -151,6 +151,8 @@ fun HomeSocioScreen(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     // Botón Circular Principal con Indicador de Notificación
                     Box(
@@ -172,12 +174,12 @@ fun HomeSocioScreen(
                         // Indicador de Notificación (Punto rojo superior derecho)
                         Box(
                             modifier = Modifier
-                                .size(10.dp)
+                                .size(12.dp)
                                 .align(Alignment.TopEnd)
-                                .offset(x = (-6).dp, y = 6.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFFF5252))
-                        )
+                                .offset(x = (-2).dp, y = 2.dp)
+                                .background(Color(0xFFFF5252), CircleShape)
+                                .border(1.dp, Color(0xFF0A111E), CircleShape)
+                        ) {}
                     }
                 }
             }
