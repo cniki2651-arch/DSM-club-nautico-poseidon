@@ -78,6 +78,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dsm.clubnauticoposeidon.ui.components.VisorTelemetriaVectorial
 import com.dsm.clubnauticoposeidon.ui.screens.naviero.Tripulante
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Ink
@@ -838,30 +839,10 @@ fun SolicitudZarpeScreen(
 
                                 Spacer(modifier = Modifier.height(12.dp))
 
-                                Surface(
-                                    color = Navy900,
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(12.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        Text(
-                                            text = "Coordenadas Satelitales:",
-                                            color = Gold500,
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = "Lat: ${String.format(Locale.US, "%.4f", state.latitud)} | Lng: ${String.format(Locale.US, "%.4f", state.longitud)}",
-                                            color = Ink,
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    }
-                                }
+                                VisorTelemetriaVectorial(
+                                    latitud = state.latitud,
+                                    longitud = state.longitud
+                                )
 
                                 Spacer(modifier = Modifier.height(12.dp))
 

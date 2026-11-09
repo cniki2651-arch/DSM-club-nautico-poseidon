@@ -68,6 +68,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dsm.clubnauticoposeidon.ui.components.VisorTelemetriaVectorial
 import com.dsm.clubnauticoposeidon.ui.screens.zarpe.SolicitudZarpe
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Ink
@@ -75,6 +76,9 @@ import com.dsm.clubnauticoposeidon.ui.theme.Muted
 import com.dsm.clubnauticoposeidon.ui.theme.Navy700
 import com.dsm.clubnauticoposeidon.ui.theme.Navy800
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private val cargosDisponibles = listOf(
     "Capitán / Patrón",
@@ -83,6 +87,12 @@ private val cargosDisponibles = listOf(
     "Operador de Radio / Telecom",
     "Patrón de Yate"
 )
+
+private fun formatFechaHora(timestamp: Long): String {
+    if (timestamp <= 0) return "N/A"
+    val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+    return sdf.format(Date(timestamp))
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -191,9 +201,9 @@ fun BandejaZarpesScreen(
                                     Icon(Icons.Default.Anchor, contentDescription = null, tint = Muted, modifier = Modifier.size(64.dp))
                                     Spacer(modifier = Modifier.height(16.dp))
                                     Text(
-                                        text = "No hay solicitudes de zarpe pendientes por autorizar",
+                                        text = "No hay operaciones ni solicitudes de zarpe activas en este momento.",
                                         color = Muted,
-                                        fontSize = 16.sp,
+                                        fontSize = 15.sp,
                                         textAlign = TextAlign.Center
                                     )
                                 }
@@ -495,11 +505,11 @@ fun SolicitudZarpeCard(
                         OutlinedButton(
                             onClick = { mostrarDialogoRechazo = true },
                             modifier = Modifier.weight(1f),
-                            border = BorderStroke(1.dp, Color(0xFFFF5252)),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFF5252)),
+                            border = BorderStroke(1.dp, Color(0xFFE57373)),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFE57373)),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("Rechazar", color = Color(0xFFFF5252), fontWeight = FontWeight.Bold)
+                            Text("Rechazar", color = Color(0xFFE57373), fontWeight = FontWeight.Bold)
                         }
 
                         Button(
@@ -543,20 +553,13 @@ fun SolicitudZarpeCard(
 
                 "activo", "en_mar" -> {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        // Telemetría GPS en tiempo real
-                        Surface(
-                            color = Navy900,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 8.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text("Coordenadas Satelitales:", color = Gold500, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text("Lat: ${solicitud.latitud} | Lng: ${solicitud.longitud}", color = Ink, fontSize = 13.sp)
-                            }
-                        }
+                        // Visor Telemetría Vectorial (Reemplazo de Google Maps)
+                        VisorTelemetriaVectorial(
+                            latitud = solicitud.latitud,
+                            longitud = solicitud.longitud
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
 
                         Button(
                             onClick = onFinalizarArribo,
