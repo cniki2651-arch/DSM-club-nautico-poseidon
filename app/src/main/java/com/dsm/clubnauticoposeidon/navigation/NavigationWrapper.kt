@@ -17,6 +17,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.dsm.clubnauticoposeidon.ui.screens.asistente.AsistenteNauticoScreen
 import com.dsm.clubnauticoposeidon.ui.screens.clima.ClimaDetalleScreen
 import com.dsm.clubnauticoposeidon.ui.screens.historial.HistorialTransitoScreen
 import com.dsm.clubnauticoposeidon.ui.screens.home.HomeOperacionesScreen
@@ -192,8 +193,13 @@ fun NavigationWrapper(
                 onNavigateToMisNaves = { navHostController.navigate("mis_naves") },
                 onNavigateToClima = { navHostController.navigate("clima_detalle") },
                 onNavigateToHistorial = { navHostController.navigate("historial_consumos") },
+                onNavigateToAsistente = { navHostController.navigate("asistente_nautico") },
                 onLogout = cerrarSesion
             )
+        }
+
+        composable("asistente_nautico") {
+            AsistenteNauticoScreen(onBackClick = { navHostController.popBackStack() })
         }
 
 

@@ -40,6 +40,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -89,7 +90,8 @@ fun HomeSocioScreen(
     onNavigateToServicios: () -> Unit = {},
     onNavigateToMisNaves: () -> Unit = {},
     onNavigateToClima: () -> Unit = {},
-    onNavigateToHistorial: () -> Unit = {}
+    onNavigateToHistorial: () -> Unit = {},
+    onNavigateToAsistente: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var menuExpanded by remember { mutableStateOf(false) }
@@ -125,7 +127,20 @@ fun HomeSocioScreen(
         )
 
         Scaffold(
-            containerColor = Color.Transparent
+            containerColor = Color.Transparent,
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = onNavigateToAsistente,
+                    containerColor = Gold500,
+                    contentColor = Navy900
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Anchor,
+                        contentDescription = "Asistente Náutico IA",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
         ) { paddingValues ->
             Column(
                 modifier = Modifier
