@@ -20,6 +20,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -34,12 +35,15 @@ import com.dsm.clubnauticoposeidon.ui.theme.Ink
 import com.dsm.clubnauticoposeidon.ui.theme.Muted
 import com.dsm.clubnauticoposeidon.ui.theme.Navy800
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 @Composable
 fun VisorTelemetriaVectorial(
     latitud: Double,
     longitud: Double,
+    timestamp: Long = 0L,
     modifier: Modifier = Modifier
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "radar")
@@ -53,6 +57,15 @@ fun VisorTelemetriaVectorial(
         label = "radarAngle"
     )
 
+    val horaActualizada = remember(timestamp) {
+        if (timestamp > 0) {
+            val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+            sdf.format(Date(timestamp))
+        } else {
+            "Hace un momento"
+        }
+    }
+
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = Navy900,
@@ -63,22 +76,6 @@ fun VisorTelemetriaVectorial(
             modifier = Modifier.padding(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Badge superior
-            Surface(
-                color = Color(0xFF1B4332),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    text = "🟢 TRANSMITIENDO GPS EN VIVO",
-                    color = Color(0xFF4EBA6F),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
             // Canvas del Radar Náutico
             Box(
                 modifier = Modifier
@@ -160,7 +157,7 @@ fun VisorTelemetriaVectorial(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "Última actualización de señal recibida",
+                    text = "Última actualización: $horaActualizada",
                     color = Muted,
                     fontSize = 11.sp
                 )
