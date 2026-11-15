@@ -241,7 +241,7 @@ fun DonaPedidos(
                 Text(etiquetaCentro, color = Muted, fontSize = 12.sp)
             }
         }
-
+            Spacer(Modifier.width(12.dp))
         Spacer(Modifier.width(20.dp))
 
         // Leyenda hecha en Compose
