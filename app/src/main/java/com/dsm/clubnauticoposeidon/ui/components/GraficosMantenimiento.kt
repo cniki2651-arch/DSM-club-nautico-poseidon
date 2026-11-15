@@ -50,13 +50,18 @@ private val FondoTarjeta = lerp(Navy800, Color(0xFF90D5FF), 0.14f)
 private val BordeTarjeta = lerp(Navy800, Color(0xFF90D5FF), 0.30f)
 /** Tarjeta contenedora con el mismo estilo de tus tarjetas del panel */
 @Composable
-fun TarjetaGrafico(
+
+fun TarjetaGraficoPlegable(
     titulo: String,
     subtitulo: String,
     modifier: Modifier = Modifier,
+    abiertaAlInicio: Boolean = false,
     contenido: @Composable ColumnScope.() -> Unit
 ) {
+    var abierta by rememberSaveable { mutableStateOf(abiertaAlInicio) }
+    val giro by animateFloatAsState(if (abierta) 180f else 0f, label = "giroFlecha")
     val forma = RoundedCornerShape(20.dp)
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -65,10 +70,29 @@ fun TarjetaGrafico(
             .border(1.dp, BordeTarjeta, forma)
             .padding(20.dp)
     ) {
-        Text(titulo, color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        Text(subtitulo, color = Muted, fontSize = 13.sp)
-        Spacer(Modifier.height(16.dp))
-        contenido()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { abierta = !abierta },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(titulo, color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(subtitulo, color = Muted, fontSize = 13.sp)
+            }
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = if (abierta) "Ocultar estadísticas" else "Ver estadísticas",
+                tint = Ink,
+                modifier = Modifier.rotate(giro)
+            )
+        }
+        AnimatedVisibility(visible = abierta) {
+            Column {
+                Spacer(Modifier.height(16.dp))
+                contenido()
+            }
+        }
     }
 }
 
