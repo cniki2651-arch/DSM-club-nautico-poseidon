@@ -5,7 +5,7 @@ import coil.ImageLoader
 import coil.request.ImageRequest
 
 
-// Guarda las fotos en el celular para que se vean también sin internet (modo avión).
+
 object ImagenesMenu {
 
     @Volatile
