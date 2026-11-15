@@ -89,13 +89,21 @@ fun HomeOperacionesScreen(
         LocalDate.now().format(formatter).replaceFirstChar { if (it.isLowerCase()) it.titlecase(localeEs) else it.toString() }
     }
 
-    // 1. Fondo principal con Marca de Agua
+    // Datos del dashboard: mismos colores que los contadores del resumen
+    val enServicio = resumen.ocupadas + resumen.disponibles   // mantenimiento no se puede usar
+    val porcentajeOcupacion = if (enServicio == 0) 0 else resumen.ocupadas * 100 / enServicio
+    val datosRadas = listOf(
+        DatoGrafico("Ocupadas", resumen.ocupadas, Gold500),
+        DatoGrafico("Disponibles", resumen.disponibles, Color(0xFF4CAF50)),
+        DatoGrafico("Mantenimiento", resumen.mantenimiento, Muted)
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Navy900)
     ) {
-        // Marca de agua: Ícono gigante de ancla en la esquina superior derecha
+        // Marca de agua
         Icon(
             imageVector = Icons.Default.Anchor,
             contentDescription = null,
@@ -115,15 +123,13 @@ fun HomeOperacionesScreen(
                     .padding(paddingValues)
                     .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
-                // 2. Cabecera (Header)
+                // Cabecera (fija)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Anchor,
                             contentDescription = "Logo Club",
@@ -167,136 +173,125 @@ fun HomeOperacionesScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Textos apilados
-                Text(
-                    text = "Bienvenido, Naviero",
-                    color = Ink,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = currentDate,
-                    color = Muted,
-                    fontSize = 14.sp
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "Panel de Control Marítimo",
-                    color = Ink,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Pequeña línea dorada debajo del título
-                Box(
-                    modifier = Modifier
-                        .width(50.dp)
-                        .height(3.dp)
-                        .background(Gold500, shape = RoundedCornerShape(2.dp))
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // 3. Tarjeta de Resumen de Muelle
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Navy800
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, Navy700)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(18.dp)
-                    ) {
-                        Text(
-                            text = "Estado del Muelle Principal",
-                            color = Ink,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            ContadorRadas(resumen.totales.toString(), "Totales", Ink)
-                            ContadorRadas(resumen.ocupadas.toString(), "Ocupadas", Gold500)
-                            ContadorRadas(resumen.disponibles.toString(), "Disponibles", Color(0xFF4CAF50))
-                            ContadorRadas(resumen.mantenimiento.toString(), "Mant.", Muted)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // 4. Acciones Rápidas (Radas)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Button(
-                        onClick = onNavigateToAsignarRada,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(50.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Gold500),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(
-                            text = "Asignar Nueva Rada",
-                            color = Navy900,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    OutlinedButton(
-                        onClick = onNavigateToSolicitudes,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(50.dp),
-                        border = BorderStroke(1.dp, Gold500),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Gold500),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(
-                            text = "Solicitudes de Rada",
-                            color = Gold500,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
                 val showToast = {
                     Toast.makeText(context, "Módulo en desarrollo", Toast.LENGTH_SHORT).show()
                 }
+                val anchoCompleto: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxLineSpan) }
 
-                // 5. Cuadrícula de Opciones Principales (Grid de 2 columnas)
-                // Tarjeta 1: Mapa de Muelles (Arriba Izquierda)
-                // Tarjeta 2: Autorizar Zarpes (Arriba Derecha - DESTACADA HU06)
-                // Tarjeta 3: Reportes de Daños (Abajo Izquierda)
-                // Tarjeta 4: Historial de Tránsito (Abajo Derecha)
+                // Todo el contenido se desplaza dentro del grid
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(bottom = 8.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
-                    // Tarjeta 1 (Arriba Izquierda): Mapa de Muelles
+                    // Saludo y título
+                    item(span = anchoCompleto) {
+                        Column {
+                            Text(
+                                text = "Bienvenido, Naviero",
+                                color = Ink,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(text = currentDate, color = Muted, fontSize = 14.sp)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "Panel de Control Marítimo",
+                                color = Ink,
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .width(50.dp)
+                                    .height(3.dp)
+                                    .background(Gold500, shape = RoundedCornerShape(2.dp))
+                            )
+                        }
+                    }
+
+                    // Tarjeta de Resumen de Muelle
+                    item(span = anchoCompleto) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Navy800),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, Navy700)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(18.dp)
+                            ) {
+                                Text(
+                                    text = "Estado del Muelle Principal",
+                                    color = Ink,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    ContadorRadas(resumen.totales.toString(), "Totales", Ink)
+                                    ContadorRadas(resumen.ocupadas.toString(), "Ocupadas", Gold500)
+                                    ContadorRadas(resumen.disponibles.toString(), "Disponibles", Color(0xFF4CAF50))
+                                    ContadorRadas(resumen.mantenimiento.toString(), "Mant.", Muted)
+                                }
+                            }
+                        }
+                    }
+
+                    // Acciones rápidas (Radas)
+                    item(span = anchoCompleto) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Button(
+                                onClick = onNavigateToAsignarRada,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(50.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Gold500),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = "Asignar Nueva Rada",
+                                    color = Navy900,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            OutlinedButton(
+                                onClick = onNavigateToSolicitudes,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(50.dp),
+                                border = BorderStroke(1.dp, Gold500),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Gold500),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = "Solicitudes de Rada",
+                                    color = Gold500,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+
+                    // Tarjetas de opciones principales (2 columnas)
                     item {
                         MenuCardNaviero(
                             titulo = "Mapa de Muelles",
@@ -306,8 +301,6 @@ fun HomeOperacionesScreen(
                             onClick = onNavigateToMapa
                         )
                     }
-
-                    // Tarjeta 2 (Arriba Derecha - DESTACADA HU06): Autorizar Zarpes
                     item {
                         MenuCardNaviero(
                             titulo = "Autorizar Zarpes",
@@ -317,8 +310,6 @@ fun HomeOperacionesScreen(
                             onClick = onNavigateToAutorizarZarpes
                         )
                     }
-
-                    // Tarjeta 3 (Abajo Izquierda): Reportes de Daños
                     item {
                         MenuCardNaviero(
                             titulo = "Reportes de Daños",
@@ -328,8 +319,6 @@ fun HomeOperacionesScreen(
                             onClick = showToast
                         )
                     }
-
-                    // Tarjeta 4 (Abajo Derecha): Historial de Tránsito
                     item {
                         MenuCardNaviero(
                             titulo = "Historial de Tránsito",
@@ -339,9 +328,23 @@ fun HomeOperacionesScreen(
                             onClick = onNavigateToHistorial
                         )
                     }
+
+                    // Dashboard plegable (cerrado al inicio, no estorba)
+                    item(span = anchoCompleto) {
+                        TarjetaGraficoPlegable(
+                            titulo = "Estadísticas de radas",
+                            subtitulo = "Estado actual del muelle"
+                        ) {
+                            DonaPedidos(
+                                datos = datosRadas,
+                                valorCentro = "$porcentajeOcupacion%",
+                                etiquetaCentro = "ocupación"
+                            )
+                        }
+                    }
                 }
 
-                // 6. Pie de Página (Footer)
+                // Pie de página (fijo)
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -373,122 +376,6 @@ fun HomeOperacionesScreen(
                         )
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun ContadorRadas(
-    cantidad: String,
-    label: String,
-    color: Color
-) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = cantidad,
-            color = color,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            text = label,
-            color = color.copy(alpha = 0.85f),
-            fontSize = 12.sp
-        )
-    }
-}
-
-/**
- * Componente reutilizable MenuCardNaviero para la cuadrícula del Panel de Control Marítimo.
- */
-@Composable
-fun MenuCardNaviero(
-    titulo: String,
-    descripcion: String,
-    icono: ImageVector,
-    destacado: Boolean = false,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(185.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = Navy800
-        ),
-        shape = RoundedCornerShape(16.dp),
-        border = if (destacado) {
-            BorderStroke(1.5.dp, Gold500)
-        } else {
-            BorderStroke(1.dp, Navy700)
-        }
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // Franja lateral dorada para la tarjeta destacada
-            if (destacado) {
-                Box(
-                    modifier = Modifier
-                        .width(4.dp)
-                        .fillMaxSize()
-                        .background(Gold500)
-                )
-            }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Fila Superior: Contenedor del ícono
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (destacado) Gold500.copy(alpha = 0.15f) else Navy700),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icono,
-                        contentDescription = titulo,
-                        tint = if (destacado) Gold500 else Muted,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                // Centro: Título y Descripción
-                Column {
-                    Text(
-                        text = titulo,
-                        color = Ink,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        lineHeight = 18.sp
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = descripcion,
-                        color = Muted,
-                        fontSize = 11.sp,
-                        lineHeight = 15.sp
-                    )
-                }
-
-                // Parte inferior: Flechita indicadora de navegación
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "Ir a $titulo",
-                    tint = if (destacado) Gold500 else Muted,
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .size(20.dp)
-                )
             }
         }
     }
