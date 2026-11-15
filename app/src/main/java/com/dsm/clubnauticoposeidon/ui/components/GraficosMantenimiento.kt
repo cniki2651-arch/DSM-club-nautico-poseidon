@@ -1,16 +1,29 @@
 package com.dsm.clubnauticoposeidon.ui.components
 
+import android.graphics.Color as AndroidColor
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,31 +39,43 @@ import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.*
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.ValueFormatter
-import android.graphics.Color as AndroidColor
-import androidx.compose.ui.graphics.lerp
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.clickable
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material3.Icon
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.draw.rotate
 
 data class DatoGrafico(val etiqueta: String, val valor: Int, val color: Color)
 
 private val FormatoEntero = object : ValueFormatter() {
     override fun getFormattedValue(value: Float) = value.toInt().toString()
 }
+
 // Fondo y borde de las tarjetas: navy un poco más claro y azulado
 private val FondoTarjeta = lerp(Navy800, Color(0xFF90D5FF), 0.14f)
 private val BordeTarjeta = lerp(Navy800, Color(0xFF90D5FF), 0.30f)
-/** Tarjeta contenedora con el mismo estilo de tus tarjetas del panel */
-@Composable
 
+/** Tarjeta contenedora de los gráficos */
+@Composable
+fun TarjetaGrafico(
+    titulo: String,
+    subtitulo: String,
+    modifier: Modifier = Modifier,
+    contenido: @Composable ColumnScope.() -> Unit
+) {
+    val forma = RoundedCornerShape(20.dp)
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(forma)
+            .background(FondoTarjeta)
+            .border(1.dp, BordeTarjeta, forma)
+            .padding(20.dp)
+    ) {
+        Text(titulo, color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text(subtitulo, color = Muted, fontSize = 13.sp)
+        Spacer(Modifier.height(16.dp))
+        contenido()
+    }
+}
+
+/** Igual que TarjetaGrafico, pero se despliega al tocar el encabezado. */
+@Composable
 fun TarjetaGraficoPlegable(
     titulo: String,
     subtitulo: String,
