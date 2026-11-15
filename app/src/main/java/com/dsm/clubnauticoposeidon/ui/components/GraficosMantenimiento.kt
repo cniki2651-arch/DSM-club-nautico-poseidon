@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,6 +51,17 @@ private val FormatoEntero = object : ValueFormatter() {
 private val FondoTarjeta = lerp(Navy800, Color(0xFF90D5FF), 0.14f)
 private val BordeTarjeta = lerp(Navy800, Color(0xFF90D5FF), 0.30f)
 
+/** Estilo compartido por las tarjetas (clip, fondo, borde y padding). */
+private fun Modifier.estiloTarjeta(): Modifier {
+    val forma = RoundedCornerShape(20.dp)
+    return this
+        .fillMaxWidth()
+        .clip(forma)
+        .background(FondoTarjeta)
+        .border(1.dp, BordeTarjeta, forma)
+        .padding(20.dp)
+}
+
 /** Tarjeta contenedora de los gráficos */
 @Composable
 fun TarjetaGrafico(
@@ -58,15 +70,7 @@ fun TarjetaGrafico(
     modifier: Modifier = Modifier,
     contenido: @Composable ColumnScope.() -> Unit
 ) {
-    val forma = RoundedCornerShape(20.dp)
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(forma)
-            .background(FondoTarjeta)
-            .border(1.dp, BordeTarjeta, forma)
-            .padding(20.dp)
-    ) {
+    Column(modifier = modifier.estiloTarjeta()) {
         Text(titulo, color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         Text(subtitulo, color = Muted, fontSize = 13.sp)
         Spacer(Modifier.height(16.dp))
@@ -85,20 +89,13 @@ fun TarjetaGraficoPlegable(
 ) {
     var abierta by rememberSaveable { mutableStateOf(abiertaAlInicio) }
     val giro by animateFloatAsState(if (abierta) 180f else 0f, label = "giroFlecha")
-    val forma = RoundedCornerShape(20.dp)
+    val accion = if (abierta) "Ocultar estadísticas" else "Ver estadísticas"
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(forma)
-            .background(FondoTarjeta)
-            .border(1.dp, BordeTarjeta, forma)
-            .padding(20.dp)
-    ) {
+    Column(modifier = modifier.estiloTarjeta()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { abierta = !abierta },
+                .clickable(role = Role.Button, onClickLabel = accion) { abierta = !abierta },
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f)) {
@@ -107,7 +104,7 @@ fun TarjetaGraficoPlegable(
             }
             Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = if (abierta) "Ocultar estadísticas" else "Ver estadísticas",
+                contentDescription = accion,
                 tint = Ink,
                 modifier = Modifier.rotate(giro)
             )
@@ -198,8 +195,6 @@ fun DonaPedidos(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-
-        Box(modifier = Modifier.size(140.dp), contentAlignment = Alignment.Center) {
         // Dona con el valor superpuesto en el centro
         Box(modifier = Modifier.size(160.dp), contentAlignment = Alignment.Center) {
             AndroidView(
@@ -241,7 +236,7 @@ fun DonaPedidos(
                 Text(etiquetaCentro, color = Muted, fontSize = 12.sp)
             }
         }
-            Spacer(Modifier.width(12.dp))
+
         Spacer(Modifier.width(20.dp))
 
         // Leyenda hecha en Compose
@@ -253,10 +248,17 @@ fun DonaPedidos(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(10.dp).clip(CircleShape).background(d.color))
                     Spacer(Modifier.width(8.dp))
-                    Text(d.etiqueta, color = Ink, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                    Text(
+                        d.etiqueta,
+                        color = Ink,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        softWrap = false, // evita que "Mantenimiento" se parta
+                        modifier = Modifier.weight(1f)
+                    )
                     Text(
                         "${d.valor}", color = Ink,
-                        fontSize = 14.sp, fontWeight = FontWeight.Bold
+                        fontSize = 13.sp, fontWeight = FontWeight.Bold
                     )
                 }
             }
