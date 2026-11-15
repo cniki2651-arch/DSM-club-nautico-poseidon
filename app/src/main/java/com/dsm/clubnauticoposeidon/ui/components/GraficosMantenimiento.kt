@@ -239,7 +239,7 @@ fun DonaPedidos(
 
         Spacer(Modifier.width(20.dp))
 
-        // Leyenda hecha en Compose
+        // Leyenda
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -253,7 +253,7 @@ fun DonaPedidos(
                         color = Ink,
                         fontSize = 13.sp,
                         maxLines = 1,
-                        softWrap = false, // evita que "Mantenimiento" se parta
+                        softWrap = false,
                         modifier = Modifier.weight(1f)
                     )
                     Text(
