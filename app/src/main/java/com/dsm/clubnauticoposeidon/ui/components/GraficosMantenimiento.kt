@@ -161,14 +161,19 @@ fun BarrasPedidos(datos: List<DatoGrafico>, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun DonaPedidos(datos: List<DatoGrafico>, modifier: Modifier = Modifier) {
+fun DonaPedidos(
+    datos: List<DatoGrafico>,
+    modifier: Modifier = Modifier,
+    valorCentro: String = datos.sumOf { it.valor }.toString(),
+    etiquetaCentro: String = "pedidos"
+) {
     val total = datos.sumOf { it.valor }
 
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Dona con el total superpuesto en el centro
+        // Dona con el valor superpuesto en el centro
         Box(modifier = Modifier.size(160.dp), contentAlignment = Alignment.Center) {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
@@ -205,8 +210,8 @@ fun DonaPedidos(datos: List<DatoGrafico>, modifier: Modifier = Modifier) {
                 }
             )
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("$total", color = Ink, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-                Text("pedidos", color = Muted, fontSize = 12.sp)
+                Text(valorCentro, color = Ink, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                Text(etiquetaCentro, color = Muted, fontSize = 12.sp)
             }
         }
 
