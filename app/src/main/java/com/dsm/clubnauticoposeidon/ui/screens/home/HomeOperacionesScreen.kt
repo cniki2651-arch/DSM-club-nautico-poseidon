@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,11 +18,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Anchor
 import androidx.compose.material.icons.filled.Build
@@ -57,6 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dsm.clubnauticoposeidon.ui.components.DashboardRadas
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Ink
 import com.dsm.clubnauticoposeidon.ui.theme.Muted
@@ -66,7 +69,7 @@ import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import com.dsm.clubnauticoposeidon.ui.components.DashboardRadas
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeOperacionesScreen(
@@ -88,15 +91,6 @@ fun HomeOperacionesScreen(
         val formatter = DateTimeFormatter.ofPattern("'Hoy,' d 'de' MMMM", localeEs)
         LocalDate.now().format(formatter).replaceFirstChar { if (it.isLowerCase()) it.titlecase(localeEs) else it.toString() }
     }
-
-    // Datos del dashboard: mismos colores que los contadores del resumen
-    val enServicio = resumen.ocupadas + resumen.disponibles   // mantenimiento no se puede usar
-    val porcentajeOcupacion = if (enServicio == 0) 0 else resumen.ocupadas * 100 / enServicio
-    val datosRadas = listOf(
-        DatoGrafico("Ocupadas", resumen.ocupadas, Gold500),
-        DatoGrafico("Disponibles", resumen.disponibles, Color(0xFF4CAF50)),
-        DatoGrafico("Mantenimiento", resumen.mantenimiento, Muted)
-    )
 
     Box(
         modifier = Modifier
@@ -331,16 +325,11 @@ fun HomeOperacionesScreen(
 
                     // Dashboard plegable (cerrado al inicio, no estorba)
                     item(span = anchoCompleto) {
-                        TarjetaGraficoPlegable(
-                            titulo = "Estadísticas de radas",
-                            subtitulo = "Estado actual del muelle"
-                        ) {
-                            DonaPedidos(
-                                datos = datosRadas,
-                                valorCentro = "$porcentajeOcupacion%",
-                                etiquetaCentro = "ocupación"
-                            )
-                        }
+                        DashboardRadas(
+                            ocupadas = resumen.ocupadas,
+                            disponibles = resumen.disponibles,
+                            mantenimiento = resumen.mantenimiento
+                        )
                     }
                 }
 
@@ -376,6 +365,122 @@ fun HomeOperacionesScreen(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ContadorRadas(
+    cantidad: String,
+    label: String,
+    color: Color
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = cantidad,
+            color = color,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = label,
+            color = color.copy(alpha = 0.85f),
+            fontSize = 12.sp
+        )
+    }
+}
+
+/**
+ * Componente reutilizable MenuCardNaviero para la cuadrícula del Panel de Control Marítimo.
+ */
+@Composable
+fun MenuCardNaviero(
+    titulo: String,
+    descripcion: String,
+    icono: ImageVector,
+    destacado: Boolean = false,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(185.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = Navy800
+        ),
+        shape = RoundedCornerShape(16.dp),
+        border = if (destacado) {
+            BorderStroke(1.5.dp, Gold500)
+        } else {
+            BorderStroke(1.dp, Navy700)
+        }
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Franja lateral dorada para la tarjeta destacada
+            if (destacado) {
+                Box(
+                    modifier = Modifier
+                        .width(4.dp)
+                        .fillMaxSize()
+                        .background(Gold500)
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Fila superior: contenedor del ícono
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (destacado) Gold500.copy(alpha = 0.15f) else Navy700),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icono,
+                        contentDescription = titulo,
+                        tint = if (destacado) Gold500 else Muted,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                // Centro: título y descripción
+                Column {
+                    Text(
+                        text = titulo,
+                        color = Ink,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = 18.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = descripcion,
+                        color = Muted,
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp
+                    )
+                }
+
+                // Parte inferior: flechita indicadora de navegación
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = "Ir a $titulo",
+                    tint = if (destacado) Gold500 else Muted,
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .size(20.dp)
+                )
             }
         }
     }
