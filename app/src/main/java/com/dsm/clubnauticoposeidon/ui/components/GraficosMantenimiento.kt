@@ -198,6 +198,8 @@ fun DonaPedidos(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
+
+        Box(modifier = Modifier.size(140.dp), contentAlignment = Alignment.Center) {
         // Dona con el valor superpuesto en el centro
         Box(modifier = Modifier.size(160.dp), contentAlignment = Alignment.Center) {
             AndroidView(
