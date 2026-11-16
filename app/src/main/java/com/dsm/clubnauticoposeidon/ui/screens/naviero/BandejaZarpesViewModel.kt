@@ -3,84 +3,47 @@ package com.dsm.clubnauticoposeidon.ui.screens.naviero
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.dsm.clubnauticoposeidon.ui.screens.zarpe.SolicitudZarpe
-import com.google.firebase.firestore.FirebaseFirestore
+import com.dsm.clubnauticoposeidon.data.repository.BandejaZarpesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
-class BandejaZarpesViewModel : ViewModel() {
-
-    private val db = FirebaseFirestore.getInstance()
+class BandejaZarpesViewModel(
+    private val repository: BandejaZarpesRepository = BandejaZarpesRepository()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<BandejaZarpesState>(BandejaZarpesState.Cargando)
     val uiState: StateFlow<BandejaZarpesState> = _uiState
 
-    private var listaZarpes: List<SolicitudZarpe> = emptyList()
-    private var listaTripulantes: List<Tripulante> = emptyList()
-
     init {
-        escucharSolicitudesYTripulacion()
+        observarDatos()
     }
 
-    private fun escucharSolicitudesYTripulacion() {
-        // Escuchar zarpes activos (pendientes, aprobados o en navegación GPS)
-        db.collection("zarpes")
-            .whereIn("estado", listOf("pendiente_aprobacion", "aprobado", "activo", "en_mar"))
-            .addSnapshotListener { snapshotZarpes, errorZarpes ->
-                if (errorZarpes != null) {
-                    Log.e("BandejaZarpesVM", "Error al escuchar zarpes", errorZarpes)
-                    listaZarpes = emptyList()
-                    emitirEstadoActual()
-                    return@addSnapshotListener
-                }
-
-                if (snapshotZarpes != null) {
-                    listaZarpes = snapshotZarpes.documents.map { doc ->
-                        doc.toObject(SolicitudZarpe::class.java)?.copy(id = doc.id) ?: SolicitudZarpe(id = doc.id)
-                    }
-                    emitirEstadoActual()
-                }
-            }
-
-        // Escuchar padrón de tripulación especializada
-        db.collection("tripulantes").addSnapshotListener { snapshotTrip, errorTrip ->
-            if (errorTrip != null) {
-                Log.e("BandejaZarpesVM", "Error al escuchar tripulantes", errorTrip)
-                listaTripulantes = emptyList()
-                emitirEstadoActual()
-                return@addSnapshotListener
-            }
-
-            if (snapshotTrip != null) {
-                listaTripulantes = snapshotTrip.documents.map { doc ->
-                    Tripulante(
-                        id = doc.id,
-                        nombreCompleto = doc.getString("nombreCompleto") ?: "",
-                        dni = doc.getString("dni") ?: "",
-                        numeroLicencia = doc.getString("numeroLicencia") ?: "",
-                        cargo = doc.getString("cargo") ?: "",
-                        estado = doc.getString("estado") ?: "autorizado"
+    private fun observarDatos() {
+        viewModelScope.launch {
+            repository.observarZarpesActivos()
+                .combine(repository.observarTripulantes()) { zarpes, tripulantes ->
+                    BandejaZarpesState.Exito(
+                        solicitudesPendientes = zarpes,
+                        tripulantesAutorizados = tripulantes
                     )
                 }
-                emitirEstadoActual()
-            }
+                .catch { e ->
+                    Log.e("BandejaZarpesVM", "Error al observar datos", e)
+                    emit(BandejaZarpesState.Exito(emptyList(), emptyList()))
+                }
+                .collect { estado ->
+                    _uiState.value = estado
+                }
         }
-    }
-
-    private fun emitirEstadoActual() {
-        _uiState.value = BandejaZarpesState.Exito(
-            solicitudesPendientes = listaZarpes.toList(),
-            tripulantesAutorizados = listaTripulantes.toList()
-        )
     }
 
     fun aprobarZarpe(zarpeId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
             try {
-                db.collection("zarpes").document(zarpeId)
-                    .update("estado", "aprobado").await()
+                repository.aprobarZarpe(zarpeId)
                 onSuccess()
             } catch (e: Exception) {
                 onError(e.message ?: "Error al aprobar zarpe")
@@ -91,13 +54,7 @@ class BandejaZarpesViewModel : ViewModel() {
     fun rechazarZarpe(zarpeId: String, motivo: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
             try {
-                db.collection("zarpes").document(zarpeId)
-                    .update(
-                        mapOf(
-                            "estado" to "rechazado",
-                            "motivoRechazo" to motivo
-                        )
-                    ).await()
+                repository.rechazarZarpe(zarpeId, motivo)
                 onSuccess()
             } catch (e: Exception) {
                 onError(e.message ?: "Error al rechazar zarpe")
@@ -108,13 +65,7 @@ class BandejaZarpesViewModel : ViewModel() {
     fun finalizarZarpe(zarpeId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
             try {
-                db.collection("zarpes").document(zarpeId)
-                    .update(
-                        mapOf(
-                            "estado" to "finalizado",
-                            "fechaRetornoReal" to System.currentTimeMillis()
-                        )
-                    ).await()
+                repository.finalizarZarpe(zarpeId)
                 onSuccess()
             } catch (e: Exception) {
                 onError(e.message ?: "Error al registrar arribo a puerto")
@@ -132,14 +83,7 @@ class BandejaZarpesViewModel : ViewModel() {
     ) {
         viewModelScope.launch {
             try {
-                val nuevoTripulante = hashMapOf(
-                    "nombreCompleto" to nombre,
-                    "dni" to dni,
-                    "numeroLicencia" to licencia,
-                    "cargo" to cargo,
-                    "estado" to "autorizado"
-                )
-                db.collection("tripulantes").add(nuevoTripulante).await()
+                repository.registrarTripulante(nombre, dni, licencia, cargo)
                 onSuccess()
             } catch (e: Exception) {
                 onError(e.message ?: "Error al registrar tripulante")
