@@ -817,6 +817,69 @@ fun SolicitudZarpeScreen(
                     }
                 }
 
+                is ZarpeState.Rechazado -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Navy800),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.5.dp, Color(0xFFE57373))
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = "Rechazado",
+                                    tint = Color(0xFFE57373),
+                                    modifier = Modifier.size(56.dp)
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "Solicitud de Zarpe Rechazada",
+                                    color = Color(0xFFE57373),
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = "Motivo de observación:",
+                                    color = Muted,
+                                    fontSize = 13.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = state.motivo,
+                                    color = Ink,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(28.dp))
+
+                        Button(
+                            onClick = { viewModel.resetState() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Gold500),
+                            shape = RoundedCornerShape(50)
+                        ) {
+                            Text("Entendido / Nueva Solicitud", color = Navy900, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        }
+                    }
+                }
+
                 is ZarpeState.ZarpeActivo -> {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,

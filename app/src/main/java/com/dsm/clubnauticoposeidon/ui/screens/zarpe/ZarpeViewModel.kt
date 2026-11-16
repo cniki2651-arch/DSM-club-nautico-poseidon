@@ -8,6 +8,7 @@ import com.dsm.clubnauticoposeidon.data.service.LocationService
 import com.dsm.clubnauticoposeidon.ui.screens.naviero.Tripulante
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
 class ZarpeViewModel(
@@ -30,8 +31,12 @@ class ZarpeViewModel(
     }
 
     private fun escucharTripulantesAutorizados() {
-        zarpeRepository.escucharTripulantesAutorizados { lista ->
-            _tripulantesAutorizados.value = lista
+        viewModelScope.launch {
+            zarpeRepository.observarTripulantesAutorizados()
+                .catch { e -> Log.e("ZarpeVM", "Error al observar tripulantes autorizados", e) }
+                .collect { lista ->
+                    _tripulantesAutorizados.value = lista
+                }
         }
     }
 
@@ -50,6 +55,9 @@ class ZarpeViewModel(
                         "activo", "en_mar" -> _uiState.value = ZarpeState.ZarpeActivo(zarpe.id, zarpe.destino, lat, lng)
                         "aprobado" -> _uiState.value = ZarpeState.AprobadoListoParaZarpar(zarpe)
                         "pendiente_aprobacion" -> _uiState.value = ZarpeState.PendienteAprobacion(zarpe)
+                        "rechazado" -> _uiState.value = ZarpeState.Rechazado(
+                            zarpe.motivoRechazo.ifBlank { "Solicitud de zarpe rechazada por Capitanía o Servicios Navieros." }
+                        )
                         else -> _uiState.value = ZarpeState.Idle
                     }
                 } else {

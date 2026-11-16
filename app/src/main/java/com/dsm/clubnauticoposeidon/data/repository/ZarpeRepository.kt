@@ -5,7 +5,9 @@ import com.dsm.clubnauticoposeidon.ui.screens.zarpe.SolicitudZarpe
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ListenerRegistration
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 class ZarpeRepository {
@@ -20,7 +22,7 @@ class ZarpeRepository {
         if (embarcacionId.isBlank()) return null
         val query = db.collection("zarpes")
             .whereEqualTo("embarcacionId", embarcacionId)
-            .whereIn("estado", listOf("pendiente_aprobacion", "aprobado", "en_mar", "activo"))
+            .whereIn("estado", listOf("pendiente_aprobacion", "aprobado", "en_mar", "activo", "rechazado"))
             .limit(1)
             .get()
             .await()
@@ -61,12 +63,15 @@ class ZarpeRepository {
             ).await()
     }
 
-    fun escucharTripulantesAutorizados(onUpdate: (List<Tripulante>) -> Unit): ListenerRegistration {
-        return db.collection("tripulantes")
+    fun observarTripulantesAutorizados(): Flow<List<Tripulante>> = callbackFlow {
+        val listener = db.collection("tripulantes")
             .whereEqualTo("estado", "autorizado")
             .addSnapshotListener { snapshot, error ->
-                if (error != null || snapshot == null) return@addSnapshotListener
-                val lista = snapshot.documents.map { doc ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                val lista = snapshot?.documents?.map { doc ->
                     Tripulante(
                         id = doc.id,
                         nombreCompleto = doc.getString("nombreCompleto") ?: "",
@@ -75,8 +80,9 @@ class ZarpeRepository {
                         cargo = doc.getString("cargo") ?: "",
                         estado = doc.getString("estado") ?: "autorizado"
                     )
-                }
-                onUpdate(lista)
+                } ?: emptyList()
+                trySend(lista)
             }
+        awaitClose { listener.remove() }
     }
 }

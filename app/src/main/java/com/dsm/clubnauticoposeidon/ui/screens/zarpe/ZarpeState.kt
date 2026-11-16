@@ -6,6 +6,7 @@ sealed interface ZarpeState {
     object MorosoBloqueado : ZarpeState
     data class PendienteAprobacion(val zarpe: SolicitudZarpe) : ZarpeState
     data class AprobadoListoParaZarpar(val zarpe: SolicitudZarpe) : ZarpeState
+    data class Rechazado(val motivo: String) : ZarpeState
     data class ZarpeActivo(
         val zarpeId: String,
         val destino: String,
