@@ -1,23 +1,19 @@
 package com.dsm.clubnauticoposeidon.ui.screens.zarpe
 
-import android.annotation.SuppressLint
-import android.content.Context
-import android.location.LocationManager
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dsm.clubnauticoposeidon.data.repository.ZarpeRepository
+import com.dsm.clubnauticoposeidon.data.service.LocationService
 import com.dsm.clubnauticoposeidon.ui.screens.naviero.Tripulante
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
-class ZarpeViewModel : ViewModel() {
-
-    private val db = FirebaseFirestore.getInstance()
-    private val auth = FirebaseAuth.getInstance()
+class ZarpeViewModel(
+    private val zarpeRepository: ZarpeRepository = ZarpeRepository(),
+    private val locationService: LocationService
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ZarpeState>(ZarpeState.Cargando)
     val uiState: StateFlow<ZarpeState> = _uiState
@@ -34,22 +30,9 @@ class ZarpeViewModel : ViewModel() {
     }
 
     private fun escucharTripulantesAutorizados() {
-        db.collection("tripulantes")
-            .whereEqualTo("estado", "autorizado")
-            .addSnapshotListener { snapshot, error ->
-                if (error != null || snapshot == null) return@addSnapshotListener
-                val lista = snapshot.documents.map { doc ->
-                    Tripulante(
-                        id = doc.id,
-                        nombreCompleto = doc.getString("nombreCompleto") ?: "",
-                        dni = doc.getString("dni") ?: "",
-                        numeroLicencia = doc.getString("numeroLicencia") ?: "",
-                        cargo = doc.getString("cargo") ?: "",
-                        estado = doc.getString("estado") ?: "autorizado"
-                    )
-                }
-                _tripulantesAutorizados.value = lista
-            }
+        zarpeRepository.escucharTripulantesAutorizados { lista ->
+            _tripulantesAutorizados.value = lista
+        }
     }
 
     fun verificarZarpeParaEmbarcacion(embarcacionId: String) {
@@ -59,27 +42,15 @@ class ZarpeViewModel : ViewModel() {
         }
         viewModelScope.launch {
             try {
-                val query = db.collection("zarpes")
-                    .whereEqualTo("embarcacionId", embarcacionId)
-                    .whereIn("estado", listOf("pendiente_aprobacion", "aprobado", "en_mar", "activo"))
-                    .limit(1)
-                    .get()
-                    .await()
-
-                val doc = query.documents.firstOrNull()
-                if (doc != null) {
-                    val zarpe = doc.toObject(SolicitudZarpe::class.java)
-                    if (zarpe != null) {
-                        val lat = doc.getDouble("latitud") ?: 0.0
-                        val lng = doc.getDouble("longitud") ?: 0.0
-                        when (zarpe.estado) {
-                            "activo", "en_mar" -> _uiState.value = ZarpeState.ZarpeActivo(zarpe.id, zarpe.destino, lat, lng)
-                            "aprobado" -> _uiState.value = ZarpeState.AprobadoListoParaZarpar(zarpe)
-                            "pendiente_aprobacion" -> _uiState.value = ZarpeState.PendienteAprobacion(zarpe)
-                            else -> _uiState.value = ZarpeState.Idle
-                        }
-                    } else {
-                        _uiState.value = ZarpeState.Idle
+                val zarpe = zarpeRepository.verificarZarpeActivo(embarcacionId)
+                if (zarpe != null) {
+                    val lat = zarpe.latitud
+                    val lng = zarpe.longitud
+                    when (zarpe.estado) {
+                        "activo", "en_mar" -> _uiState.value = ZarpeState.ZarpeActivo(zarpe.id, zarpe.destino, lat, lng)
+                        "aprobado" -> _uiState.value = ZarpeState.AprobadoListoParaZarpar(zarpe)
+                        "pendiente_aprobacion" -> _uiState.value = ZarpeState.PendienteAprobacion(zarpe)
+                        else -> _uiState.value = ZarpeState.Idle
                     }
                 } else {
                     _uiState.value = ZarpeState.Idle
@@ -104,7 +75,7 @@ class ZarpeViewModel : ViewModel() {
         observacionesTripulacion: String,
         tripulacionEspecializada: List<String>
     ) {
-        val uid = auth.currentUser?.uid
+        val uid = zarpeRepository.currentUserId
         if (uid == null) {
             _uiState.value = ZarpeState.Error("No hay sesión activa")
             return
@@ -115,7 +86,7 @@ class ZarpeViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 // 1. Verificar estado de deuda y clasificación del socio
-                val userDoc = db.collection("usuarios").document(uid).get().await()
+                val userDoc = zarpeRepository.obtenerUsuarioActual(uid)
                 if (userDoc.exists()) {
                     val estadoDeuda = userDoc.getString("estado_deuda")
                     val clasificacion = userDoc.getString("clasificacion")
@@ -127,13 +98,11 @@ class ZarpeViewModel : ViewModel() {
                 }
 
                 val dni = userDoc.getString("dni") ?: ""
-                val zarpeRef = db.collection("zarpes").document()
-
                 val fechaHoraSalida = "$fechaPartida - $horaPartida"
                 val fechaHoraRegreso = "$fechaRetorno - $horaRetorno"
 
                 val nuevoZarpe = SolicitudZarpe(
-                    id = zarpeRef.id,
+                    id = "",
                     embarcacionId = embarcacionId,
                     embarcacionNombre = embarcacionNombre,
                     socioId = uid,
@@ -153,7 +122,7 @@ class ZarpeViewModel : ViewModel() {
                     estado = "pendiente_aprobacion"
                 )
 
-                zarpeRef.set(nuevoZarpe).await()
+                zarpeRepository.solicitarZarpe(nuevoZarpe)
                 _uiState.value = ZarpeState.PendienteAprobacion(nuevoZarpe)
 
             } catch (e: Exception) {
@@ -163,37 +132,15 @@ class ZarpeViewModel : ViewModel() {
         }
     }
 
-    @SuppressLint("MissingPermission")
-    fun iniciarTransmisionGps(
-        zarpeId: String,
-        context: Context
-    ) {
+    fun iniciarTransmisionGps(zarpeId: String) {
         _uiState.value = ZarpeState.Cargando
         viewModelScope.launch {
             try {
-                val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
-                val location = try {
-                    locationManager?.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                        ?: locationManager?.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-                } catch (e: Exception) {
-                    null
-                }
+                val (lat, lng) = locationService.obtenerCoordenadasActuales()
+                zarpeRepository.actualizarZarpeEnMar(zarpeId, lat, lng)
 
-                val lat = location?.latitude ?: -12.046374
-                val lng = location?.longitude ?: -77.142786
-
-                db.collection("zarpes").document(zarpeId)
-                    .update(
-                        mapOf(
-                            "estado" to "en_mar",
-                            "latitud" to lat,
-                            "longitud" to lng,
-                            "ultimaActualizacion" to System.currentTimeMillis()
-                        )
-                    ).await()
-
-                val doc = db.collection("zarpes").document(zarpeId).get().await()
-                val destino = doc.getString("destino") ?: "Mar Abierto"
+                val zarpeActualizado = zarpeRepository.verificarZarpeActivo("")
+                val destino = zarpeActualizado?.destino ?: "Mar Abierto"
                 _uiState.value = ZarpeState.ZarpeActivo(zarpeId, destino, lat, lng)
 
             } catch (e: Exception) {
@@ -207,14 +154,7 @@ class ZarpeViewModel : ViewModel() {
         _uiState.value = ZarpeState.Cargando
         viewModelScope.launch {
             try {
-                db.collection("zarpes").document(zarpeId)
-                    .update(
-                        mapOf(
-                            "estado" to "finalizado",
-                            "fechaRetorno" to System.currentTimeMillis()
-                        )
-                    ).await()
-
+                zarpeRepository.finalizarZarpe(zarpeId)
                 _uiState.value = ZarpeState.Idle
             } catch (e: Exception) {
                 Log.e("ZarpeVM", "Error al finalizar zarpe", e)

@@ -78,7 +78,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dsm.clubnauticoposeidon.data.repository.ZarpeRepository
+import com.dsm.clubnauticoposeidon.data.service.LocationService
 import com.dsm.clubnauticoposeidon.ui.components.VisorTelemetriaVectorial
 import com.dsm.clubnauticoposeidon.ui.screens.naviero.Tripulante
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
@@ -94,10 +98,22 @@ import java.util.Locale
 fun SolicitudZarpeScreen(
     embarcacionId: String,
     embarcacionNombre: String,
-    onBackClick: () -> Unit,
-    viewModel: ZarpeViewModel = viewModel()
+    onBackClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val viewModel: ZarpeViewModel = viewModel(
+        factory = remember(context) {
+            object : ViewModelProvider.Factory {
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return ZarpeViewModel(
+                        zarpeRepository = ZarpeRepository(),
+                        locationService = LocationService(context)
+                    ) as T
+                }
+            }
+        }
+    )
+
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(embarcacionId) {
@@ -147,7 +163,7 @@ fun SolicitudZarpeScreen(
         if (fineLocation || coarseLocation) {
             val zarpeToStart = zarpeAprobadoPendienteGPS
             if (zarpeToStart != null) {
-                viewModel.iniciarTransmisionGps(zarpeToStart.id, context)
+                viewModel.iniciarTransmisionGps(zarpeToStart.id)
             }
         } else {
             Toast.makeText(context, "Se requiere permiso GPS para iniciar la navegación", Toast.LENGTH_LONG).show()
@@ -842,7 +858,7 @@ fun SolicitudZarpeScreen(
                                     textAlign = TextAlign.Center
                                 )
 
-                                Spacer(modifier = Modifier.height(12.dp))
+                                Spacer(modifier = Modifier.height(16.dp))
 
                                 VisorTelemetriaVectorial(
                                     latitud = state.latitud,
