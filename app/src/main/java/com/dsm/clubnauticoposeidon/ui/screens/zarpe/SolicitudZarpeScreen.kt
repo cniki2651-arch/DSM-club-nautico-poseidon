@@ -163,7 +163,7 @@ fun SolicitudZarpeScreen(
         if (fineLocation || coarseLocation) {
             val zarpeToStart = zarpeAprobadoPendienteGPS
             if (zarpeToStart != null) {
-                viewModel.iniciarTransmisionGps(zarpeToStart.id)
+                viewModel.iniciarTransmisionGps(zarpeToStart.id, zarpeToStart.destino)
             }
         } else {
             Toast.makeText(context, "Se requiere permiso GPS para iniciar la navegación", Toast.LENGTH_LONG).show()

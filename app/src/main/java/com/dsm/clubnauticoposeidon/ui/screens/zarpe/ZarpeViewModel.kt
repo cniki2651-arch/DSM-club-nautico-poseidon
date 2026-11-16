@@ -132,16 +132,28 @@ class ZarpeViewModel(
         }
     }
 
-    fun iniciarTransmisionGps(zarpeId: String) {
+    /**
+     * Inicia la navegación marítima y registra las coordenadas iniciales de GPS en Firestore.
+     *
+     * Nota de Arquitectura / Documentación Técnica:
+     * La llamada actual a `locationService.obtenerCoordenadasActuales()` realiza una captura única de la
+     * ubicación GPS al momento de arrancar la navegación. La transmisión continua de telemetría en bucle
+     * en segundo plano mediante un Foreground Service / WorkManager queda programada como una mejora
+     * técnica para la siguiente fase del proyecto.
+     */
+    fun iniciarTransmisionGps(zarpeId: String, destino: String) {
         _uiState.value = ZarpeState.Cargando
         viewModelScope.launch {
             try {
                 val (lat, lng) = locationService.obtenerCoordenadasActuales()
                 zarpeRepository.actualizarZarpeEnMar(zarpeId, lat, lng)
 
-                val zarpeActualizado = zarpeRepository.verificarZarpeActivo("")
-                val destino = zarpeActualizado?.destino ?: "Mar Abierto"
-                _uiState.value = ZarpeState.ZarpeActivo(zarpeId, destino, lat, lng)
+                _uiState.value = ZarpeState.ZarpeActivo(
+                    zarpeId = zarpeId,
+                    destino = destino,
+                    latitud = lat,
+                    longitud = lng
+                )
 
             } catch (e: Exception) {
                 Log.e("ZarpeVM", "Error al iniciar transmisión GPS", e)
