@@ -52,9 +52,13 @@ class BandejaZarpesViewModel(
     }
 
     fun rechazarZarpe(zarpeId: String, motivo: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        if (motivo.isBlank()) {
+            onError("Debes indicar el motivo del rechazo")
+            return
+        }
         viewModelScope.launch {
             try {
-                repository.rechazarZarpe(zarpeId, motivo)
+                repository.rechazarZarpe(zarpeId, motivo.trim())
                 onSuccess()
             } catch (e: Exception) {
                 onError(e.message ?: "Error al rechazar zarpe")
