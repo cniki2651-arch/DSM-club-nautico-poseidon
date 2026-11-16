@@ -58,7 +58,7 @@ class ZarpeRepository {
             .update(
                 mapOf(
                     "estado" to "finalizado",
-                    "fechaRetorno" to System.currentTimeMillis()
+                    "fechaArribo" to System.currentTimeMillis()
                 )
             ).await()
     }

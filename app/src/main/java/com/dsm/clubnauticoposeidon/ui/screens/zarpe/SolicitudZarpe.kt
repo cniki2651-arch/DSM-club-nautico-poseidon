@@ -18,7 +18,8 @@ data class SolicitudZarpe(
     val observacionesTripulacion: String = "",
     val tripulacionEspecializada: List<String> = emptyList(),
     val fechaSolicitud: Long = System.currentTimeMillis(),
-    val estado: String = "pendiente_aprobacion", // pendiente_aprobacion | aprobado | activo | finalizado | rechazado
+    val fechaArribo: Long = 0L,
+    val estado: String = "pendiente_aprobacion", // pendiente_aprobacion | aprobado | en_mar | finalizado | rechazado
     val motivoRechazo: String = "",
     val latitud: Double = 0.0,
     val longitud: Double = 0.0,
