@@ -56,10 +56,10 @@ import com.dsm.clubnauticoposeidon.ui.theme.Navy800
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 
 private val preguntasFrecuentes = listOf(
+    "¿Cómo solicito un zarpe?",
+    "¿Dónde veo mi Credencial QR?",
     "¿Cómo anclar mi nave?",
-    "¿Qué exige Capitanía para zarpar?",
-    "¿Reglas del muelle principal?",
-    "Equipo de seguridad obligatorio"
+    "¿Qué exige Capitanía para zarpar?"
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
