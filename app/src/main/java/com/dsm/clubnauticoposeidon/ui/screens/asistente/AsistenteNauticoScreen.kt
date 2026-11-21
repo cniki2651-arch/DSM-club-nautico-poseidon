@@ -95,7 +95,7 @@ fun AsistenteNauticoScreen(
                             border = BorderStroke(1.dp, Gold500)
                         ) {
                             Text(
-                                text = "Gemini 3.5",
+                                text = "Gemini 3.5 Flash Lite",
                                 color = Gold500,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,

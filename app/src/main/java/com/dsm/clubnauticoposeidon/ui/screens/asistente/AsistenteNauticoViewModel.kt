@@ -1,5 +1,6 @@
 package com.dsm.clubnauticoposeidon.ui.screens.asistente
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dsm.clubnauticoposeidon.data.repository.AsistenteRepository
@@ -71,6 +72,7 @@ class AsistenteNauticoViewModel(
                     )
                 }
             } catch (e: Exception) {
+                Log.e("FIREBASE_AI", "Error en ViewModel al procesar respuesta: ${e.javaClass.simpleName} - ${e.message}", e)
                 val errorText = if (e is IllegalStateException) {
                     "Aviso: ${e.localizedMessage ?: "Clave API no configurada."}"
                 } else {

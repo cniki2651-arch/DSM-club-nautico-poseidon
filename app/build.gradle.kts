@@ -83,6 +83,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.appcheck)
     implementation(libs.firebase.appcheck.debug)
+    implementation(libs.firebase.ai)
 
     // Corrutinas con Firebase (await)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
