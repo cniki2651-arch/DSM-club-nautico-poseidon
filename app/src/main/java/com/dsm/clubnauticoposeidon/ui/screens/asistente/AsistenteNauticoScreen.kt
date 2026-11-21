@@ -44,7 +44,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -61,6 +65,22 @@ private val preguntasFrecuentes = listOf(
     "¿Cómo anclar mi nave?",
     "¿Qué exige Capitanía para zarpar?"
 )
+
+fun formatChatText(text: String): AnnotatedString {
+    val cleanText = text.replace(Regex("(?m)^\\s*\\*\\s+"), "• ")
+    return buildAnnotatedString {
+        val parts = cleanText.split("**")
+        parts.forEachIndexed { index, part ->
+            if (index % 2 == 1) {
+                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                    append(part)
+                }
+            } else {
+                append(part)
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -309,7 +329,7 @@ fun ChatBubble(message: ChatMessage) {
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Text(
-                        text = message.text,
+                        text = formatChatText(message.text),
                         color = Ink,
                         fontSize = 14.sp,
                         lineHeight = 20.sp
