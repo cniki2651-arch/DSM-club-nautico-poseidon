@@ -12,7 +12,16 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import java.util.UUID
+
+private fun obtenerHoraLima(): String {
+    val localeEs = Locale.Builder().setLanguage("es").setRegion("PE").build()
+    val sdf = SimpleDateFormat("HH:mm", localeEs).apply {
+        timeZone = TimeZone.getTimeZone("America/Lima")
+    }
+    return sdf.format(Date())
+}
 
 data class AsistenteUiState(
     val messages: List<ChatMessage> = listOf(
@@ -20,7 +29,7 @@ data class AsistenteUiState(
             id = UUID.randomUUID().toString(),
             sender = MessageSender.BOT,
             text = "¡Hola, Socio! Soy tu Asistente Náutico Poseidón. ⚓ ¿En qué te puedo ayudar hoy?",
-            timestamp = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+            timestamp = obtenerHoraLima()
         )
     ),
     val inputQuery: String = "",
@@ -40,12 +49,12 @@ class AsistenteNauticoViewModel(
 
     fun sendMessage(userQuery: String) {
         if (userQuery.isBlank()) return
-        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val horaActual = obtenerHoraLima()
         val userMsg = ChatMessage(
             id = UUID.randomUUID().toString(),
             sender = MessageSender.USER,
             text = userQuery.trim(),
-            timestamp = timeFormat.format(Date())
+            timestamp = horaActual
         )
 
         _uiState.update {
@@ -63,7 +72,7 @@ class AsistenteNauticoViewModel(
                     id = UUID.randomUUID().toString(),
                     sender = MessageSender.BOT,
                     text = botText,
-                    timestamp = timeFormat.format(Date())
+                    timestamp = obtenerHoraLima()
                 )
                 _uiState.update {
                     it.copy(
@@ -82,7 +91,7 @@ class AsistenteNauticoViewModel(
                     id = UUID.randomUUID().toString(),
                     sender = MessageSender.BOT,
                     text = errorText,
-                    timestamp = timeFormat.format(Date())
+                    timestamp = obtenerHoraLima()
                 )
                 _uiState.update {
                     it.copy(

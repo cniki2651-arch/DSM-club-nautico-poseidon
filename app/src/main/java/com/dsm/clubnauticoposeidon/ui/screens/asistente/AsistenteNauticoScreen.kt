@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -92,8 +93,9 @@ fun AsistenteNauticoScreen(
     val listState = rememberLazyListState()
 
     LaunchedEffect(state.messages.size, state.isLoading) {
-        if (state.messages.isNotEmpty()) {
-            listState.animateScrollToItem(state.messages.size - 1)
+        val totalItems = state.messages.size + if (state.isLoading) 1 else 0
+        if (totalItems > 0) {
+            listState.animateScrollToItem(totalItems - 1)
         }
     }
 
@@ -149,7 +151,7 @@ fun AsistenteNauticoScreen(
                     .fillMaxWidth()
                     .padding(vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
+                contentPadding = PaddingValues(horizontal = 16.dp)
             ) {
                 items(preguntasFrecuentes) { pregunta ->
                     Surface(
@@ -172,6 +174,7 @@ fun AsistenteNauticoScreen(
             // Historial de Conversación (LazyColumn)
             LazyColumn(
                 state = listState,
+                contentPadding = PaddingValues(top = 4.dp, bottom = 24.dp),
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
