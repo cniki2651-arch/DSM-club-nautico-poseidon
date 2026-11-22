@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,12 +17,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Anchor
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.DirectionsBoat
 import androidx.compose.material.icons.filled.FactCheck
 import androidx.compose.material.icons.filled.NotificationsActive
@@ -63,8 +67,8 @@ import java.util.Locale
 fun HomeJefaturaScreen(
     viewModel: HomeJefaturaViewModel = viewModel(),
     onNavigateToAprobaciones: () -> Unit,
-    onLogout: () -> Unit
-    onNavigateToDashboard = { navHostController.navigate("dashboard_jefatura") },
+    onLogout: () -> Unit,
+    onNavigateToDashboard: () -> Unit = {}
 ) {
     val nombreJefe by viewModel.nombreJefe.collectAsState()
     val aprobacionesPendientes by viewModel.aprobacionesPendientes.collectAsState()
@@ -102,8 +106,7 @@ fun HomeJefaturaScreen(
                     .padding(paddingValues)
                     .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
-                // 2. Cabecera (Header)
-                // Fila superior: Logo pequeño + Nombre del Club + Cierre de sesión
+                // 2. Cabecera (fija): logo + nombre del club + cierre de sesión
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -143,90 +146,93 @@ fun HomeJefaturaScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Textos apilados
-                Text(
-                    text = "Bienvenid@, $nombreJefe",
-                    color = Ink,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = currentDate,
-                    color = Muted,
-                    fontSize = 14.sp
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "Panel de Jefatura",
-                    color = Ink,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // Pequeña línea dorada debajo del título
-                Box(
-                    modifier = Modifier
-                        .width(50.dp)
-                        .height(3.dp)
-                        .background(Gold500, shape = RoundedCornerShape(2.dp))
-                )
+                val anchoCompleto: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxLineSpan) }
 
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Banner de notificación rápida si hay aprobaciones pendientes
-                if (aprobacionesPendientes > 0) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 20.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Navy800
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, Gold500.copy(alpha = 0.6f))
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.NotificationsActive,
-                                contentDescription = "Notificación",
-                                tint = Gold500,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            
-                            val textoBanner = if (aprobacionesPendientes == 1) {
-                                "Tienes 1 solicitud esperando aprobación final"
-                            } else {
-                                "Tienes $aprobacionesPendientes solicitudes esperando aprobación final"
-                            }
-                            
-                            Text(
-                                text = textoBanner,
-                                color = Ink,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                }
-
-                // 3. Cuadrícula de Opciones (Grid de 2 columnas)
+                // 3. Todo el contenido se desplaza dentro del grid
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(bottom = 8.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
+                    // Saludo y título
+                    item(span = anchoCompleto) {
+                        Column {
+                            Text(
+                                text = "Bienvenid@, $nombreJefe",
+                                color = Ink,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = currentDate,
+                                color = Muted,
+                                fontSize = 14.sp
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "Panel de Jefatura",
+                                color = Ink,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            // Pequeña línea dorada debajo del título
+                            Box(
+                                modifier = Modifier
+                                    .width(50.dp)
+                                    .height(3.dp)
+                                    .background(Gold500, shape = RoundedCornerShape(2.dp))
+                            )
+                        }
+                    }
+
+                    // Banner de notificación rápida si hay aprobaciones pendientes
+                    if (aprobacionesPendientes > 0) {
+                        item(span = anchoCompleto) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Navy800
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(1.dp, Gold500.copy(alpha = 0.6f))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(14.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.NotificationsActive,
+                                        contentDescription = "Notificación",
+                                        tint = Gold500,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+
+                                    val textoBanner = if (aprobacionesPendientes == 1) {
+                                        "Tienes 1 solicitud esperando aprobación final"
+                                    } else {
+                                        "Tienes $aprobacionesPendientes solicitudes esperando aprobación final"
+                                    }
+
+                                    Text(
+                                        text = textoBanner,
+                                        color = Ink,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     // Tarjeta 1 (Destacada): Aprobación de Nuevos Socios
                     item {
                         MenuCard(
@@ -239,7 +245,18 @@ fun HomeJefaturaScreen(
                         )
                     }
 
-                    // Tarjeta 2: Fichas de Embarcación
+                    // Tarjeta 2 (Destacada): Dashboard
+                    item {
+                        MenuCard(
+                            titulo = "Dashboard",
+                            descripcion = "Membresías y consumos del club",
+                            icono = Icons.Default.BarChart,
+                            destacado = true,
+                            onClick = onNavigateToDashboard
+                        )
+                    }
+
+                    // Tarjeta 3: Fichas de Embarcación
                     item {
                         MenuCard(
                             titulo = "Fichas de Embarcación",
@@ -250,7 +267,7 @@ fun HomeJefaturaScreen(
                         )
                     }
 
-                    // Tarjeta 3: Conformidad de Liquidaciones
+                    // Tarjeta 4: Conformidad de Liquidaciones
                     item {
                         MenuCard(
                             titulo = "Conformidad de Liquidaciones",
@@ -261,7 +278,7 @@ fun HomeJefaturaScreen(
                         )
                     }
 
-                    // Tarjeta 4: Reportes de Área
+                    // Tarjeta 5: Reportes de Área
                     item {
                         MenuCard(
                             titulo = "Reportes de Área",
@@ -273,7 +290,7 @@ fun HomeJefaturaScreen(
                     }
                 }
 
-                // 4. Pie de Página (Footer)
+                // 4. Pie de página (fijo)
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -357,7 +374,7 @@ fun MenuCard(
                     .padding(14.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Fila Superior: Contenedor del ícono + Badge
+                // Fila superior: contenedor del ícono + badge
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -394,7 +411,7 @@ fun MenuCard(
                     }
                 }
 
-                // Centro: Título y Descripción
+                // Centro: título y descripción
                 Column {
                     Text(
                         text = titulo,
@@ -412,7 +429,7 @@ fun MenuCard(
                     )
                 }
 
-                // Parte inferior: Flechita indicadora de navegación
+                // Parte inferior: flechita indicadora de navegación
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                     contentDescription = "Ir a $titulo",
