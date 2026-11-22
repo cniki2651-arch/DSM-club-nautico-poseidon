@@ -97,8 +97,7 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
 
-    // MPAndroidChart (gráficos del panel de radas, HU04)
-    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
 
     // Room (SQLite)
     implementation(libs.androidx.room.runtime)
@@ -112,7 +111,7 @@ dependencies {
     implementation(libs.mpandroidchart)
 
     implementation("io.coil-kt:coil-compose:2.7.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+
 
     // Google AI Client for Android (Gemini API)
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
