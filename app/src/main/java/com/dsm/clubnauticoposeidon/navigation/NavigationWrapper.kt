@@ -381,8 +381,15 @@ fun NavigationWrapper(
         composable("bandeja_aprobaciones") {
             com.dsm.clubnauticoposeidon.ui.screens.jefatura.BandejaAprobacionesScreen(
                 onBackClick = { navHostController.popBackStack() }
+
             )
         }
+        composable("dashboard_jefatura") {
+            com.dsm.clubnauticoposeidon.ui.screens.jefatura.DashboardJefaturaScreen(
+                onBackClick = { navHostController.popBackStack() }
+            )
+        }
+
         // MANTENIMIENTO
         composable("home_mantenimiento") {
             com.dsm.clubnauticoposeidon.ui.screens.mantenimiento.HomeMantenimientoScreen(
