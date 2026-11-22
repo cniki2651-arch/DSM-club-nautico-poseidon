@@ -64,6 +64,7 @@ fun HomeJefaturaScreen(
     viewModel: HomeJefaturaViewModel = viewModel(),
     onNavigateToAprobaciones: () -> Unit,
     onLogout: () -> Unit
+    onNavigateToDashboard = { navHostController.navigate("dashboard_jefatura") },
 ) {
     val nombreJefe by viewModel.nombreJefe.collectAsState()
     val aprobacionesPendientes by viewModel.aprobacionesPendientes.collectAsState()
