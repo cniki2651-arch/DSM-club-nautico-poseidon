@@ -245,11 +245,11 @@ fun HomeJefaturaScreen(
                         )
                     }
 
-                    // Tarjeta 2 (Destacada): Dashboard
+                    // Tarjeta 2: Reportes de Área
                     item {
                         MenuCard(
-                            titulo = "Dashboard",
-                            descripcion = "Membresías y consumos del club",
+                            titulo = "Reportes de Área",
+                            descripcion = "Visualiza reportes y estadísticas del club",
                             icono = Icons.Default.BarChart,
                             destacado = true,
                             onClick = onNavigateToDashboard
@@ -278,16 +278,6 @@ fun HomeJefaturaScreen(
                         )
                     }
 
-                    // Tarjeta 5: Reportes de Área
-                    item {
-                        MenuCard(
-                            titulo = "Reportes de Área",
-                            descripcion = "Visualiza reportes y estadísticas del club",
-                            icono = Icons.Default.QueryStats,
-                            destacado = false,
-                            onClick = { /* TODO: Módulo Estadísticas */ }
-                        )
-                    }
                 }
 
                 // 4. Pie de página (fijo)
