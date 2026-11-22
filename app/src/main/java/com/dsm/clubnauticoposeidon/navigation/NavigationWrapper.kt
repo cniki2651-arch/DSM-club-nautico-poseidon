@@ -371,17 +371,18 @@ fun NavigationWrapper(
             )
         }
 
+
         // JEFE
         composable("jefe") {
             com.dsm.clubnauticoposeidon.ui.screens.jefatura.HomeJefaturaScreen(
                 onNavigateToAprobaciones = { navHostController.navigate("bandeja_aprobaciones") },
+                onNavigateToDashboard = { navHostController.navigate("dashboard_jefatura") },
                 onLogout = cerrarSesion
             )
         }
         composable("bandeja_aprobaciones") {
             com.dsm.clubnauticoposeidon.ui.screens.jefatura.BandejaAprobacionesScreen(
                 onBackClick = { navHostController.popBackStack() }
-
             )
         }
         composable("dashboard_jefatura") {
