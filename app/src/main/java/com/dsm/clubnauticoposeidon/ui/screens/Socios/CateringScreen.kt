@@ -184,7 +184,7 @@ fun CateringScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Categorías con ícono, estilo Yape
+            // Categorías con ícono
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
