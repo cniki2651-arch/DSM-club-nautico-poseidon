@@ -207,7 +207,7 @@ fun GestionUsuariosScreen(
                 }
 
                 items(rolesAdministrativos) { rol ->
-                    val cantidad = state.usuarios.count { it.rol == rol.key }
+                    val cantidad = state.usuarios.count { it.rolEnum == rol }
                     FilterChip(
                         selected = state.filtroRol == rol,
                         onClick = {
