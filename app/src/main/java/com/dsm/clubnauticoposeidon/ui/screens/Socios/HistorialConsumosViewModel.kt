@@ -10,14 +10,14 @@ import com.google.firebase.firestore.MetadataChanges
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-// Un producto dentro de un pedido
+
 data class ItemPedidoHistorial(
     val nombre: String,
     val cantidad: Int,
     val precioUnitario: Double
 )
 
-// Un pedido tal como se muestra en el historial
+// Pedido
 data class PedidoHistorial(
     val id: String,
     val modulo: String,
@@ -29,8 +29,7 @@ data class PedidoHistorial(
     val pendienteDeEnvio: Boolean
 )
 
-// Lee la colección solicitudes_servicios del socio y se mantiene actualizado en vivo.
-// No toca nada del flujo de pedidos: solo lee.
+
 class HistorialConsumosViewModel : ViewModel() {
 
     private val _pedidos = MutableStateFlow<List<PedidoHistorial>>(emptyList())
@@ -109,9 +108,8 @@ private fun aInt(valor: Any?): Int = when (valor) {
     else -> 1
 }
 
-// Acepta los dos formatos:
-//  - lista de objetos:  [{nombre, cantidad, precio_unitario}, ...]
-//  - lista de textos:   ["nombre: Ceviche", "cantidad: 1", "precio_unitario: 45.00", ...]
+
+
 private fun parsearItems(crudo: Any?): List<ItemPedidoHistorial> {
     val lista = crudo as? List<*> ?: return emptyList()
     val items = mutableListOf<ItemPedidoHistorial>()

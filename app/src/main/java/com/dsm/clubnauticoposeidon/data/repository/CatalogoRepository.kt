@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 
 // Menú de cada módulo (catering, limpieza...) desde Firestore.
-// Usa un listener: funciona sin internet con lo que Firestore ya guardó en el celular.
+
 class CatalogoRepository {
 
     private val ref = FirebaseFirestore.getInstance().collection("catalogo_servicios")
