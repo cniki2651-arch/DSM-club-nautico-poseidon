@@ -41,7 +41,7 @@ abstract class AppDatabase : RoomDatabase() {
         private var instancia: AppDatabase? = null
 
         fun get(context: Context): AppDatabase = instancia ?: synchronized(this) {
-            Room.databaseBuilder(
+            instancia ?: Room.databaseBuilder(
                 context.applicationContext,
                 AppDatabase::class.java,
                 "poseidon.db"
