@@ -264,7 +264,7 @@ fun HomeJefaturaScreen(
                             titulo = "Gestión de Usuarios",
                             descripcion = "Administra cuentas del personal, roles y permisos del club",
                             icono = Icons.Default.ManageAccounts,
-                            destacado = false,
+                            destacado = true,
                             onClick = onNavigateToGestionUsuarios
                         )
                     }
