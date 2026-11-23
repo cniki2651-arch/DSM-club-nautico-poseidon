@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.dsm.clubnauticoposeidon.data.repository.ConsumoRepository
-import com.dsm.clubnauticoposeidon.data.repository.PlatoRepository
+import com.dsm.clubnauticoposeidon.data.repository.CatalogoRepository
 import com.dsm.clubnauticoposeidon.model.ItemCarrito
 import com.dsm.clubnauticoposeidon.model.Plato
 import com.dsm.clubnauticoposeidon.ui.components.CarritoSocio
@@ -53,7 +53,7 @@ open class ServicioViewModel(
     private val mensajeExito: String
 ) : AndroidViewModel(app) {
 
-    private val platoRepo = PlatoRepository()
+    private val platoRepo = CatalogoRepository()
     private val consumoRepo = ConsumoRepository(app)
     private val usuario = FirebaseAuth.getInstance().currentUser
 
