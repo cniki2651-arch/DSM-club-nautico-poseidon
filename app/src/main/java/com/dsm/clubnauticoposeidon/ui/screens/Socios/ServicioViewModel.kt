@@ -16,12 +16,10 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-private const val MODULO = "catering"
 
-// Todo lo que la pantalla de Catering necesita dibujar
-data class CateringUiState(
+data class ServicioUiState(
     val platos: List<Plato> = emptyList(),
-    val categoriaSeleccionada: String = "Desayunos",
+    val categoriaSeleccionada: String = "",
     val carrito: List<ItemCarrito> = emptyList(),
     val cargando: Boolean = true,
     val guardando: Boolean = false,
@@ -44,7 +42,16 @@ data class CateringUiState(
         carrito.firstOrNull { it.nombre == nombre }?.cantidad ?: 0
 }
 
-class CateringViewModel(private val app: Application) : AndroidViewModel(app) {
+// Para que CateringScreen siga funcionando sin cambios
+typealias CateringUiState = ServicioUiState
+
+// Lógica común a todos los módulos: solo cambia el nombre del módulo
+open class ServicioViewModel(
+    private val app: Application,
+    private val modulo: String,
+    categoriaInicial: String,
+    private val mensajeExito: String
+) : AndroidViewModel(app) {
 
     private val platoRepo = PlatoRepository()
     private val consumoRepo = ConsumoRepository(app)
@@ -52,15 +59,15 @@ class CateringViewModel(private val app: Application) : AndroidViewModel(app) {
 
     val uid: String = usuario?.uid.orEmpty()
 
-    private val _ui = MutableStateFlow(CateringUiState())
-    val ui: StateFlow<CateringUiState> = _ui
+    private val _ui = MutableStateFlow(ServicioUiState(categoriaSeleccionada = categoriaInicial))
+    val ui: StateFlow<ServicioUiState> = _ui
 
     init {
-        // Menú desde Firestore (con caché para cuando no hay internet)
+        // Productos desde Firestore (con caché para cuando no hay internet)
         viewModelScope.launch {
-            platoRepo.observarPlatos(MODULO)
+            platoRepo.observarPlatos(modulo)
                 .catch {
-                    _ui.update { it.copy(cargando = false, mensaje = "Error al cargar el menú de la nube") }
+                    _ui.update { it.copy(cargando = false, mensaje = "Error al cargar los productos de la nube") }
                 }
                 .collect { platos ->
                     _ui.update { estado ->
@@ -69,14 +76,14 @@ class CateringViewModel(private val app: Application) : AndroidViewModel(app) {
                             else platos.firstOrNull()?.categoria.orEmpty()
                         estado.copy(platos = platos, categoriaSeleccionada = categoria, cargando = false)
                     }
-                    // Guarda en el celular las fotos de todas las categorías
-                    ImagenesMenu.precargar(app, platos.map { it.imagen })
+                    // Guarda en el celular las fotos (solo las que tienen link)
+                    ImagenesMenu.precargar(app, platos.map { it.imagen }.filter { it.isNotBlank() })
                 }
         }
 
         // Carrito guardado en el celular: no se pierde al ir al inicio, rotar ni cerrar la app
         viewModelScope.launch {
-            CarritoSocio.observar(app, uid, MODULO).collect { carrito ->
+            CarritoSocio.observar(app, uid, modulo).collect { carrito ->
                 _ui.update { it.copy(carrito = carrito) }
             }
         }
@@ -86,10 +93,10 @@ class CateringViewModel(private val app: Application) : AndroidViewModel(app) {
         _ui.update { it.copy(categoriaSeleccionada = categoria) }
 
     fun agregar(plato: Plato) =
-        CarritoSocio.agregar(app, uid, MODULO, plato.nombre, plato.precio)
+        CarritoSocio.agregar(app, uid, modulo, plato.nombre, plato.precio)
 
     fun quitar(plato: Plato) =
-        CarritoSocio.quitar(app, uid, MODULO, plato.nombre)
+        CarritoSocio.quitar(app, uid, modulo, plato.nombre)
 
     // ubicacion = texto de la embarcación (y rada) elegida en el selector
     fun confirmar(ubicacion: String?) {
@@ -100,7 +107,7 @@ class CateringViewModel(private val app: Application) : AndroidViewModel(app) {
         when {
             estado.guardando -> Unit
             socio == null -> mostrar("Inicia sesión para hacer un pedido")
-            estado.carrito.isEmpty() -> mostrar("Agrega al menos un plato")
+            estado.carrito.isEmpty() -> mostrar("Agrega al menos un producto")
             destino == null -> mostrar("Elige tu embarcación")
             else -> viewModelScope.launch {
                 _ui.update { it.copy(guardando = true) }
@@ -109,17 +116,13 @@ class CateringViewModel(private val app: Application) : AndroidViewModel(app) {
                     consumoRepo.registrarPedido(
                         socioUid = socio.uid,
                         correo = socio.email.orEmpty(),
-                        modulo = MODULO,
+                        modulo = modulo,
                         ubicacionRada = destino,
                         items = estado.carrito
                     )
-                    CarritoSocio.vaciar(app, uid, MODULO)
+                    CarritoSocio.vaciar(app, uid, modulo)
                     _ui.update {
-                        it.copy(
-                            guardando = false,
-                            pedidoConfirmado = true,
-                            mensaje = "Pedido registrado. Se enviará a cocina automáticamente"
-                        )
+                        it.copy(guardando = false, pedidoConfirmado = true, mensaje = mensajeExito)
                     }
                 } catch (e: Exception) {
                     _ui.update { it.copy(guardando = false, mensaje = "No se pudo guardar el pedido") }
@@ -133,3 +136,10 @@ class CateringViewModel(private val app: Application) : AndroidViewModel(app) {
     fun mensajeMostrado() = _ui.update { it.copy(mensaje = null) }
     fun pedidoProcesado() = _ui.update { it.copy(pedidoConfirmado = false) }
 }
+
+// Un ViewModel por módulo: cada uno es una sola línea
+class CateringViewModel(app: Application) :
+    ServicioViewModel(app, "catering", "Bebidas", "Pedido registrado. Se enviará a cocina automáticamente")
+
+class SuministrosViewModel(app: Application) :
+    ServicioViewModel(app, "suministros", "Combustible", "Pedido registrado. Se enviará automáticamente")
