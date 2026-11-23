@@ -5,5 +5,5 @@ data class ItemCarrito(
     val nombre: String,
     val precioUnitario: Double,
     val cantidad: Int = 1,
-    val servicioId: String? = null // ID del catálogo (opcional)
+    val servicioId: String? = null
 )

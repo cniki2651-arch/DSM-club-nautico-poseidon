@@ -10,6 +10,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
+import com.dsm.clubnauticoposeidon.data.local.AppDatabase
 import com.dsm.clubnauticoposeidon.navigation.NavigationWrapper
 import com.dsm.clubnauticoposeidon.ui.theme.ClubNauticoPoseidonTheme
 import com.google.firebase.Firebase
@@ -18,6 +19,10 @@ import com.google.firebase.auth.auth
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
+        Thread { AppDatabase.get(applicationContext).openHelper.writableDatabase }.start()
+
         enableEdgeToEdge()
         val auth = Firebase.auth
 
