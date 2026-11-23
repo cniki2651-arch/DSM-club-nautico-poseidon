@@ -19,7 +19,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.dsm.clubnauticoposeidon.ui.screens.asistente.AsistenteNauticoScreen
 import com.dsm.clubnauticoposeidon.ui.screens.clima.ClimaDetalleScreen
-import com.dsm.clubnauticoposeidon.ui.screens.jefatura.GestionUsuariosScreen
 import com.dsm.clubnauticoposeidon.ui.screens.historial.HistorialTransitoScreen
 import com.dsm.clubnauticoposeidon.ui.screens.home.HomeOperacionesScreen
 import com.dsm.clubnauticoposeidon.ui.screens.home.HomeSocioScreen
@@ -378,7 +377,6 @@ fun NavigationWrapper(
             com.dsm.clubnauticoposeidon.ui.screens.jefatura.HomeJefaturaScreen(
                 onNavigateToAprobaciones = { navHostController.navigate("bandeja_aprobaciones") },
                 onNavigateToDashboard = { navHostController.navigate("dashboard_jefatura") },
-                onNavigateToGestionUsuarios = { navHostController.navigate("gestion_usuarios") },
                 onLogout = cerrarSesion
             )
         }
@@ -389,11 +387,6 @@ fun NavigationWrapper(
         }
         composable("dashboard_jefatura") {
             com.dsm.clubnauticoposeidon.ui.screens.jefatura.DashboardJefaturaScreen(
-                onBackClick = { navHostController.popBackStack() }
-            )
-        }
-        composable("gestion_usuarios") {
-            GestionUsuariosScreen(
                 onBackClick = { navHostController.popBackStack() }
             )
         }
