@@ -69,7 +69,8 @@ fun HomeJefaturaScreen(
     viewModel: HomeJefaturaViewModel = viewModel(),
     onNavigateToAprobaciones: () -> Unit,
     onLogout: () -> Unit,
-    onNavigateToDashboard: () -> Unit = {}
+    onNavigateToDashboard: () -> Unit = {},
+    onNavigateToGestionUsuarios: () -> Unit = {}
 ) {
     val nombreJefe by viewModel.nombreJefe.collectAsState()
     val aprobacionesPendientes by viewModel.aprobacionesPendientes.collectAsState()
@@ -264,7 +265,7 @@ fun HomeJefaturaScreen(
                             descripcion = "Administra cuentas del personal, roles y permisos del club",
                             icono = Icons.Default.ManageAccounts,
                             destacado = false,
-                            onClick = { /* TODO: Módulo Gestión de Usuarios */ }
+                            onClick = onNavigateToGestionUsuarios
                         )
                     }
 
