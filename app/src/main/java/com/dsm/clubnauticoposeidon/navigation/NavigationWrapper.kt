@@ -195,7 +195,14 @@ fun NavigationWrapper(
                 onNavigateToClima = { navHostController.navigate("clima_detalle") },
                 onNavigateToHistorial = { navHostController.navigate("historial_consumos") },
                 onNavigateToAsistente = { navHostController.navigate("asistente_nautico") },
+                onNavigateToReportarDanio = { navHostController.navigate("reportar_danio") },
                 onLogout = cerrarSesion
+            )
+        }
+
+        composable("reportar_danio") {
+            com.dsm.clubnauticoposeidon.ui.screens.Socios.ReportarDanioScreen(
+                onBackClick = { navHostController.popBackStack() }
             )
         }
 
@@ -402,11 +409,17 @@ fun NavigationWrapper(
         composable("home_mantenimiento") {
             com.dsm.clubnauticoposeidon.ui.screens.mantenimiento.HomeMantenimientoScreen(
                 onNavigateToPedidos = { navHostController.navigate("bandeja_pedidos") },
+                onNavigateToEvaluacionAverias = { navHostController.navigate("evaluacion_averias") },
                 onLogout = cerrarSesion
             )
         }
         composable("bandeja_pedidos") {
             com.dsm.clubnauticoposeidon.ui.screens.mantenimiento.BandejaPedidosScreen(
+                onBackClick = { navHostController.popBackStack() }
+            )
+        }
+        composable("evaluacion_averias") {
+            com.dsm.clubnauticoposeidon.ui.screens.mantenimiento.EvaluacionAveriasScreen(
                 onBackClick = { navHostController.popBackStack() }
             )
         }

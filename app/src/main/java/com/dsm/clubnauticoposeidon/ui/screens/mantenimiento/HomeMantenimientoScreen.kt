@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Anchor
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -71,6 +72,7 @@ import java.util.Locale
 fun HomeMantenimientoScreen(
     onLogout: () -> Unit,
     onNavigateToPedidos: () -> Unit = {},
+    onNavigateToEvaluacionAverias: () -> Unit = {},
     viewModel: PedidosPendientesViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -262,11 +264,11 @@ fun HomeMantenimientoScreen(
                     }
                     item {
                         MenuCardNaviero(
-                            titulo = "Reportes de Daños",
-                            descripcion = "Registra incidencias con fotos",
-                            icono = Icons.Default.Build,
-                            destacado = false,
-                            onClick = showToast
+                            titulo = "Reporte de Daños ",
+                            descripcion = "Registra Incidencias mediante Fotos",
+                            icono = Icons.Default.CameraAlt,
+                            destacado = true,
+                            onClick = onNavigateToEvaluacionAverias
                         )
                     }
 

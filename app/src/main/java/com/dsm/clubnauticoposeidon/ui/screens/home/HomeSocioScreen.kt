@@ -93,7 +93,8 @@ fun HomeSocioScreen(
     onNavigateToMisNaves: () -> Unit = {},
     onNavigateToClima: () -> Unit = {},
     onNavigateToHistorial: () -> Unit = {},
-    onNavigateToAsistente: () -> Unit = {}
+    onNavigateToAsistente: () -> Unit = {},
+    onNavigateToReportarDanio: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var menuExpanded by remember { mutableStateOf(false) }
@@ -434,7 +435,7 @@ fun HomeSocioScreen(
                             titulo = "Reportar Daño",
                             descripcion = "Notifica incidencias",
                             icono = Icons.Default.Build,
-                            onClick = showToast
+                            onClick = onNavigateToReportarDanio
                         )
                     }
                 }
