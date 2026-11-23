@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Anchor
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.DirectionsBoat
 import androidx.compose.material.icons.filled.FactCheck
+import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.VerifiedUser
@@ -68,7 +69,8 @@ fun HomeJefaturaScreen(
     viewModel: HomeJefaturaViewModel = viewModel(),
     onNavigateToAprobaciones: () -> Unit,
     onLogout: () -> Unit,
-    onNavigateToDashboard: () -> Unit = {}
+    onNavigateToDashboard: () -> Unit = {},
+    onNavigateToGestionUsuarios: () -> Unit = {}
 ) {
     val nombreJefe by viewModel.nombreJefe.collectAsState()
     val aprobacionesPendientes by viewModel.aprobacionesPendientes.collectAsState()
@@ -256,14 +258,14 @@ fun HomeJefaturaScreen(
                         )
                     }
 
-                    // Tarjeta 3: Fichas de Embarcación
+                    // Tarjeta 3: Gestión de Usuarios
                     item {
                         MenuCard(
-                            titulo = "Fichas de Embarcación",
-                            descripcion = "Consulta y gestiona la información de las embarcaciones",
-                            icono = Icons.Default.DirectionsBoat,
-                            destacado = false,
-                            onClick = { /* TODO: Módulo Embarcaciones */ }
+                            titulo = "Gestión de Usuarios",
+                            descripcion = "Administra cuentas del personal, roles y permisos del club",
+                            icono = Icons.Default.ManageAccounts,
+                            destacado = true,
+                            onClick = onNavigateToGestionUsuarios
                         )
                     }
 
