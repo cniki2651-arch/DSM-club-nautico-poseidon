@@ -1,6 +1,9 @@
 package com.dsm.clubnauticoposeidon.ui.screens.Socios
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.dsm.clubnauticoposeidon.data.local.AppDatabase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
@@ -8,7 +11,11 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.MetadataChanges
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 
 data class ItemPedidoHistorial(
@@ -30,10 +37,21 @@ data class PedidoHistorial(
 )
 
 
-class HistorialConsumosViewModel : ViewModel() {
 
-    private val _pedidos = MutableStateFlow<List<PedidoHistorial>>(emptyList())
-    val pedidos: StateFlow<List<PedidoHistorial>> = _pedidos
+class HistorialConsumosViewModel(app: Application) : AndroidViewModel(app) {
+
+    private val dao = AppDatabase.get(app).consumoDao()
+
+    private val _nube = MutableStateFlow<List<PedidoHistorial>>(emptyList())
+    private val _locales = MutableStateFlow<List<PedidoHistorial>>(emptyList())
+
+    // Lista final: pendientes del celular + enviados, sin repetir, del más reciente al más antiguo
+    val pedidos: StateFlow<List<PedidoHistorial>> =
+        combine(_nube, _locales) { nube, locales ->
+            val idsEnNube = nube.map { it.id }.toSet()
+            (locales.filter { it.id !in idsEnNube } + nube)
+                .sortedByDescending { it.fecha }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val _cargando = MutableStateFlow(true)
     val cargando: StateFlow<Boolean> = _cargando
@@ -49,8 +67,29 @@ class HistorialConsumosViewModel : ViewModel() {
             _cargando.value = false
             _error.value = "Inicia sesión para ver tu historial"
         } else {
-            // INCLUDE: también avisa cuando un pedido pasa de "pendiente de envío" a enviado.
-            // Sin orderBy a propósito (evita crear un índice en Firestore); se ordena aquí.
+            // 1) SQLite: funciona sin internet y se actualiza solo
+            viewModelScope.launch {
+                dao.pendientesDe(uid).collect { lista ->
+                    _locales.value = lista.map { p ->
+                        PedidoHistorial(
+                            id = p.id,
+                            modulo = p.modulo,
+                            estado = p.estado,
+                            total = p.total,
+                            fecha = p.fecha,
+                            ubicacion = p.ubicacion.orEmpty(),
+                            items = dao.detalleDe(p.id).map {
+                                ItemPedidoHistorial(it.nombre, it.cantidad, it.precioUnitario)
+                            },
+                            pendienteDeEnvio = true
+                        )
+                    }
+                    _cargando.value = false
+                }
+            }
+
+            // 2) Firestore: pedidos ya enviados.
+
             registro = FirebaseFirestore.getInstance()
                 .collection("solicitudes_servicios")
                 .whereEqualTo("uid_socio", uid)
@@ -61,9 +100,7 @@ class HistorialConsumosViewModel : ViewModel() {
                         return@addSnapshotListener
                     }
                     if (snapshot != null) {
-                        _pedidos.value = snapshot.documents
-                            .map { it.aPedido() }
-                            .sortedByDescending { it.fecha }
+                        _nube.value = snapshot.documents.map { it.aPedido() }
                         _error.value = null
                         _cargando.value = false
                     }
@@ -107,8 +144,6 @@ private fun aInt(valor: Any?): Int = when (valor) {
     is String -> valor.trim().toIntOrNull() ?: 1
     else -> 1
 }
-
-
 
 private fun parsearItems(crudo: Any?): List<ItemPedidoHistorial> {
     val lista = crudo as? List<*> ?: return emptyList()
