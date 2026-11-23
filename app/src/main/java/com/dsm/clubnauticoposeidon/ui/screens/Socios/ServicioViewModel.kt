@@ -42,10 +42,10 @@ data class ServicioUiState(
         carrito.firstOrNull { it.nombre == nombre }?.cantidad ?: 0
 }
 
-// Para que CateringScreen siga funcionando sin cambios
+
 typealias CateringUiState = ServicioUiState
 
-// Lógica común a todos los módulos: solo cambia el nombre del módulo
+// Módulos
 open class ServicioViewModel(
     private val app: Application,
     private val modulo: String,
