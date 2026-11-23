@@ -13,9 +13,31 @@ enum class RolUsuario(val key: String, val displayName: String) {
     POSTULANTE("postulante", "Postulante");
 
     companion object {
+        private val rolesAdministrativosSet = setOf(
+            "jefe", "jefatura",
+            "naviero", "servicios navieros", "admin",
+            "secretaria", "secretaría",
+            "finanzas",
+            "mantenimiento"
+        )
+
         fun fromKey(key: String?): RolUsuario {
-            val keyClean = key?.trim()?.lowercase()
-            return entries.find { it.key == keyClean } ?: SOCIO
+            val k = key?.trim()?.lowercase() ?: return SOCIO
+            return when {
+                k in setOf("jefe", "jefatura") -> JEFE
+                k in setOf("naviero", "servicios navieros", "admin") -> NAVIERO
+                k in setOf("secretaria", "secretaría") -> SECRETARIA
+                k == "finanzas" -> FINANZAS
+                k == "mantenimiento" -> MANTENIMIENTO
+                k == "postulante" -> POSTULANTE
+                k == "socio" -> SOCIO
+                else -> SOCIO
+            }
+        }
+
+        fun esAdministrativo(key: String?): Boolean {
+            val k = key?.trim()?.lowercase() ?: return false
+            return k !in setOf("socio", "postulante") && k in rolesAdministrativosSet
         }
     }
 }
