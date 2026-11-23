@@ -3,12 +3,14 @@ package com.dsm.clubnauticoposeidon.ui.screens.Socios
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,6 +25,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,9 +39,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,50 +49,42 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dsm.clubnauticoposeidon.ui.components.SelectorEmbarcacion
+import com.dsm.clubnauticoposeidon.ui.components.rememberEstadoEmbarcacion
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
-import com.google.firebase.firestore.FirebaseFirestore
 
-
-
+// Pantalla de Suministros Básicos: usa la misma lógica que Catering (ServicioViewModel)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SuministrosScreen(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    viewModel: SuministrosViewModel = viewModel()
 ) {
     val context = LocalContext.current
+    val ui by viewModel.ui.collectAsState()
 
-    // Estados para recibir los datos de la nube
-    var listaSuministros by remember { mutableStateOf<List<SuministroItemModel>>(emptyList()) }
-    var categoriaSeleccionada by remember { mutableStateOf("Consumibles") }
+    // Embarcación: solo se elige de las registradas
+    val estadoEmbarcacion = rememberEstadoEmbarcacion(viewModel.uid)
 
-    // 2. Descarga dinámica desde Firestore al abrir la pantalla (Módulo suministros)
-    LaunchedEffect(Unit) {
-        val db = FirebaseFirestore.getInstance()
-        db.collection("catalogo_servicios")
-            .whereEqualTo("modulo", "suministros")
-            .get()
-            .addOnSuccessListener { result ->
-                val suministrosNuevos = result.toObjects(SuministroItemModel::class.java)
-                listaSuministros = suministrosNuevos
-                // Si la categoría por defecto no existe en los datos descargados, seleccionamos la primera disponible
-                if (suministrosNuevos.isNotEmpty() && !suministrosNuevos.any { it.categoria == categoriaSeleccionada }) {
-                    categoriaSeleccionada = suministrosNuevos.first().categoria
-                }
-            }
-            .addOnFailureListener {
-                Toast.makeText(context, "Error al cargar los suministros de la nube", Toast.LENGTH_SHORT).show()
-            }
+    // Mensajes del ViewModel
+    LaunchedEffect(ui.mensaje) {
+        ui.mensaje?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.mensajeMostrado()
+        }
     }
 
-    // Obtener las categorías únicas de forma dinámica de la base de datos
-    val categorias = remember(listaSuministros) { listaSuministros.map { it.categoria }.distinct() }
-
-    // 3. Filtrado reactivo
-    val itemsFiltrados = remember(listaSuministros, categoriaSeleccionada) {
-        listaSuministros.filter { it.categoria == categoriaSeleccionada }
+    // Pedido enviado: volver
+    LaunchedEffect(ui.pedidoConfirmado) {
+        if (ui.pedidoConfirmado) {
+            viewModel.pedidoProcesado()
+            onBackClick()
+        }
     }
 
     Scaffold(
@@ -114,6 +109,73 @@ fun SuministrosScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Navy900)
             )
         },
+        // Panel fijo abajo: resumen, embarcación y botón solicitar
+        bottomBar = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Navy900)
+                    .navigationBarsPadding()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Gold500.copy(alpha = 0.3f))
+                )
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    if (ui.carrito.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "🛒 ${ui.productos} ${if (ui.productos == 1) "producto" else "productos"}",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "S/ ${String.format("%.2f", ui.total)}",
+                                color = Gold500,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
+
+                    SelectorEmbarcacion(estado = estadoEmbarcacion, enabled = !ui.guardando)
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = { viewModel.confirmar(estadoEmbarcacion.ubicacionEntrega) },
+                        enabled = !ui.guardando,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Gold500),
+                        shape = RoundedCornerShape(50)
+                    ) {
+                        if (ui.guardando) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp),
+                                strokeWidth = 2.dp,
+                                color = Navy900
+                            )
+                        } else {
+                            Text(
+                                text = "Solicitar Suministros",
+                                color = Navy900,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        },
         containerColor = Navy900
     ) { paddingValues ->
         Column(
@@ -132,15 +194,15 @@ fun SuministrosScreen(
                     .padding(bottom = 16.dp)
             )
 
-            // Pestañas de Categorías Dinámicas (Solo se muestran si hay categorías cargadas)
-            if (categorias.isNotEmpty() && categorias.contains(categoriaSeleccionada)) {
+            // Pestañas de categorías (vienen de Firestore)
+            if (ui.categorias.isNotEmpty() && ui.categorias.contains(ui.categoriaSeleccionada)) {
                 ScrollableTabRow(
-                    selectedTabIndex = categorias.indexOf(categoriaSeleccionada),
+                    selectedTabIndex = ui.categorias.indexOf(ui.categoriaSeleccionada),
                     containerColor = Navy900,
                     contentColor = Gold500,
                     edgePadding = 16.dp,
                     indicator = { tabPositions ->
-                        val index = categorias.indexOf(categoriaSeleccionada)
+                        val index = ui.categorias.indexOf(ui.categoriaSeleccionada)
                         if (index >= 0 && index < tabPositions.size) {
                             TabRowDefaults.Indicator(
                                 Modifier.tabIndicatorOffset(tabPositions[index]),
@@ -151,11 +213,11 @@ fun SuministrosScreen(
                     },
                     divider = { }
                 ) {
-                    categorias.forEach { categoria ->
-                        val isSelected = categoria == categoriaSeleccionada
+                    ui.categorias.forEach { categoria ->
+                        val isSelected = categoria == ui.categoriaSeleccionada
                         Tab(
                             selected = isSelected,
-                            onClick = { categoriaSeleccionada = categoria },
+                            onClick = { viewModel.seleccionarCategoria(categoria) },
                             text = {
                                 Text(
                                     text = categoria,
@@ -170,50 +232,54 @@ fun SuministrosScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Lista de Suministros Filtrados desde la Base de Datos
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(itemsFiltrados) { suministro ->
-                    SuministroItem(
-                        nombre = suministro.nombre,
-                        descripcion = suministro.descripcion,
-                        precio = "S/ ${String.format("%.2f", suministro.precio)}"
+            when {
+                ui.cargando && ui.platos.isEmpty() -> Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Gold500)
+                }
+
+                ui.platos.isEmpty() -> Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No se pudieron cargar los suministros.\nConéctate a internet una vez para descargarlos.",
+                        color = Color.LightGray,
+                        textAlign = TextAlign.Center
                     )
                 }
 
-                item { Spacer(modifier = Modifier.height(32.dp)) }
-
-                item {
-                    Button(
-                        onClick = {
-                            Toast.makeText(context, "Suministros en camino", Toast.LENGTH_SHORT).show()
-                            onBackClick()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Gold500),
-                        shape = RoundedCornerShape(50)
-                    ) {
-                        Text(
-                            text = "Solicitar Suministros",
-                            color = Navy900,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
+                else -> LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(ui.platosFiltrados) { producto ->
+                        MenuItemCard(
+                            nombre = producto.nombre,
+                            precio = "S/ ${String.format("%.2f", producto.precio)}",
+                            descripcion = producto.descripcion,
+                            cantidad = ui.cantidadDe(producto.nombre),
+                            onAgregar = { viewModel.agregar(producto) },
+                            onQuitar = { viewModel.quitar(producto) },
+                            // Solo muestra foto si el producto tiene link
+                            imagenUrl = producto.imagen.takeIf { it.isNotBlank() }
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    item { Spacer(modifier = Modifier.height(16.dp)) }
                 }
             }
         }
     }
 }
 
+// Tarjeta anterior: se mantiene por si otra pantalla la usa
 @Composable
 fun SuministroItem(
     nombre: String,
@@ -237,25 +303,11 @@ fun SuministroItem(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = nombre,
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(text = nombre, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = descripcion,
-                    color = Color.LightGray,
-                    fontSize = 14.sp
-                )
+                Text(text = descripcion, color = Color.LightGray, fontSize = 14.sp)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = precio,
-                    color = Gold500,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(text = precio, color = Gold500, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -266,10 +318,7 @@ fun SuministroItem(
                     .background(Color.White.copy(alpha = 0.1f), RoundedCornerShape(50))
                     .padding(horizontal = 4.dp, vertical = 2.dp)
             ) {
-                IconButton(
-                    onClick = { if (cantidad > 0) cantidad-- },
-                    modifier = Modifier.size(32.dp)
-                ) {
+                IconButton(onClick = { if (cantidad > 0) cantidad-- }, modifier = Modifier.size(32.dp)) {
                     Icon(
                         imageVector = Icons.Default.Remove,
                         contentDescription = "Quitar",
@@ -277,7 +326,6 @@ fun SuministroItem(
                         modifier = Modifier.size(20.dp)
                     )
                 }
-
                 Text(
                     text = cantidad.toString(),
                     color = Color.White,
@@ -285,11 +333,7 @@ fun SuministroItem(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
-
-                IconButton(
-                    onClick = { cantidad++ },
-                    modifier = Modifier.size(32.dp)
-                ) {
+                IconButton(onClick = { cantidad++ }, modifier = Modifier.size(32.dp)) {
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = "Añadir",

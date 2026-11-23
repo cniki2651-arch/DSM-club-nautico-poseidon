@@ -59,7 +59,7 @@ import com.dsm.clubnauticoposeidon.ui.components.rememberEstadoEmbarcacion
 import com.dsm.clubnauticoposeidon.ui.theme.Gold500
 import com.dsm.clubnauticoposeidon.ui.theme.Navy900
 
-// Pantalla del menú de Catering (MVVM: la lógica está en CateringViewModel)
+// Pantalla del menú de Catering
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CateringScreen(
@@ -69,7 +69,7 @@ fun CateringScreen(
     val context = LocalContext.current
     val ui by viewModel.ui.collectAsState()
 
-    // Embarcación: solo se elige de las registradas, se recuerda y muestra su rada
+    // Embarcación: solo se elige de las registradas
     val estadoEmbarcacion = rememberEstadoEmbarcacion(viewModel.uid)
 
     // Mensajes del ViewModel

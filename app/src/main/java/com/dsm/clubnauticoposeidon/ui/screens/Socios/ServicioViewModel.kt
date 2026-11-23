@@ -137,7 +137,7 @@ open class ServicioViewModel(
     fun pedidoProcesado() = _ui.update { it.copy(pedidoConfirmado = false) }
 }
 
-// Un ViewModel por módulo: cada uno es una sola línea
+// Un ViewModel por módulo
 class CateringViewModel(app: Application) :
     ServicioViewModel(app, "catering", "Bebidas", "Pedido registrado. Se enviará a cocina automáticamente")
 
