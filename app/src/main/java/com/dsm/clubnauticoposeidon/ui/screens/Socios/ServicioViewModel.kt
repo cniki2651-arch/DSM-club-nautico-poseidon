@@ -53,7 +53,7 @@ open class ServicioViewModel(
     private val mensajeExito: String
 ) : AndroidViewModel(app) {
 
-    private val platoRepo = CatalogoRepository()
+    private val catalogoRepository = CatalogoRepository()
     private val consumoRepo = ConsumoRepository(app)
     private val usuario = FirebaseAuth.getInstance().currentUser
 
@@ -65,7 +65,7 @@ open class ServicioViewModel(
     init {
         // Productos desde Firestore (con caché para cuando no hay internet)
         viewModelScope.launch {
-            platoRepo.observarPlatos(modulo)
+            catalogoRepository.observarPlatos(modulo)
                 .catch {
                     _ui.update { it.copy(cargando = false, mensaje = "Error al cargar los productos de la nube") }
                 }
