@@ -44,12 +44,13 @@ class GestionUsuariosViewModel(
                     _uiState.update { it.copy(isLoading = false, mensaje = "Error al cargar usuarios: ${e.message}") }
                 }
                 .collect { lista ->
-                    // Regla de Negocio Estricta: Excluir cuentas de socios (tienen su propio módulo)
-                    val listaSinSocios = lista.filter { it.rol != "socio" }
+                    // Regla de Negocio Estricta: Incluir ÚNICAMENTE cuentas del personal/roles administrativos
+                    // Descartar explícitamente postulantes, socios y roles ajenos
+                    val listaAdministrativa = lista.filter { RolUsuario.esAdministrativo(it.rol) }
                     _uiState.update { state ->
-                        val filtrada = aplicarFiltros(listaSinSocios, state.filtroRol, state.busquedaQuery)
+                        val filtrada = aplicarFiltros(listaAdministrativa, state.filtroRol, state.busquedaQuery)
                         state.copy(
-                            usuarios = listaSinSocios,
+                            usuarios = listaAdministrativa,
                             usuariosFiltrados = filtrada,
                             isLoading = false
                         )
@@ -78,7 +79,8 @@ class GestionUsuariosViewModel(
         query: String
     ): List<UsuarioGestion> {
         return lista.filter { u ->
-            val coincideRol = (rol == null || u.rol == rol.key)
+            val uRol = u.rolEnum
+            val coincideRol = (rol == null || uRol == rol)
             val queryLower = query.trim().lowercase()
             val coincideQuery = queryLower.isBlank() ||
                     u.nombreCompleto.lowercase().contains(queryLower) ||
@@ -125,8 +127,8 @@ class GestionUsuariosViewModel(
             _uiState.update { it.copy(mensaje = "El DNI debe tener exactamente 8 dígitos numéricos") }
             return
         }
-        if (rolKey == "socio") {
-            _uiState.update { it.copy(mensaje = "No puedes asignar el rol 'socio' desde esta pantalla") }
+        if (rolKey == "socio" || rolKey == "postulante" || !RolUsuario.esAdministrativo(rolKey)) {
+            _uiState.update { it.copy(mensaje = "Selecciona un rol administrativo válido para el personal") }
             return
         }
 
