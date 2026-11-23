@@ -28,6 +28,23 @@ data class TotalPorCategoria(
     val total: Double
 )
 
+// Pedido guardado en el celular que todavía no se envió
+data class PedidoPendiente(
+    val id: String,
+    val modulo: String,
+    val estado: String,
+    val total: Double,
+    val fecha: Long,
+    val ubicacion: String?
+)
+
+// Producto de un pedido pendiente
+data class ItemPendiente(
+    val nombre: String,
+    val cantidad: Int,
+    val precioUnitario: Double
+)
+
 @Dao
 interface ConsumoDao {
 
@@ -37,7 +54,7 @@ interface ConsumoDao {
     @Upsert
     suspend fun guardarItems(items: List<ConsumoItemEntity>)
 
-    // HU07: consumos registrados sin internet que aún no se subieron
+    //  consumos registrados sin internet que aún no se subieron
     @Query("SELECT * FROM consumo WHERE sincronizado = 0")
     suspend fun pendientes(): List<ConsumoEntity>
 
@@ -47,7 +64,22 @@ interface ConsumoDao {
     @Query("UPDATE consumo SET sincronizado = 1 WHERE id = :id")
     suspend fun marcarSincronizado(id: String)
 
-    // HU06: historial ordenado por fecha, con monto, estado y detalle
+    //  pedidos del socio que aún no se envían
+    @Query(
+        "SELECT id, modulo, estado, total_pagar AS total, fecha_solicitud AS fecha, " +
+                "ubicacion_rada AS ubicacion FROM consumo " +
+                "WHERE socio_uid = :uid AND sincronizado = 0"
+    )
+    fun pendientesDe(uid: String): Flow<List<PedidoPendiente>>
+
+    // Productos de un pedido pendiente
+    @Query(
+        "SELECT nombre, cantidad, precio_unitario AS precioUnitario " +
+                "FROM consumo_item WHERE consumo_id = :consumoId"
+    )
+    suspend fun detalleDe(consumoId: String): List<ItemPendiente>
+
+    //  historial ordenado por fecha, con monto, estado y detalle
     @Transaction
     @Query("SELECT * FROM consumo WHERE socio_uid = :uid ORDER BY fecha_solicitud DESC")
     fun historial(uid: String): Flow<List<ConsumoConItems>>
